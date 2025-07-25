@@ -9,6 +9,7 @@ com\ahadu\payroll\service\SystemSettingService.class
 com\ahadu\payroll\model\SystemSetting.class
 com\ahadu\payroll\model\Role.class
 com\ahadu\payroll\service\ReportService.class
+com\ahadu\payroll\config\CorsConfig.class
 com\ahadu\payroll\model\SalaryComponent.class
 com\ahadu\payroll\payload\AuthRequest.class
 com\ahadu\payroll\payload\ReportRequest.class
