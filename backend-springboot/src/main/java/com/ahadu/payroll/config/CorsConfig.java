@@ -17,7 +17,7 @@ public class CorsConfig implements WebMvcConfigurer {
     public void addCorsMappings(@NonNull CorsRegistry registry) {
         registry.addMapping("/api/**")
                 .allowedOrigins(
-                        "https://ahadu-payroll-system.vercel.app",
+                        "https://ahadubank-payroll-system.vercel.app/",
                         "http://localhost:3000",
                         "http://localhost:5173",
                         "http://localhost:4200",
