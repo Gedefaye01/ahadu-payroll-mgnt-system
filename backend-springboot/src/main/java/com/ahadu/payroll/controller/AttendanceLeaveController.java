@@ -2,9 +2,10 @@ package com.ahadu.payroll.controller;
 
 import com.ahadu.payroll.model.Attendance;
 import com.ahadu.payroll.model.LeaveRequest;
+import com.ahadu.payroll.security.UserDetailsImpl;
 import com.ahadu.payroll.service.AttendanceService;
 import com.ahadu.payroll.service.LeaveRequestService;
-import com.ahadu.payroll.service.UserDetailsImpl;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;

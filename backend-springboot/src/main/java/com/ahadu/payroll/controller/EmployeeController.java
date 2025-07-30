@@ -64,8 +64,7 @@ public class EmployeeController {
     @PostMapping
     public ResponseEntity<User> createEmployee(@RequestBody User user) {
         // Basic validation (more comprehensive validation can be added with @Valid)
-        if (user.getUsername() == null || user.getUsername().isEmpty() ||
-                user.getEmail() == null || user.getEmail().isEmpty() ||
+        if (user.getEmail() == null || user.getEmail().isEmpty() ||
                 user.getPassword() == null || user.getPassword().isEmpty()) {
             return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
         }

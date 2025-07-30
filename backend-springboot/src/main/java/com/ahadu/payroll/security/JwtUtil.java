@@ -1,120 +1,159 @@
 package com.ahadu.payroll.security;
 
-import io.jsonwebtoken.*;
-import io.jsonwebtoken.io.Decoders;
-import io.jsonwebtoken.security.Keys;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.Jwts;
+import io.jsonwebtoken.SignatureAlgorithm;
+import io.jsonwebtoken.io.Decoders; // Import Decoders for Base64 decoding
+import io.jsonwebtoken.security.Keys; // Import Keys for secure key generation
+import io.jsonwebtoken.JwtException; // Explicitly import JwtException for comprehensive error handling
+import io.jsonwebtoken.MalformedJwtException; // Specific exception for malformed JWTs
+import io.jsonwebtoken.ExpiredJwtException; // Specific exception for expired JWTs
+import io.jsonwebtoken.UnsupportedJwtException; // Specific exception for unsupported JWTs
+import io.jsonwebtoken.security.SecurityException; // Specific exception for security-related issues (e.g., invalid signature)
+
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.GrantedAuthority;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Component;
 
 import java.security.Key;
 import java.util.Date;
-import java.util.List;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.function.Function;
-import java.util.stream.Collectors;
 
 @Component
 public class JwtUtil {
 
-    private static final Logger logger = LoggerFactory.getLogger(JwtUtil.class);
-
     @Value("${jwt.secret}")
-    private String secretKeyString; // Renamed to avoid confusion with the actual Key object
+    private String secret; // This will hold your Base64 encoded secret from application.properties
 
     @Value("${jwt.expirationMs}")
-    private int jwtExpirationMs;
+    private long expirationMs; // This will hold the expiration time in milliseconds from
+                               // application.properties
 
-    private Key signingKey; // Lazily initialized Key
-
+    // This method provides the secure signing key by decoding the Base64 secret.
+    // It ensures the key is properly formatted and of sufficient strength for
+    // HS512.
     private Key getSigningKey() {
-        if (this.signingKey == null) {
-            try {
-                byte[] keyBytes = Decoders.BASE64.decode(secretKeyString);
-                this.signingKey = Keys.hmacShaKeyFor(keyBytes);
-            } catch (IllegalArgumentException e) {
-                logger.error("JWT Secret Key is invalid or malformed: {}", e.getMessage());
-                throw new RuntimeException("Invalid JWT Secret Key configuration.", e);
-            }
-        }
-        return this.signingKey;
+        // Decode the Base64 secret string into bytes
+        byte[] keyBytes = Decoders.BASE64.decode(secret);
+        // Create an HMAC-SHA key from the decoded bytes. Keys.hmacShaKeyFor ensures the
+        // key is suitable for the algorithm.
+        return Keys.hmacShaKeyFor(keyBytes);
     }
 
+    /**
+     * Extracts the username (subject) from a JWT token.
+     * 
+     * @param token The JWT token string.
+     * @return The username extracted from the token.
+     */
     public String extractUsername(String token) {
         return extractClaim(token, Claims::getSubject);
     }
 
+    /**
+     * Extracts the expiration date from a JWT token.
+     * 
+     * @param token The JWT token string.
+     * @return The expiration Date extracted from the token.
+     */
     public Date extractExpiration(String token) {
         return extractClaim(token, Claims::getExpiration);
     }
 
-    @SuppressWarnings("unchecked")
-    public List<String> extractRoles(String token) {
-        Claims claims = extractAllClaims(token);
-        Object rolesObject = claims.get("roles");
-        if (rolesObject instanceof List<?>) {
-            return (List<String>) rolesObject;
-        }
-        return List.of();
-    }
-
+    /**
+     * Extracts a specific claim from a JWT token using a claims resolver function.
+     * 
+     * @param token          The JWT token string.
+     * @param claimsResolver A function to resolve the desired claim from the Claims
+     *                       object.
+     * @param <T>            The type of the claim to be extracted.
+     * @return The extracted claim.
+     */
     public <T> T extractClaim(String token, Function<Claims, T> claimsResolver) {
-        return claimsResolver.apply(extractAllClaims(token));
+        final Claims claims = extractAllClaims(token);
+        return claimsResolver.apply(claims);
     }
 
+    /**
+     * Extracts all claims (payload) from a JWT token.
+     * This method also validates the token's signature using the signing key.
+     * 
+     * @param token The JWT token string.
+     * @return The Claims object containing all payload data.
+     */
     private Claims extractAllClaims(String token) {
-        try {
-            return Jwts.parserBuilder()
-                    .setSigningKey(getSigningKey())
-                    .build()
-                    .parseClaimsJws(token)
-                    .getBody();
-        } catch (MalformedJwtException e) {
-            logger.error("Invalid JWT token: {}", e.getMessage());
-            throw e;
-        } catch (ExpiredJwtException e) {
-            logger.error("JWT token is expired: {}", e.getMessage());
-            throw e;
-        } catch (UnsupportedJwtException e) {
-            logger.error("JWT token is unsupported: {}", e.getMessage());
-            throw e;
-        } catch (IllegalArgumentException e) {
-            logger.error("JWT claims string is empty: {}", e.getMessage());
-            throw e;
-        }
+        return Jwts.parserBuilder()
+                .setSigningKey(getSigningKey()) // Use the securely generated key
+                .build()
+                .parseClaimsJws(token) // Parses the JWS (Signed JWT) and validates the signature
+                .getBody(); // Returns the claims (payload)
     }
 
-    private boolean isTokenExpired(String token) {
+    /**
+     * Checks if a JWT token has expired.
+     * 
+     * @param token The JWT token string.
+     * @return True if the token is expired, false otherwise.
+     */
+    private Boolean isTokenExpired(String token) {
         return extractExpiration(token).before(new Date());
     }
 
-    public String generateToken(Authentication authentication) {
-        // Here, authentication.getPrincipal() will be your UserDetailsImpl instance
-        UserDetails userPrincipal = (UserDetails) authentication.getPrincipal();
-
-        List<String> roles = userPrincipal.getAuthorities().stream()
-                .map(GrantedAuthority::getAuthority)
-                .collect(Collectors.toList());
-
-        return Jwts.builder()
-                .setSubject(userPrincipal.getUsername()) // Use getUsername which is the main identifier
-                .claim("roles", roles)
-                .setIssuedAt(new Date())
-                .setExpiration(new Date(System.currentTimeMillis() + jwtExpirationMs))
-                .signWith(getSigningKey(), SignatureAlgorithm.HS256)
-                .compact();
+    /**
+     * Generates a new JWT token for a given username.
+     * 
+     * @param username The subject (username) for whom the token is generated.
+     * @return The generated JWT token string.
+     */
+    public String generateToken(String username) {
+        Map<String, Object> claims = new HashMap<>(); // You can add custom claims here if needed
+        return createToken(claims, username);
     }
 
+    /**
+     * Creates the JWT token with specified claims, subject, issued at, expiration,
+     * and signs it using HS512 algorithm with the secure key.
+     * 
+     * @param claims  Custom claims to include in the token payload.
+     * @param subject The subject (username) of the token.
+     * @return The complete JWT token string.
+     */
+    private String createToken(Map<String, Object> claims, String subject) {
+        return Jwts.builder()
+                .setClaims(claims)
+                .setSubject(subject)
+                .setIssuedAt(new Date(System.currentTimeMillis()))
+                .setExpiration(new Date(System.currentTimeMillis() + expirationMs)) // Use expirationMs from properties
+                .signWith(getSigningKey(), SignatureAlgorithm.HS512) // Ensure HS512 is used with the strong key
+                .compact(); // Builds and compacts the JWT into a string
+    }
+
+    /**
+     * Validates a JWT token against a given username and checks for expiration.
+     * This method also handles various JWT-related exceptions.
+     * 
+     * @param token    The JWT token string to validate.
+     * @param username The expected username (subject) in the token.
+     * @return True if the token is valid for the user and not expired, false
+     *         otherwise.
+     */
     public boolean validateToken(String token, String username) {
         try {
-            return extractUsername(token).equals(username) && !isTokenExpired(token);
-        } catch (Exception e) { // Catch any parsing/validation exceptions from extractUsername or
-                                // isTokenExpired
-            logger.error("JWT token validation failed: {}", e.getMessage());
-            return false;
+            final String extractedUsername = extractUsername(token);
+            return (extractedUsername.equals(username) && !isTokenExpired(token));
+        } catch (SecurityException | MalformedJwtException e) {
+            System.err.println("Invalid JWT signature or malformed token: " + e.getMessage());
+        } catch (ExpiredJwtException e) {
+            System.err.println("JWT token is expired: " + e.getMessage());
+        } catch (UnsupportedJwtException e) {
+            System.err.println("JWT token is unsupported: " + e.getMessage());
+        } catch (IllegalArgumentException e) {
+            System.err.println("JWT claims string is empty: " + e.getMessage());
+        } catch (JwtException e) {
+            // Catch any other JWT-related exceptions
+            System.err.println("JWT Validation failed: " + e.getMessage());
         }
+        return false;
     }
 }

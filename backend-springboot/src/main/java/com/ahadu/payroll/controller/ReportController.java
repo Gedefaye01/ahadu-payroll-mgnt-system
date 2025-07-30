@@ -1,4 +1,3 @@
-// File: src/main/java/com/ahadu/payroll/controller/ReportController.java
 package com.ahadu.payroll.controller;
 
 import com.ahadu.payroll.service.ReportService;
@@ -7,10 +6,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.ArrayList; // Added missing import
+import java.util.*;
 
 @RestController
 @RequestMapping("/api/reports")
@@ -18,13 +14,13 @@ import java.util.ArrayList; // Added missing import
 public class ReportController {
 
     @Autowired
-    private ReportService reportService; // Inject the new ReportService
+    private ReportService reportService;
 
     @PostMapping("/generate")
-    @PreAuthorize("hasAuthority('ADMIN')") // Ensure only admins can generate reports
+    @PreAuthorize("hasAuthority('ADMIN')")
     public ResponseEntity<Map<String, Object>> generateReport(@RequestBody Map<String, String> request) {
         String reportType = request.get("reportType");
-        List<Map<String, Object>> reportData = new ArrayList<>(); // Initialize here
+        List<Map<String, Object>> reportData = new ArrayList<>();
 
         if (reportType == null || reportType.isEmpty()) {
             return ResponseEntity.badRequest().body(Map.of("message", "Report type cannot be empty."));
@@ -44,9 +40,9 @@ public class ReportController {
                 return ResponseEntity.badRequest().body(Map.of("message", "Invalid report type specified."));
         }
 
-        Map<String, Object> responseBody = new HashMap<>();
-        responseBody.put("reportType", reportType); // Optional: send back the type
-        responseBody.put("reportData", reportData); // This must be an array of objects
-        return ResponseEntity.ok(responseBody);
+        Map<String, Object> response = new HashMap<>();
+        response.put("reportType", reportType);
+        response.put("reportData", reportData);
+        return ResponseEntity.ok(response);
     }
 }

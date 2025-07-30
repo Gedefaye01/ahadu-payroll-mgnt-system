@@ -3,8 +3,9 @@ package com.ahadu.payroll.controller;
 import com.ahadu.payroll.model.User;
 import com.ahadu.payroll.payload.ChangePasswordRequest;
 import com.ahadu.payroll.payload.UserProfileUpdateRequest;
+import com.ahadu.payroll.security.UserDetailsImpl;
 import com.ahadu.payroll.service.UserProfileService;
-import com.ahadu.payroll.service.UserDetailsImpl;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;

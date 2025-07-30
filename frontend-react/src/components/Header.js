@@ -28,7 +28,7 @@ function Header() {
     { title: 'User Roles', path: '/user-role-management' },
     { title: 'Attendance & Leave', path: '/attendance-leave-approval' },
     { title: 'Salary Structure', path: '/salary-structure' },
-    { title: 'Change Password', path: '/change-password-admin' }, // Added Change Password for Admin
+    { title: 'Change Password', path: '/change-password' }, // Added Change Password for Admin
   ];
 
   // Define employee dashboard items with their paths
@@ -100,7 +100,7 @@ function Header() {
       <div className="header-logo">
         {/* Link logo to home or dashboard based on login status */}
         <Link to={isAuthenticated ? (userRole === 'ADMIN' ? '/admin-dashboard' : '/employee-profile') : '/'}>
-          <img src="/footer-logo.png" alt="Ahadu Bank Logo" /> {/* Ensure logo is in public folder */}
+          <img src="/logo1.jpg" alt="Ahadu Bank Logo" /> {/* Ensure logo is in public folder */}
         </Link>
       </div>
       <div className="header-nav">

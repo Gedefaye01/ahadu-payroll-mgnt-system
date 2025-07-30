@@ -13,7 +13,6 @@ function GenerateReports() {
   const [downloadLink, setDownloadLink] = useState(null); // State for the download link URL
 
   // Get JWT token from localStorage for authenticated requests
-  // FIX: Corrected localStorage access from localStorage.localStorage.getItem to localStorage.getItem
   const token = localStorage.getItem('token'); 
 
   /**
@@ -132,11 +131,13 @@ function GenerateReports() {
         <h3 className="text-xl font-semibold text-gray-700 mb-4">Report Options</h3>
         <div className="form-group mb-4">
           <label htmlFor="reportType" className="block text-gray-700 text-sm font-bold mb-2">Select Report Type</label>
+          {/* Apply form-group select styling */}
           <select
             id="reportType"
             value={reportType}
             onChange={(e) => setReportType(e.target.value)}
-            className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+            // Removed conflicting Tailwind classes, rely on App.css .form-group select
+            className="form-group select" 
           >
             <option value="payrollSummary">Payroll Summary</option>
             <option value="attendanceOverview">Attendance Overview</option>
@@ -146,7 +147,8 @@ function GenerateReports() {
         <button
           onClick={handleGenerateReport}
           disabled={generating}
-          className={`bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-md focus:outline-none focus:shadow-outline w-full transition duration-200 ease-in-out transform hover:scale-105 ${generating ? 'opacity-50 cursor-not-allowed' : ''}`}
+          // Using btn-primary from App.css
+          className={`btn btn-primary w-full ${generating ? 'opacity-50 cursor-not-allowed' : ''}`}
         >
           {generating ? 'Generating Report...' : 'Generate Report'}
         </button>
@@ -154,31 +156,36 @@ function GenerateReports() {
 
       {/* Report Output Display (Table) */}
       {reportData && (
-        <div className="mt-8 p-6 border border-gray-200 rounded-lg shadow-sm bg-gray-50">
+        // Apply table-container from App.css
+        <div className="table-container mt-8 p-6 border border-gray-200 rounded-lg shadow-sm bg-gray-50">
           <h3 className="text-xl font-semibold text-gray-700 mb-4">Report Output</h3>
           {reportData.length > 0 ? (
-            <div className="overflow-x-auto rounded-md border border-gray-300">
-              <table className="min-w-full divide-y divide-gray-200 bg-white">
-                <thead className="bg-gray-100">
+            // Removed overflow-x-auto and other conflicting classes, rely on table-container
+            <div className="rounded-md border border-gray-300">
+              {/* Apply data-table from App.css */}
+              <table className="data-table">
+                <thead>
                   <tr>
                     {tableHeaders.map((header, index) => (
                       <th
                         key={index}
                         scope="col"
-                        className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                        // Removed conflicting Tailwind classes, rely on App.css .data-table th
+                        className=""
                       >
                         {header.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase())} {/* Format camelCase to Title Case */}
                       </th>
                     ))}
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-gray-200">
+                <tbody>
                   {reportData.map((row, rowIndex) => (
                     <tr key={rowIndex}>
                       {tableHeaders.map((header, colIndex) => (
                         <td
                           key={`${rowIndex}-${colIndex}`}
-                          className="px-6 py-4 whitespace-nowrap text-sm text-gray-900"
+                          // Removed conflicting Tailwind classes, rely on App.css .data-table td
+                          className=""
                         >
                           {row[header]}
                         </td>
@@ -195,7 +202,8 @@ function GenerateReports() {
           {downloadLink && (
             <button
               onClick={handleDownloadReport}
-              className="mt-4 bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-md focus:outline-none focus:shadow-outline w-full transition duration-200 ease-in-out transform hover:scale-105"
+              // Using btn-primary from App.css, consider a different color for download if needed
+              className="btn btn-primary w-full mt-4 bg-green-600 hover:bg-green-700"
             >
               Download Report (CSV)
             </button>

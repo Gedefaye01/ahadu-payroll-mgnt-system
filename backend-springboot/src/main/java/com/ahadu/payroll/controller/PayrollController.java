@@ -2,8 +2,9 @@ package com.ahadu.payroll.controller;
 
 import com.ahadu.payroll.model.Payroll;
 import com.ahadu.payroll.payload.PayrollProcessRequest;
+import com.ahadu.payroll.security.UserDetailsImpl;
 import com.ahadu.payroll.service.PayrollService;
-import com.ahadu.payroll.service.UserDetailsImpl; // To get current user details
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;

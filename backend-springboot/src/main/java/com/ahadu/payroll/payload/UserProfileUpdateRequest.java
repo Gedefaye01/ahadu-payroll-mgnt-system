@@ -1,28 +1,41 @@
-// UserProfileUpdateRequest.java (Backend DTO)
 package com.ahadu.payroll.payload;
 
-import jakarta.validation.constraints.Email;
-import jakarta.validation.constraints.NotBlank;
-import lombok.AllArgsConstructor; // Added AllArgsConstructor
-import lombok.Data;
-import lombok.NoArgsConstructor; // Added NoArgsConstructor
-
-/**
- * DTO for updating user profile details.
- */
-@Data
-@NoArgsConstructor // Lombok will generate a no-args constructor
-@AllArgsConstructor // Lombok will generate a constructor with all fields
 public class UserProfileUpdateRequest {
-    @NotBlank(message = "Username cannot be empty")
-    private String username; // This field name must match the payload from frontend
 
-    @Email(message = "Email should be valid")
-    @NotBlank(message = "Email cannot be empty")
+    private String username;
     private String email;
-
     private String phone;
     private String address;
-    private String emergencyContactName;
-    private String emergencyContactPhone;
+
+    public String getUsername() {
+        return username;
+    }
+
+    public void setUsername(String username) {
+        this.username = username;
+    }
+
+    public String getEmail() {
+        return email;
+    }
+
+    public void setEmail(String email) {
+        this.email = email;
+    }
+
+    public String getPhone() {
+        return phone;
+    }
+
+    public void setPhone(String phone) {
+        this.phone = phone;
+    }
+
+    public String getAddress() {
+        return address;
+    }
+
+    public void setAddress(String address) {
+        this.address = address;
+    }
 }

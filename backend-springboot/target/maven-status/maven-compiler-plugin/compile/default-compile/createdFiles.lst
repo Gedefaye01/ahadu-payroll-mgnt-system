@@ -4,12 +4,13 @@ com\ahadu\payroll\model\Announcement.class
 com\ahadu\payroll\controller\AuthController.class
 com\ahadu\payroll\service\AnnouncementService.class
 com\ahadu\payroll\payload\SignupRequest.class
+com\ahadu\payroll\payload\JwtResponse.class
 com\ahadu\payroll\repository\PayrollRepository.class
 com\ahadu\payroll\service\SystemSettingService.class
 com\ahadu\payroll\model\SystemSetting.class
 com\ahadu\payroll\model\Role.class
+com\ahadu\payroll\service\CustomUserDetailsService.class
 com\ahadu\payroll\service\ReportService.class
-com\ahadu\payroll\config\CorsConfig.class
 com\ahadu\payroll\model\SalaryComponent.class
 com\ahadu\payroll\payload\AuthRequest.class
 com\ahadu\payroll\payload\ReportRequest.class
@@ -29,6 +30,7 @@ com\ahadu\payroll\payload\ChangePasswordRequest.class
 com\ahadu\payroll\controller\UserRoleController.class
 com\ahadu\payroll\security\JwtAccessDeniedHandler.class
 com\ahadu\payroll\model\Payroll.class
+com\ahadu\payroll\security\UserDetailsImpl.class
 com\ahadu\payroll\repository\UserRepository.class
 com\ahadu\payroll\model\User.class
 com\ahadu\payroll\controller\ReportController.class
@@ -44,6 +46,7 @@ com\ahadu\payroll\controller\SalaryComponentController.class
 com\ahadu\payroll\PayrollApplication.class
 com\ahadu\payroll\repository\SystemSettingRepository.class
 com\ahadu\payroll\payload\ContactRequest.class
+com\ahadu\payroll\payload\MessageResponse.class
 com\ahadu\payroll\repository\SalaryComponentRepository.class
 com\ahadu\payroll\service\LeaveRequestService.class
 com\ahadu\payroll\controller\AttendanceLeaveController.class
@@ -53,10 +56,8 @@ com\ahadu\payroll\repository\RoleRepository.class
 com\ahadu\payroll\service\ContactService.class
 com\ahadu\payroll\payload\UserRoleUpdateRequest.class
 com\ahadu\payroll\controller\EmployeeController.class
-com\ahadu\payroll\security\CustomUserDetailsService.class
 com\ahadu\payroll\model\ContactMessage.class
 com\ahadu\payroll\payload\UserProfileUpdateRequest.class
 com\ahadu\payroll\repository\AttendanceRepository.class
 com\ahadu\payroll\security\JwtAuthenticationEntryPoint.class
-com\ahadu\payroll\service\UserDetailsImpl.class
 com\ahadu\payroll\service\UserProfileServiceImpl.class
