@@ -3,7 +3,7 @@ package com.ahadu.payroll.service;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
-import org.springframework.util.StringUtils; // For StringUtils.cleanPath
+import org.springframework.util.StringUtils;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -16,7 +16,6 @@ public class LocalFileStorageServiceImpl implements FileStorageService {
 
     private final Path fileStorageLocation;
 
-    // The @Value annotation will inject the value from application.properties
     public LocalFileStorageServiceImpl(@Value("${file.upload-dir}") String uploadDir) {
         this.fileStorageLocation = Paths.get(uploadDir).toAbsolutePath().normalize();
         try {
@@ -28,13 +27,11 @@ public class LocalFileStorageServiceImpl implements FileStorageService {
 
     @Override
     public String storeProfilePicture(MultipartFile file, String userId) throws IOException {
-        // Handle potential null from getOriginalFilename()
+
+        // ADDED: Handle potential null or empty filename from getOriginalFilename()
         String originalFileName = file.getOriginalFilename();
         if (originalFileName == null || originalFileName.isEmpty()) {
-            // Handle this case, perhaps throw an exception or assign a default name
-            // For now, let's throw an exception as a file with no name isn't useful for
-            // profile pictures.
-            throw new IllegalArgumentException("Original filename cannot be null or empty.");
+            throw new IllegalArgumentException("Original filename cannot be null or empty for profile picture upload.");
         }
 
         // Clean the path after ensuring it's not null
@@ -47,6 +44,7 @@ public class LocalFileStorageServiceImpl implements FileStorageService {
         }
 
         // Generate unique file name to avoid clashes and provide a cleaner URL
+        // Using userId to prefix can help with organization if needed
         String uniqueFileName = userId + "_" + UUID.randomUUID().toString() + fileExtension;
         Path targetLocation = this.fileStorageLocation.resolve(uniqueFileName);
 

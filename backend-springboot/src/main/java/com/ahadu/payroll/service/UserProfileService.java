@@ -7,14 +7,14 @@ import com.ahadu.payroll.payload.UserProfileUpdateRequest;
 import java.util.Optional;
 
 public interface UserProfileService {
-    Optional<User> getUserProfile(String userId);
 
-    Optional<User> updateMyProfile(String userId, UserProfileUpdateRequest updateRequest);
+    Optional<User> updateMyProfile(String id, UserProfileUpdateRequest updateRequest);
 
     boolean changePassword(String userId, String oldPassword, String newPassword);
 
+    Optional<User> getUserProfile(String userId);
+
     void registerNewUser(SignupRequest signupRequest);
 
-    // --- NEW METHOD FOR PROFILE PICTURE URL ---
-    void updateProfilePictureUrl(String userId, String imageUrl);
+    void updateProfilePictureUrl(String userId, String imageUrl); // ADDED
 }

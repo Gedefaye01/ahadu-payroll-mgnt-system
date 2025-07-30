@@ -2,14 +2,28 @@ package com.ahadu.payroll.payload;
 
 public class UserProfileUpdateRequest {
 
-    private String username;
+    private String username; // Corresponds to fullName in frontend
     private String email;
     private String phone;
     private String address;
-    // --- NEW FIELDS ADDED ---
-    private String emergencyContactName;
-    private String emergencyContactPhone;
+    private String emergencyContactName; // ADDED
+    private String emergencyContactPhone; // ADDED
 
+    // Constructors (optional, but good practice)
+    public UserProfileUpdateRequest() {
+    }
+
+    public UserProfileUpdateRequest(String username, String email, String phone, String address,
+            String emergencyContactName, String emergencyContactPhone) {
+        this.username = username;
+        this.email = email;
+        this.phone = phone;
+        this.address = address;
+        this.emergencyContactName = emergencyContactName;
+        this.emergencyContactPhone = emergencyContactPhone;
+    }
+
+    // Getters and Setters
     public String getUsername() {
         return username;
     }
@@ -42,20 +56,19 @@ public class UserProfileUpdateRequest {
         this.address = address;
     }
 
-    // --- NEW GETTERS AND SETTERS FOR EMERGENCY CONTACTS ---
-    public String getEmergencyContactName() {
+    public String getEmergencyContactName() { // ADDED
         return emergencyContactName;
     }
 
-    public void setEmergencyContactName(String emergencyContactName) {
+    public void setEmergencyContactName(String emergencyContactName) { // ADDED
         this.emergencyContactName = emergencyContactName;
     }
 
-    public String getEmergencyContactPhone() {
+    public String getEmergencyContactPhone() { // ADDED
         return emergencyContactPhone;
     }
 
-    public void setEmergencyContactPhone(String emergencyContactPhone) {
+    public void setEmergencyContactPhone(String emergencyContactPhone) { // ADDED
         this.emergencyContactPhone = emergencyContactPhone;
     }
 }

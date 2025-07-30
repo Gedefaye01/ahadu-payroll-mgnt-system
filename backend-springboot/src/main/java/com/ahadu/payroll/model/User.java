@@ -1,7 +1,6 @@
 package com.ahadu.payroll.model;
 
 import org.springframework.data.annotation.Id;
-import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.util.HashSet;
@@ -9,46 +8,31 @@ import java.util.Set;
 
 @Document(collection = "users")
 public class User {
-
     @Id
     private String id;
 
-    @Indexed(unique = true)
-    private String username;
-
-    @Indexed(unique = true)
+    private String username; // This typically stores the full name
     private String email;
+    private String password; // Hashed password
+    private Set<String> roles = new HashSet<>(); // Storing roles as strings (e.g., "ROLE_USER", "ROLE_ADMIN")
 
-    private String password;
+    private String phone; // ADDED
+    private String address; // ADDED
+    private String profilePictureUrl; // ADDED
+    private String emergencyContactName; // ADDED
+    private String emergencyContactPhone; // ADDED
 
-    private Set<String> roles = new HashSet<>();
-
-    private String employeeStatus;
-
-    private String phone;
-    private String address;
-    private String emergencyContactName;
-    private String emergencyContactPhone;
-
-    // --- NEW FIELD FOR PROFILE PICTURE URL ---
-    private String profilePictureUrl;
-
-    // No-args constructor
+    // Constructors
     public User() {
-        this.employeeStatus = "Active";
     }
 
-    // Constructor with main fields
     public User(String username, String email, String password) {
         this.username = username;
         this.email = email;
         this.password = password;
-        this.employeeStatus = "Active";
-        this.roles.add("USER"); // default role without prefix
     }
 
-    // Getters and Setters for all fields
-
+    // Getters and Setters
     public String getId() {
         return id;
     }
@@ -89,52 +73,63 @@ public class User {
         this.roles = roles;
     }
 
-    public String getEmployeeStatus() {
-        return employeeStatus;
-    }
-
-    public void setEmployeeStatus(String employeeStatus) {
-        this.employeeStatus = employeeStatus;
-    }
-
-    public String getPhone() {
+    public String getPhone() { // ADDED
         return phone;
     }
 
-    public void setPhone(String phone) {
+    public void setPhone(String phone) { // ADDED
         this.phone = phone;
     }
 
-    public String getAddress() {
+    public String getAddress() { // ADDED
         return address;
     }
 
-    public void setAddress(String address) {
+    public void setAddress(String address) { // ADDED
         this.address = address;
     }
 
-    public String getEmergencyContactName() {
-        return emergencyContactName;
-    }
-
-    public void setEmergencyContactName(String emergencyContactName) {
-        this.emergencyContactName = emergencyContactName;
-    }
-
-    public String getEmergencyContactPhone() {
-        return emergencyContactPhone;
-    }
-
-    public void setEmergencyContactPhone(String emergencyContactPhone) {
-        this.emergencyContactPhone = emergencyContactPhone;
-    }
-
-    // --- NEW GETTER AND SETTER FOR PROFILE PICTURE URL ---
-    public String getProfilePictureUrl() {
+    public String getProfilePictureUrl() { // ADDED
         return profilePictureUrl;
     }
 
-    public void setProfilePictureUrl(String profilePictureUrl) {
+    public void setProfilePictureUrl(String profilePictureUrl) { // ADDED
         this.profilePictureUrl = profilePictureUrl;
+    }
+
+    public String getEmergencyContactName() { // ADDED
+        return emergencyContactName;
+    }
+
+    public void setEmergencyContactName(String emergencyContactName) { // ADDED
+        this.emergencyContactName = emergencyContactName;
+    }
+
+    public String getEmergencyContactPhone() { // ADDED
+        return emergencyContactPhone;
+    }
+
+    public void setEmergencyContactPhone(String emergencyContactPhone) { // ADDED
+        this.emergencyContactPhone = emergencyContactPhone;
+    }
+
+    @Override
+    public String toString() {
+        return "User{" +
+                "id='" + id + '\'' +
+                ", username='" + username + '\'' +
+                ", email='" + email + '\'' +
+                ", roles=" + roles +
+                ", phone='" + phone + '\'' +
+                ", address='" + address + '\'' +
+                ", profilePictureUrl='" + profilePictureUrl + '\'' +
+                ", emergencyContactName='" + emergencyContactName + '\'' +
+                ", emergencyContactPhone='" + emergencyContactPhone + '\'' +
+                '}';
+    }
+
+    public String getEmployeeStatus() {
+
+        throw new UnsupportedOperationException("Unimplemented method 'getEmployeeStatus'");
     }
 }

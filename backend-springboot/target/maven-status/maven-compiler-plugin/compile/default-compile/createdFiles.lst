@@ -2,6 +2,7 @@ com\ahadu\payroll\controller\ContactController.class
 com\ahadu\payroll\service\UserProfileService.class
 com\ahadu\payroll\model\Announcement.class
 com\ahadu\payroll\controller\AuthController.class
+com\ahadu\payroll\service\LocalFileStorageServiceImpl.class
 com\ahadu\payroll\service\AnnouncementService.class
 com\ahadu\payroll\payload\SignupRequest.class
 com\ahadu\payroll\payload\JwtResponse.class
@@ -9,6 +10,7 @@ com\ahadu\payroll\repository\PayrollRepository.class
 com\ahadu\payroll\service\SystemSettingService.class
 com\ahadu\payroll\model\SystemSetting.class
 com\ahadu\payroll\model\Role.class
+com\ahadu\payroll\service\FileStorageService.class
 com\ahadu\payroll\service\CustomUserDetailsService.class
 com\ahadu\payroll\service\ReportService.class
 com\ahadu\payroll\model\SalaryComponent.class
@@ -23,6 +25,7 @@ com\ahadu\payroll\security\JwtUtil.class
 com\ahadu\payroll\service\SalaryComponentService.class
 com\ahadu\payroll\controller\SystemSettingsController.class
 com\ahadu\payroll\model\Attendance.class
+com\ahadu\payroll\payload\ApiResponse.class
 com\ahadu\payroll\security\SecurityConfig.class
 com\ahadu\payroll\payload\AuthResponse.class
 com\ahadu\payroll\controller\UserProfileController.class
@@ -38,6 +41,7 @@ com\ahadu\payroll\service\AttendanceService.class
 com\ahadu\payroll\controller\AnnouncementController.class
 com\ahadu\payroll\model\LeaveRequest.class
 com\ahadu\payroll\service\EmployeeService.class
+com\ahadu\payroll\config\WebConfig.class
 com\ahadu\payroll\controller\PayrollController.class
 com\ahadu\payroll\payload\LoginRequest.class
 com\ahadu\payroll\repository\LeaveRequestRepository.class
