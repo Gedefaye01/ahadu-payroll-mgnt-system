@@ -6,6 +6,9 @@ public class UserProfileUpdateRequest {
     private String email;
     private String phone;
     private String address;
+    // --- NEW FIELDS ADDED ---
+    private String emergencyContactName;
+    private String emergencyContactPhone;
 
     public String getUsername() {
         return username;
@@ -37,5 +40,22 @@ public class UserProfileUpdateRequest {
 
     public void setAddress(String address) {
         this.address = address;
+    }
+
+    // --- NEW GETTERS AND SETTERS FOR EMERGENCY CONTACTS ---
+    public String getEmergencyContactName() {
+        return emergencyContactName;
+    }
+
+    public void setEmergencyContactName(String emergencyContactName) {
+        this.emergencyContactName = emergencyContactName;
+    }
+
+    public String getEmergencyContactPhone() {
+        return emergencyContactPhone;
+    }
+
+    public void setEmergencyContactPhone(String emergencyContactPhone) {
+        this.emergencyContactPhone = emergencyContactPhone;
     }
 }

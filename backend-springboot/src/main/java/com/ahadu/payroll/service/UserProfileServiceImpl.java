@@ -38,6 +38,8 @@ public class UserProfileServiceImpl implements UserProfileService {
             User user = existingUserOpt.get();
 
             // Update fields only if they are provided in the request
+            // Note: The frontend sends 'fullName' as 'username' in the payload.
+            // Ensure consistency or map correctly.
             if (updateRequest.getUsername() != null && !updateRequest.getUsername().trim().isEmpty()) {
                 user.setUsername(updateRequest.getUsername().trim());
             }
@@ -50,7 +52,18 @@ public class UserProfileServiceImpl implements UserProfileService {
             if (updateRequest.getAddress() != null && !updateRequest.getAddress().trim().isEmpty()) {
                 user.setAddress(updateRequest.getAddress().trim());
             }
-            // Add other fields from UserProfileUpdateRequest as needed
+            if (updateRequest.getEmergencyContactName() != null
+                    && !updateRequest.getEmergencyContactName().trim().isEmpty()) {
+                user.setEmergencyContactName(updateRequest.getEmergencyContactName().trim());
+            }
+            if (updateRequest.getEmergencyContactPhone() != null
+                    && !updateRequest.getEmergencyContactPhone().trim().isEmpty()) {
+                user.setEmergencyContactPhone(updateRequest.getEmergencyContactPhone().trim());
+            }
+
+            // IMPORTANT: Do NOT update profilePictureUrl here if it's handled by a separate
+            // /upload-picture endpoint
+            // The frontend will send profilePictureUrl separately.
 
             userRepository.save(user);
             return Optional.of(user);
@@ -78,7 +91,6 @@ public class UserProfileServiceImpl implements UserProfileService {
 
     @Override
     public Optional<User> getUserProfile(String userId) {
-        // Implementation for getting user profile
         return userRepository.findById(userId);
     }
 
@@ -129,13 +141,19 @@ public class UserProfileServiceImpl implements UserProfileService {
                 }
             });
         }
-        // Assuming your User model's setRoles method accepts Set<String> for
-        // simplicity,
-        // or you need to convert the Set<Role> to Set<String> if User.roles is
-        // Set<String>
+        // Assuming your User model's setRoles method accepts Set<String>
         user.setRoles(roles.stream().map(Role::getName).collect(Collectors.toSet()));
 
         // 4. Save the user
         userRepository.save(user);
+    }
+
+    // --- NEW METHOD IMPLEMENTATION FOR PROFILE PICTURE URL ---
+    @Override
+    public void updateProfilePictureUrl(String userId, String imageUrl) {
+        userRepository.findById(userId).ifPresent(user -> {
+            user.setProfilePictureUrl(imageUrl);
+            userRepository.save(user);
+        });
     }
 }

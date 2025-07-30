@@ -30,6 +30,9 @@ public class User {
     private String emergencyContactName;
     private String emergencyContactPhone;
 
+    // --- NEW FIELD FOR PROFILE PICTURE URL ---
+    private String profilePictureUrl;
+
     // No-args constructor
     public User() {
         this.employeeStatus = "Active";
@@ -124,5 +127,14 @@ public class User {
 
     public void setEmergencyContactPhone(String emergencyContactPhone) {
         this.emergencyContactPhone = emergencyContactPhone;
+    }
+
+    // --- NEW GETTER AND SETTER FOR PROFILE PICTURE URL ---
+    public String getProfilePictureUrl() {
+        return profilePictureUrl;
+    }
+
+    public void setProfilePictureUrl(String profilePictureUrl) {
+        this.profilePictureUrl = profilePictureUrl;
     }
 }

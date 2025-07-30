@@ -14,4 +14,7 @@ public interface UserProfileService {
     boolean changePassword(String userId, String oldPassword, String newPassword);
 
     void registerNewUser(SignupRequest signupRequest);
+
+    // --- NEW METHOD FOR PROFILE PICTURE URL ---
+    void updateProfilePictureUrl(String userId, String imageUrl);
 }
