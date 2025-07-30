@@ -1,11 +1,10 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { toast } from 'react-toastify';
+import { Camera } from 'lucide-react'; // For the camera icon on the photo upload
 
 /**
  * EmployeeProfileUpdate Component
- * Allows employees to update their personal profile information.
- * It fetches the current user's profile data from the backend,
- * provides a form for updates, and sends changes back to the backend.
+ * Allows employees to update their personal profile information and upload a profile photo.
  */
 function EmployeeProfileUpdate() {
   const [profile, setProfile] = useState({
@@ -15,13 +14,15 @@ function EmployeeProfileUpdate() {
     address: '',
     emergencyContactName: '',
     emergencyContactPhone: '',
+    profilePictureUrl: '', // New field for profile picture URL
   });
+  const [selectedFile, setSelectedFile] = useState(null);
+  const [filePreview, setFilePreview] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const fileInputRef = useRef(null); // Ref for the hidden file input
 
-  // Define the API_BASE_URL using the environment variable
-  const API_BASE_URL = process.env.REACT_APP_API_BASE_URL; // <--- ADD THIS LINE
-
+  const API_BASE_URL = process.env.REACT_APP_API_BASE_URL;
   const token = localStorage.getItem('token');
 
   /**
@@ -37,8 +38,7 @@ function EmployeeProfileUpdate() {
         'Authorization': `Bearer ${token}`
       };
 
-      // Use API_BASE_URL instead of hardcoded localhost
-      const response = await fetch(`${API_BASE_URL}/api/my-profile`, { // <--- MODIFIED
+      const response = await fetch(`${API_BASE_URL}/api/my-profile`, {
         headers: authHeaders
       });
       if (!response.ok) {
@@ -46,13 +46,15 @@ function EmployeeProfileUpdate() {
       }
       const data = await response.json();
       setProfile({
-        fullName: data.username || '',
+        fullName: data.username || '', // Assuming 'username' from backend corresponds to 'fullName'
         email: data.email || '',
         phone: data.phone || '',
         address: data.address || '',
         emergencyContactName: data.emergencyContactName || '',
         emergencyContactPhone: data.emergencyContactPhone || '',
+        profilePictureUrl: data.profilePictureUrl || '', // Set the existing URL
       });
+      setFilePreview(data.profilePictureUrl || null); // Set preview to existing URL
     } catch (err) {
       console.error("Failed to fetch user profile:", err);
       setError("Failed to load your profile. Please try again.");
@@ -60,7 +62,7 @@ function EmployeeProfileUpdate() {
     } finally {
       setLoading(false);
     }
-  }, [API_BASE_URL, token]); // Add API_BASE_URL to dependencies
+  }, [API_BASE_URL, token]);
 
   useEffect(() => {
     fetchUserProfile();
@@ -68,8 +70,6 @@ function EmployeeProfileUpdate() {
 
   /**
    * Handles changes to form input fields.
-   * Updates the corresponding state property based on the input's name and value.
-   * @param {Object} e - The event object from the input change.
    */
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -77,14 +77,82 @@ function EmployeeProfileUpdate() {
   };
 
   /**
-   * Handles the form submission.
-   * Sends the updated profile data to the backend.
-   * @param {Object} e - The event object from the form submission.
+   * Handles file selection for profile picture.
+   */
+  const handleFileChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      setSelectedFile(file);
+      setFilePreview(URL.createObjectURL(file)); // Create a local URL for preview
+    } else {
+      setSelectedFile(null);
+      setFilePreview(profile.profilePictureUrl || null); // Revert to existing or clear
+    }
+  };
+
+  /**
+   * Uploads the selected profile picture.
+   * This is a separate function as file uploads often require a different Content-Type.
+   */
+  const uploadProfilePicture = async () => {
+    if (!selectedFile) return null; // No file to upload
+
+    setLoading(true);
+    try {
+      const formData = new FormData();
+      formData.append('profilePicture', selectedFile); // 'profilePicture' is the field name your backend expects
+
+      const response = await fetch(`${API_BASE_URL}/api/my-profile/upload-picture`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          // DO NOT set 'Content-Type': 'multipart/form-data' here. The browser does it automatically with FormData.
+        },
+        body: formData,
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to upload profile picture.');
+      }
+
+      const result = await response.json();
+      toast.success('Profile picture uploaded successfully!');
+      // Update the profile with the new URL received from the backend
+      setProfile(prev => ({ ...prev, profilePictureUrl: result.profilePictureUrl }));
+      setFilePreview(result.profilePictureUrl); // Update preview with actual URL
+      setSelectedFile(null); // Clear selected file after successful upload
+      return result.profilePictureUrl; // Return the new URL
+    } catch (err) {
+      console.error("Error uploading profile picture:", err);
+      toast.error(err.message || "Failed to upload profile picture.");
+      setError("Failed to upload profile picture.");
+      return null;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  /**
+   * Handles the form submission for profile data.
    */
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
 
+    // First, handle photo upload if a new file is selected
+    if (selectedFile) {
+      const uploadedUrl = await uploadProfilePicture();
+      if (!uploadedUrl) {
+        // If photo upload failed, stop the process
+        setLoading(false);
+        return;
+      }
+      // If photo uploaded successfully, the profile state is already updated.
+    }
+
+    // Now, send the rest of the profile data (excluding profilePictureUrl from payload,
+    // as it's managed by the separate upload or already in profile state)
     const authHeaders = {
       'Content-Type': 'application/json',
       'Authorization': `Bearer ${token}`
@@ -97,11 +165,14 @@ function EmployeeProfileUpdate() {
       address: profile.address,
       emergencyContactName: profile.emergencyContactName,
       emergencyContactPhone: profile.emergencyContactPhone,
+      // Do NOT send profilePictureUrl here if it's updated via a separate endpoint.
+      // Or, if your backend PUT endpoint can handle it, send the updated URL.
+      // For this example, we assume it's handled by the separate upload.
+      // If your PUT endpoint needs it: profilePictureUrl: profile.profilePictureUrl
     };
 
     try {
-      // Use API_BASE_URL instead of hardcoded localhost
-      const response = await fetch(`${API_BASE_URL}/api/my-profile`, { // <--- MODIFIED
+      const response = await fetch(`${API_BASE_URL}/api/my-profile`, {
         method: 'PUT',
         headers: authHeaders,
         body: JSON.stringify(payload)
@@ -109,18 +180,19 @@ function EmployeeProfileUpdate() {
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.message || 'Failed to update profile.');
+        throw new Error(errorData.message || 'Failed to update profile details.');
       }
 
-      toast.success('Profile updated successfully!');
-      fetchUserProfile();
+      toast.success('Profile details updated successfully!');
+      fetchUserProfile(); // Re-fetch to ensure latest data
     } catch (err) {
-      console.error("Error updating profile:", err);
-      toast.error(err.message || "Failed to update profile.");
+      console.error("Error updating profile details:", err);
+      toast.error(err.message || "Failed to update profile details.");
     } finally {
       setLoading(false);
     }
   };
+
 
   if (loading) {
     return (
@@ -143,6 +215,38 @@ function EmployeeProfileUpdate() {
       <h2 className="text-3xl font-bold text-center text-gray-800 mb-8">Update Personal Profile</h2>
 
       <form onSubmit={handleSubmit} className="p-6 border border-gray-200 rounded-lg bg-gray-50">
+        {/* Profile Picture Section */}
+        <div className="flex flex-col items-center mb-6">
+          <div
+            className="w-32 h-32 rounded-full overflow-hidden border-2 border-gray-300 bg-gray-200 flex items-center justify-center text-gray-500 relative cursor-pointer group"
+            onClick={() => fileInputRef.current.click()}
+          >
+            {filePreview ? (
+              <img src={filePreview} alt="Profile" className="w-full h-full object-cover" />
+            ) : (
+              <span className="text-sm text-center">No Photo</span>
+            )}
+            <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+              <Camera className="w-8 h-8 text-white" />
+            </div>
+          </div>
+          <input
+            type="file"
+            ref={fileInputRef}
+            onChange={handleFileChange}
+            accept="image/*"
+            className="hidden" // Hide the default file input
+          />
+          <button
+            type="button"
+            onClick={() => fileInputRef.current.click()}
+            className="mt-3 px-4 py-2 bg-blue-500 text-white text-sm rounded-md hover:bg-blue-600 transition duration-200"
+          >
+            Upload Photo
+          </button>
+        </div>
+
+
         <h3 className="text-xl font-semibold text-gray-700 mb-4">Personal Information</h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
           <div className="form-group">
