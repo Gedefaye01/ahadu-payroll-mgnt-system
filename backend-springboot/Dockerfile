@@ -1,22 +1,12 @@
-# Use Maven image to build the project
-FROM maven:3.9.5-eclipse-temurin-17 AS build
+# Build stage
+FROM maven:3.9.6-eclipse-temurin-21 AS build
 WORKDIR /app
+COPY . /app
+RUN mvn clean package -DskipTests
 
-# Copy the entire project
-COPY . .
-
-# Build only the backend project
-RUN ./mvnw clean package -DskipTests -pl backend-springboot -am
-
-# Use JDK image to run the JAR
-FROM eclipse-temurin:17-jdk
+# Package stage
+FROM eclipse-temurin:21-jdk-alpine
 WORKDIR /app
-
-# Copy the built JAR file from the previous step
-COPY --from=build /app/backend-springboot/target/*.jar app.jar
-
-# Expose the port your app runs on
-EXPOSE 8080
-
-# Run the application
-ENTRYPOINT ["java", "-jar", "app.jar"]
+COPY --from=build /app/target/*.jar app.jar
+ENTRYPOINT ["java","-jar","/app.jar"]
+EXPOSE 8080 # Or whatever port your Spring Boot app listens on (e.g., from application.properties)
