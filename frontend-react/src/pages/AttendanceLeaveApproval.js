@@ -8,10 +8,13 @@ import { toast } from 'react-toastify';
  * and for updating leave request statuses.
  */
 function AttendanceLeaveApproval() {
-  const [allLeaveRequests, setAllLeaveRequests] = useState([]); // State for all leave requests
-  const [allAttendanceRecords, setAllAttendanceRecords] = useState([]); // State for all attendance records
-  const [loading, setLoading] = useState(true); // State for loading status
-  const [error, setError] = useState(null); // State for error messages
+  const [allLeaveRequests, setAllLeaveRequests] = useState([]);
+  const [allAttendanceRecords, setAllAttendanceRecords] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  // Define the API_BASE_URL using the environment variable
+  const API_BASE_URL = process.env.REACT_APP_API_BASE_URL; // <--- ADD THIS LINE
 
   // Get JWT token from localStorage for authenticated requests
   const token = localStorage.getItem('token');
@@ -26,7 +29,8 @@ function AttendanceLeaveApproval() {
    */
   const fetchAllLeaveRequests = useCallback(async () => {
     try {
-      const response = await fetch('http://localhost:8080/api/leave-requests/all', {
+      // Use API_BASE_URL instead of hardcoded localhost
+      const response = await fetch(`${API_BASE_URL}/api/leave-requests/all`, { // <--- MODIFIED
         headers: authHeaders
       });
       if (!response.ok) {
@@ -39,7 +43,7 @@ function AttendanceLeaveApproval() {
       toast.error("Failed to load all leave requests.");
       setError("Failed to load leave requests. Please try again.");
     }
-  }, [token, toast]); // authHeaders depends on token
+  }, [API_BASE_URL, token, toast]); // Add API_BASE_URL to dependencies
 
   /**
    * Fetches all attendance records from the backend API.
@@ -47,7 +51,8 @@ function AttendanceLeaveApproval() {
    */
   const fetchAllAttendanceRecords = useCallback(async () => {
     try {
-      const response = await fetch('http://localhost:8080/api/attendance/all', {
+      // Use API_BASE_URL instead of hardcoded localhost
+      const response = await fetch(`${API_BASE_URL}/api/attendance/all`, { // <--- MODIFIED
         headers: authHeaders
       });
       if (!response.ok) {
@@ -60,7 +65,7 @@ function AttendanceLeaveApproval() {
       toast.error("Failed to load all attendance records.");
       setError("Failed to load attendance records. Please try again.");
     }
-  }, [token, toast]); // authHeaders depends on token
+  }, [API_BASE_URL, token, toast]); // Add API_BASE_URL to dependencies
 
   // Fetch data on component mount
   useEffect(() => {
@@ -83,7 +88,8 @@ function AttendanceLeaveApproval() {
     }
 
     try {
-      const response = await fetch(`http://localhost:8080/api/leave-requests/${requestId}/${status}`, {
+      // Use API_BASE_URL instead of hardcoded localhost
+      const response = await fetch(`${API_BASE_URL}/api/leave-requests/${requestId}/${status}`, { // <--- MODIFIED
         method: 'PUT',
         headers: authHeaders
       });
@@ -167,8 +173,8 @@ function AttendanceLeaveApproval() {
               {pendingLeaveRequests.map(req => (
                 <tr key={req.id}>
                   <td>{req.id}</td>
-                  <td>{req.employeeUsername}</td> {/* Use employeeUsername from backend */}
-                  <td>{req.leaveType}</td> {/* Use leaveType from backend */}
+                  <td>{req.employeeUsername}</td>
+                  <td>{req.leaveType}</td>
                   <td>{req.startDate} to {req.endDate}</td>
                   <td>{req.reason}</td>
                   <td className="table-actions text-center">
@@ -206,7 +212,7 @@ function AttendanceLeaveApproval() {
                 <th>Type</th>
                 <th>Period</th>
                 <th>Status</th>
-                <th>Request Date</th> {/* Added Request Date */}
+                <th>Request Date</th>
               </tr>
             </thead>
             <tbody>
@@ -225,7 +231,7 @@ function AttendanceLeaveApproval() {
                       {req.status}
                     </span>
                   </td>
-                  <td>{new Date(req.requestDate).toLocaleDateString()}</td> {/* Format Request Date */}
+                  <td>{new Date(req.requestDate).toLocaleDateString()}</td>
                 </tr>
               ))}
             </tbody>

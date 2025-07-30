@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useCallback } from 'react'; // Import useEffect and useCallback
-import { toast } from 'react-toastify'; // Import toast for notifications
+import React, { useState, useEffect, useCallback } from 'react';
+import { toast } from 'react-toastify';
 
 /**
  * PayrollDetails Component
@@ -7,11 +7,13 @@ import { toast } from 'react-toastify'; // Import toast for notifications
  * It fetches payslip records from the backend API and displays them in a table.
  */
 function PayrollDetails() {
-  const [payslips, setPayslips] = useState([]); // State for fetched payslip data
-  const [loading, setLoading] = useState(true); // State for loading status
-  const [error, setError] = useState(null); // State for error messages
+  const [payslips, setPayslips] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
-  // Get JWT token from localStorage for authenticated requests
+  // Define the API_BASE_URL using the environment variable
+  const API_BASE_URL = process.env.REACT_APP_API_BASE_URL; // <--- ADD THIS LINE
+
   const token = localStorage.getItem('token');
 
   /**
@@ -22,13 +24,13 @@ function PayrollDetails() {
     setLoading(true);
     setError(null);
     try {
-      // Define authHeaders inside useCallback to ensure 'token' is captured correctly
       const authHeaders = {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${token}`
       };
 
-      const response = await fetch('http://localhost:8080/api/payroll/my-payslips', {
+      // Use API_BASE_URL instead of hardcoded localhost
+      const response = await fetch(`${API_BASE_URL}/api/payroll/my-payslips`, { // <--- MODIFIED
         headers: authHeaders
       });
       if (!response.ok) {
@@ -43,12 +45,12 @@ function PayrollDetails() {
     } finally {
       setLoading(false);
     }
-  }, [token]); // 'token' is a dependency. 'toast' is removed as it's stable.
+  }, [API_BASE_URL, token]); // Add API_BASE_URL to dependencies
 
   // Fetch payslips on component mount
   useEffect(() => {
     fetchMyPayslips();
-  }, [fetchMyPayslips]); // fetchMyPayslips is now a dependency
+  }, [fetchMyPayslips]);
 
   /**
    * Handles the download action for a specific payslip.
@@ -57,9 +59,9 @@ function PayrollDetails() {
    * @param {string} payslipId - The ID of the payslip to download.
    */
   const handleDownloadPayslip = (payslipId) => {
-    toast.info(`Simulating download for payslip ID: ${payslipId}`); // Use toast
+    toast.info(`Simulating download for payslip ID: ${payslipId}`);
     // Example: Triggering a backend endpoint for download
-    // window.open(`http://localhost:8080/api/payroll/payslips/${payslipId}/download`, '_blank');
+    // window.open(`${API_BASE_URL}/api/payroll/payslips/${payslipId}/download`, '_blank'); // <--- Example of how you would use API_BASE_URL for download
   };
 
   if (loading) {

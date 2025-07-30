@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useCallback } from 'react'; // Import useEffect and useCallback
-import { toast } from 'react-toastify'; // Import toast for notifications
+import React, { useState, useEffect, useCallback } from 'react';
+import { toast } from 'react-toastify';
 
 /**
  * LeaveApplication Component
@@ -8,21 +8,21 @@ import { toast } from 'react-toastify'; // Import toast for notifications
  * It interacts with the backend API for submitting and fetching leave requests.
  */
 function LeaveApplication() {
-  // State for the leave application form inputs
   const [leaveForm, setLeaveForm] = useState({
-    leaveType: 'Sick Leave', // Corresponds to 'leaveType' in backend LeaveRequest model
+    leaveType: 'Sick Leave',
     startDate: '',
     endDate: '',
     reason: '',
   });
-  // State for storing leave applications fetched from the API
   const [applications, setApplications] = useState([]);
-  const [loading, setLoading] = useState(true); // State for loading status
-  const [error, setError] = useState(null); // State for error messages
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
-  // Get JWT token and current user ID from localStorage for authenticated requests
+  // Define the API_BASE_URL using the environment variable
+  const API_BASE_URL = process.env.REACT_APP_API_BASE_URL; // <--- ADD THIS LINE
+
   const token = localStorage.getItem('token');
-  const userId = localStorage.getItem('userId'); // Assuming userId is stored in localStorage
+  const userId = localStorage.getItem('userId');
 
   /**
    * Fetches the current user's leave applications from the backend API.
@@ -32,13 +32,13 @@ function LeaveApplication() {
     setLoading(true);
     setError(null);
     try {
-      // Define authHeaders inside useCallback to ensure 'token' is captured correctly
       const authHeaders = {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${token}`
       };
 
-      const response = await fetch('http://localhost:8080/api/leave-requests/my', {
+      // Use API_BASE_URL instead of hardcoded localhost
+      const response = await fetch(`${API_BASE_URL}/api/leave-requests/my`, { // <--- MODIFIED
         headers: authHeaders
       });
       if (!response.ok) {
@@ -53,12 +53,12 @@ function LeaveApplication() {
     } finally {
       setLoading(false);
     }
-  }, [token]); // 'token' is a dependency. 'toast' is removed as it's stable.
+  }, [API_BASE_URL, token]); // Add API_BASE_URL to dependencies
 
   // Fetch applications on component mount
   useEffect(() => {
     fetchMyLeaveApplications();
-  }, [fetchMyLeaveApplications]); // fetchMyLeaveApplications is now a dependency
+  }, [fetchMyLeaveApplications]);
 
   /**
    * Handles changes to the leave application form input fields.
@@ -75,37 +75,33 @@ function LeaveApplication() {
    * @param {Object} e - The event object from the form submission.
    */
   const handleSubmit = async (e) => {
-    e.preventDefault(); // Prevent default form submission
+    e.preventDefault();
 
-    // Basic form validation
     if (!leaveForm.startDate || !leaveForm.endDate || !leaveForm.reason) {
       toast.error('Please fill in all required fields.');
       return;
     }
-    // Simple date order validation
     if (new Date(leaveForm.startDate) > new Date(leaveForm.endDate)) {
       toast.error('Start date cannot be after end date.');
       return;
     }
 
-    // Define authHeaders here as well, as it's used in this async function
     const authHeaders = {
       'Content-Type': 'application/json',
       'Authorization': `Bearer ${token}`
     };
 
-    // Prepare payload for backend
     const payload = {
-      employeeId: userId, // Set employeeId from current user
+      employeeId: userId,
       leaveType: leaveForm.leaveType,
       startDate: leaveForm.startDate,
       endDate: leaveForm.endDate,
       reason: leaveForm.reason,
-      // Backend will set requestDate and status to "Pending"
     };
 
     try {
-      const response = await fetch('http://localhost:8080/api/leave-requests', {
+      // Use API_BASE_URL instead of hardcoded localhost
+      const response = await fetch(`${API_BASE_URL}/api/leave-requests`, { // <--- MODIFIED
         method: 'POST',
         headers: authHeaders,
         body: JSON.stringify(payload)
@@ -117,8 +113,8 @@ function LeaveApplication() {
       }
 
       toast.success('Leave application submitted successfully!');
-      setLeaveForm({ leaveType: 'Sick Leave', startDate: '', endDate: '', reason: '' }); // Reset form
-      fetchMyLeaveApplications(); // Re-fetch to update the list
+      setLeaveForm({ leaveType: 'Sick Leave', startDate: '', endDate: '', reason: '' });
+      fetchMyLeaveApplications();
     } catch (err) {
       console.error("Error submitting leave application:", err);
       toast.error(err.message || "Failed to submit leave application.");
@@ -189,14 +185,14 @@ function LeaveApplication() {
             />
           </div>
           {/* Reason Textarea */}
-          <div className="form-group md:col-span-2"> {/* Spans two columns on medium screens and up */}
+          <div className="form-group md:col-span-2">
             <label htmlFor="reason">Reason</label>
             <textarea
               id="reason"
               name="reason"
               value={leaveForm.reason}
               onChange={handleChange}
-              rows="3" // Sets the visible number of lines
+              rows="3"
               placeholder="Briefly describe the reason for your leave..."
               required
             ></textarea>
@@ -226,14 +222,14 @@ function LeaveApplication() {
                 <th>End Date</th>
                 <th>Reason</th>
                 <th>Status</th>
-                <th>Request Date</th> {/* Added Request Date */}
+                <th>Request Date</th>
               </tr>
             </thead>
             <tbody>
               {applications.map(app => (
                 <tr key={app.id}>
                   <td>{app.id}</td>
-                  <td>{app.leaveType}</td> {/* Use leaveType from backend */}
+                  <td>{app.leaveType}</td>
                   <td>{app.startDate}</td>
                   <td>{app.endDate}</td>
                   <td>{app.reason}</td>
@@ -246,7 +242,7 @@ function LeaveApplication() {
                       {app.status}
                     </span>
                   </td>
-                  <td>{new Date(app.requestDate).toLocaleDateString()}</td> {/* Format Request Date */}
+                  <td>{new Date(app.requestDate).toLocaleDateString()}</td>
                 </tr>
               ))}
             </tbody>

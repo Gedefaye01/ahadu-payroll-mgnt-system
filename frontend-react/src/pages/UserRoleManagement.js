@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useCallback } from 'react'; // Import useCallback and useState
-import { toast } from 'react-toastify'; // Import toast for notifications
+import React, { useState, useEffect, useCallback } from 'react';
+import { toast } from 'react-toastify';
 
 /**
  * CompanyAnnouncements Component
@@ -8,31 +8,32 @@ import { toast } from 'react-toastify'; // Import toast for notifications
  * It interacts with the backend API for CRUD operations.
  */
 function CompanyAnnouncements() {
-  const [announcements, setAnnouncements] = useState([]); // State for announcements list
-  const [loading, setLoading] = useState(true); // State for loading status
-  const [error, setError] = useState(null); // State for error messages
-  const [isAdding, setIsAdding] = useState(false); // State to control visibility of add form
-  const [editingAnnouncement, setEditingAnnouncement] = useState(null); // State for announcement being edited
-  const [formTitle, setFormTitle] = useState(''); // State for form title input
-  const [formContent, setFormContent] = useState(''); // State for form content input (corrected)
+  const [announcements, setAnnouncements] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [isAdding, setIsAdding] = useState(false);
+  const [editingAnnouncement, setEditingAnnouncement] = useState(null);
+  const [formTitle, setFormTitle] = useState('');
+  const [formContent, setFormContent] = useState('');
 
-  // Determine if the current user is an admin based on localStorage
+  // Define the API_BASE_URL using the environment variable
+  const API_BASE_URL = process.env.REACT_APP_API_BASE_URL; // <--- ADD THIS LINE
+
   const isAdmin = localStorage.getItem('userRole') === 'ADMIN';
-  const token = localStorage.getItem('token'); // Get JWT token from localStorage
+  const token = localStorage.getItem('token');
 
-  // Memoize fetchAnnouncements using useCallback to prevent unnecessary re-creations
   const fetchAnnouncements = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
-      // Headers for authenticated requests, dependent on 'token'
       const authHeaders = {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${token}`
       };
 
-      const response = await fetch('http://localhost:8080/api/announcements', {
-        headers: authHeaders // Include auth headers for fetching
+      // Use API_BASE_URL instead of hardcoded localhost
+      const response = await fetch(`${API_BASE_URL}/api/announcements`, { // <--- MODIFIED
+        headers: authHeaders
       });
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
@@ -46,16 +47,12 @@ function CompanyAnnouncements() {
     } finally {
       setLoading(false);
     }
-  }, [token]); // 'toast' dependency removed as it's a stable object.
+  }, [API_BASE_URL, token]); // Add API_BASE_URL to dependencies
 
-  // Fetch announcements on component mount and whenever fetchAnnouncements changes
   useEffect(() => {
     fetchAnnouncements();
   }, [fetchAnnouncements]);
 
-  /**
-   * Handles submission of the add/edit announcement form.
-   */
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!formTitle || !formContent) {
@@ -63,12 +60,13 @@ function CompanyAnnouncements() {
       return;
     }
 
-    const method = editingAnnouncement ? 'PUT' : 'POST';
+    // Use API_BASE_URL instead of hardcoded localhost
     const url = editingAnnouncement
-      ? `http://localhost:8080/api/announcements/${editingAnnouncement.id}`
-      : 'http://localhost:8080/api/announcements';
+      ? `${API_BASE_URL}/api/announcements/${editingAnnouncement.id}` // <--- MODIFIED
+      : `${API_BASE_URL}/api/announcements`; // <--- MODIFIED
 
-    // Headers for authenticated requests
+    const method = editingAnnouncement ? 'PUT' : 'POST';
+
     const authHeaders = {
       'Content-Type': 'application/json',
       'Authorization': `Bearer ${token}`
@@ -87,7 +85,6 @@ function CompanyAnnouncements() {
       }
 
       toast.success(`Announcement ${editingAnnouncement ? 'updated' : 'added'} successfully!`);
-      // Clear form and refetch announcements
       setFormTitle('');
       setFormContent('');
       setIsAdding(false);
@@ -99,34 +96,26 @@ function CompanyAnnouncements() {
     }
   };
 
-  /**
-   * Handles initiating the edit process for an announcement.
-   * @param {Object} announcement The announcement object to edit.
-   */
   const handleEditClick = (announcement) => {
     setEditingAnnouncement(announcement);
     setFormTitle(announcement.title);
     setFormContent(announcement.content);
-    setIsAdding(true); // Open the form in edit mode
+    setIsAdding(true);
   };
 
-  /**
-   * Handles deleting an announcement.
-   * @param {string} id The ID of the announcement to delete.
-   */
   const handleDelete = async (id) => {
     if (!window.confirm("Are you sure you want to delete this announcement?")) {
       return;
     }
 
-    // Headers for authenticated requests
     const authHeaders = {
       'Content-Type': 'application/json',
       'Authorization': `Bearer ${token}`
     };
 
     try {
-      const response = await fetch(`http://localhost:8080/api/announcements/${id}`, {
+      // Use API_BASE_URL instead of hardcoded localhost
+      const response = await fetch(`${API_BASE_URL}/api/announcements/${id}`, { // <--- MODIFIED
         method: 'DELETE',
         headers: authHeaders
       });
@@ -164,13 +153,12 @@ function CompanyAnnouncements() {
     <div className="page-container p-6 max-w-4xl mx-auto bg-white rounded-lg shadow-md">
       <h2 className="text-3xl font-bold text-center text-gray-800 mb-8">Company Announcements</h2>
 
-      {/* Admin: Add New Announcement Button & Form */}
       {isAdmin && (
         <div className="mb-8 p-6 border border-gray-200 rounded-lg bg-gray-50">
           <button
             onClick={() => {
               setIsAdding(!isAdding);
-              setEditingAnnouncement(null); // Clear editing state when toggling add form
+              setEditingAnnouncement(null);
               setFormTitle('');
               setFormContent('');
             }}
@@ -212,7 +200,6 @@ function CompanyAnnouncements() {
         </div>
       )}
 
-      {/* Announcements List */}
       {announcements.length === 0 ? (
         <p className="text-center text-gray-500">No announcements available at this time.</p>
       ) : (
@@ -226,7 +213,6 @@ function CompanyAnnouncements() {
               </p>
               <p className="text-gray-700 leading-relaxed">{announcement.content}</p>
 
-              {/* Admin Actions for each announcement */}
               {isAdmin && (
                 <div className="mt-4 flex justify-end space-x-3">
                   <button

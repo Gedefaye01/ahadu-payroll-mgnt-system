@@ -9,14 +9,17 @@ import { toast } from 'react-toastify';
  * It interacts with the backend API for saving attendance records.
  */
 function ClockInOut() {
-  const [currentAttendance, setCurrentAttendance] = useState(null); // State for today's attendance record
-  const [loading, setLoading] = useState(true); // State for loading status
-  const [error, setError] = useState(null); // State for error messages
-  const [remarks, setRemarks] = useState(''); // State for remarks input
+  const [currentAttendance, setCurrentAttendance] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [remarks, setRemarks] = useState('');
+
+  // Define the API_BASE_URL using the environment variable
+  const API_BASE_URL = process.env.REACT_APP_API_BASE_URL; // <--- ADD THIS LINE
 
   // Get JWT token and current user ID from localStorage for authenticated requests
   const token = localStorage.getItem('token');
-  const userId = localStorage.getItem('userId'); // Assuming userId is stored in localStorage
+  const userId = localStorage.getItem('userId');
 
   /**
    * Fetches today's attendance record for the current user.
@@ -26,27 +29,25 @@ function ClockInOut() {
     setLoading(true);
     setError(null);
     try {
-      // Define authHeaders inside useCallback to ensure 'token' is captured correctly
       const authHeaders = {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${token}`
       };
 
-      // The backend endpoint /api/attendance/my returns all attendance for the user.
-      // We'll filter for today's record on the frontend.
-      const response = await fetch('http://localhost:8080/api/attendance/my', {
+      // Use API_BASE_URL instead of hardcoded localhost
+      const response = await fetch(`${API_BASE_URL}/api/attendance/my`, { // <--- MODIFIED
         headers: authHeaders
       });
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
       const data = await response.json();
-      const today = new Date().toISOString().slice(0, 10); // Get today's date in YYYY-MM-DD format
+      const today = new Date().toISOString().slice(0, 10);
       const recordToday = data.find(record => record.date === today);
 
       if (recordToday) {
         setCurrentAttendance(recordToday);
-        setRemarks(recordToday.remarks || ''); // Pre-fill remarks if they exist
+        setRemarks(recordToday.remarks || '');
       } else {
         setCurrentAttendance(null);
         setRemarks('');
@@ -58,7 +59,7 @@ function ClockInOut() {
     } finally {
       setLoading(false);
     }
-  }, [token]); // 'token' is a dependency. 'toast' is removed as it's stable.
+  }, [API_BASE_URL, token]); // Add API_BASE_URL to dependencies
 
   // Fetch today's attendance on component mount and after actions
   useEffect(() => {
@@ -77,20 +78,20 @@ function ClockInOut() {
     const now = new Date();
     const payload = {
       employeeId: userId,
-      date: now.toISOString().slice(0, 10), // YYYY-MM-DD
-      clockInTime: now.toTimeString().slice(0, 8), // HH:MM:SS
+      date: now.toISOString().slice(0, 10),
+      clockInTime: now.toTimeString().slice(0, 8),
       status: 'Present',
       remarks: remarks,
     };
 
-    // Define authHeaders here as well, as it's used in this async function
     const authHeaders = {
       'Content-Type': 'application/json',
       'Authorization': `Bearer ${token}`
     };
 
     try {
-      const response = await fetch('http://localhost:8080/api/attendance', {
+      // Use API_BASE_URL instead of hardcoded localhost
+      const response = await fetch(`${API_BASE_URL}/api/attendance`, { // <--- MODIFIED
         method: 'POST',
         headers: authHeaders,
         body: JSON.stringify(payload)
@@ -102,7 +103,7 @@ function ClockInOut() {
       }
 
       toast.success("Clock-in successful!");
-      fetchTodayAttendance(); // Re-fetch to update UI with new record
+      fetchTodayAttendance();
     } catch (err) {
       console.error("Error clocking in:", err);
       toast.error(err.message || "Failed to clock in.");
@@ -124,21 +125,19 @@ function ClockInOut() {
 
     const now = new Date();
     const payload = {
-      ...currentAttendance, // Use existing record data
-      clockOutTime: now.toTimeString().slice(0, 8), // HH:MM:SS
-      // Status might remain 'Present' or change based on company policy (e.g., 'Completed')
-      remarks: remarks, // Update remarks if changed
+      ...currentAttendance,
+      clockOutTime: now.toTimeString().slice(0, 8),
+      remarks: remarks,
     };
 
-    // Define authHeaders here as well, as it's used in this async function
     const authHeaders = {
       'Content-Type': 'application/json',
       'Authorization': `Bearer ${token}`
     };
 
     try {
-      // Use PUT to update the existing attendance record
-      const response = await fetch(`http://localhost:8080/api/attendance/${currentAttendance.id}`, {
+      // Use API_BASE_URL instead of hardcoded localhost
+      const response = await fetch(`${API_BASE_URL}/api/attendance/${currentAttendance.id}`, { // <--- MODIFIED
         method: 'PUT',
         headers: authHeaders,
         body: JSON.stringify(payload)
@@ -150,7 +149,7 @@ function ClockInOut() {
       }
 
       toast.success("Clock-out successful!");
-      fetchTodayAttendance(); // Re-fetch to update UI
+      fetchTodayAttendance();
     } catch (err) {
       console.error("Error clocking out:", err);
       toast.error(err.message || "Failed to clock out.");
@@ -171,14 +170,14 @@ function ClockInOut() {
       remarks: remarks,
     };
 
-    // Define authHeaders here as well, as it's used in this async function
     const authHeaders = {
       'Content-Type': 'application/json',
       'Authorization': `Bearer ${token}`
     };
 
     try {
-      const response = await fetch(`http://localhost:8080/api/attendance/${currentAttendance.id}`, {
+      // Use API_BASE_URL instead of hardcoded localhost
+      const response = await fetch(`${API_BASE_URL}/api/attendance/${currentAttendance.id}`, { // <--- MODIFIED
         method: 'PUT',
         headers: authHeaders,
         body: JSON.stringify(payload)
@@ -190,7 +189,7 @@ function ClockInOut() {
       }
 
       toast.success("Remarks updated successfully!");
-      fetchTodayAttendance(); // Re-fetch to update UI
+      fetchTodayAttendance();
     } catch (err) {
       console.error("Error updating remarks:", err);
       toast.error(err.message || "Failed to update remarks.");
@@ -241,7 +240,6 @@ function ClockInOut() {
           <p className="text-gray-600 mb-4">No attendance record for today.</p>
         )}
 
-        {/* Action Buttons */}
         <div className="flex flex-col sm:flex-row justify-center gap-4 mt-6">
           {!currentAttendance || !currentAttendance.clockInTime ? (
             <button
@@ -262,7 +260,6 @@ function ClockInOut() {
           )}
         </div>
 
-        {/* Remarks Section */}
         <div className="mt-8">
           <label htmlFor="remarks" className="block text-sm font-medium text-gray-700 text-left mb-2">Remarks (Optional):</label>
           <textarea

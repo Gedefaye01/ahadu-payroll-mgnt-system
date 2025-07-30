@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useCallback } from 'react'; // Import useEffect and useCallback
-import { toast } from 'react-toastify'; // Import toast for notifications
+import React, { useState, useEffect, useCallback } from 'react';
+import { toast } from 'react-toastify';
 
 /**
  * AddEmployee Component
@@ -9,18 +9,23 @@ import { toast } from 'react-toastify'; // Import toast for notifications
 function AddEmployee() {
   // State for the new/edited employee form inputs
   const [employeeForm, setEmployeeForm] = useState({
-    username: '', // Corresponds to 'username' in backend User model
+    username: '',
     email: '',
-    password: '', // Only for adding new employee, or if admin can reset password
-    roles: ['USER'], // Default role for new employees, matches backend User model's roles Set<String>
-    employeeStatus: 'Active' // Corresponds to 'employeeStatus' in backend User model
+    password: '',
+    roles: ['USER'],
+    employeeStatus: 'Active'
   });
   // State for the list of employees fetched from the API
   const [employees, setEmployees] = useState([]);
   // State for tracking which employee is currently being edited (null if adding new)
   const [editingId, setEditingId] = useState(null);
-  const [loading, setLoading] = useState(true); // State for loading status
-  const [error, setError] = useState(null); // State for error messages
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  // Define the API_BASE_URL using the environment variable
+  // This will be 'http://localhost:8080' in development (from your local .env)
+  // and 'https://ahadu-payroll-mgnt-system.onrender.com' in production (from Render's env)
+  const API_BASE_URL = process.env.REACT_APP_API_BASE_URL; // <--- ADD THIS LINE
 
   // Get JWT token from localStorage for authenticated requests
   const token = localStorage.getItem('token');
@@ -37,7 +42,8 @@ function AddEmployee() {
     setLoading(true);
     setError(null);
     try {
-      const response = await fetch('http://localhost:8080/api/employees', {
+      // Use API_BASE_URL instead of hardcoded localhost
+      const response = await fetch(`${API_BASE_URL}/api/employees`, { // <--- MODIFIED
         headers: authHeaders
       });
       if (!response.ok) {
@@ -52,12 +58,12 @@ function AddEmployee() {
     } finally {
       setLoading(false);
     }
-  }, [token, toast]); // 'token' is a dependency for authHeaders, 'toast' is stable.
+  }, [API_BASE_URL, token, toast]); // Add API_BASE_URL to dependencies
 
   // Fetch employees on component mount
   useEffect(() => {
     fetchEmployees();
-  }, [fetchEmployees]); // fetchEmployees is now a dependency
+  }, [fetchEmployees]);
 
   /**
    * Handles changes to form input fields.
@@ -88,9 +94,10 @@ function AddEmployee() {
     }
 
     const method = editingId ? 'PUT' : 'POST';
+    // Use API_BASE_URL instead of hardcoded localhost
     const url = editingId
-      ? `http://localhost:8080/api/employees/${editingId}`
-      : 'http://localhost:8080/api/employees';
+      ? `${API_BASE_URL}/api/employees/${editingId}` // <--- MODIFIED
+      : `${API_BASE_URL}/api/employees`;            // <--- MODIFIED
 
     // Prepare payload: exclude password for PUT requests unless it's explicitly a password reset
     const payload = { ...employeeForm };
@@ -98,7 +105,6 @@ function AddEmployee() {
       delete payload.password; // Don't send empty password on update
     } else if (editingId && payload.password) {
       // If password is provided during edit, it means admin wants to reset it
-      // In a real app, you might have a dedicated "reset password" endpoint or confirm this action
       console.warn("Admin is updating password for existing user. Ensure this is intended behavior.");
     }
 
@@ -120,7 +126,7 @@ function AddEmployee() {
       setEditingId(null); // Reset editing mode
       fetchEmployees(); // Refetch updated list
     } catch (err) {
-      console.error(`Error ${editingId ? 'updating' : 'adding'} employee:`, err);
+      console.error(`Error ${editingId ? 'updating' : 'add'} employee:`, err);
       toast.error(err.message || `Failed to ${editingId ? 'update' : 'add'} employee.`);
     }
   };
@@ -135,7 +141,8 @@ function AddEmployee() {
     }
 
     try {
-      const response = await fetch(`http://localhost:8080/api/employees/${id}`, {
+      // Use API_BASE_URL instead of hardcoded localhost
+      const response = await fetch(`${API_BASE_URL}/api/employees/${id}`, { // <--- MODIFIED
         method: 'DELETE',
         headers: authHeaders
       });
@@ -162,11 +169,11 @@ function AddEmployee() {
     setEmployeeForm({
       username: employee.username,
       email: employee.email,
-      password: '', // Do not pre-fill password for security
-      roles: employee.roles, // Assuming roles is an array/list of strings
+      password: '',
+      roles: employee.roles,
       employeeStatus: employee.employeeStatus
     });
-    setEditingId(employee.id); // Set the ID to indicate editing mode
+    setEditingId(employee.id);
   };
 
   if (loading) {
@@ -229,7 +236,7 @@ function AddEmployee() {
               value={employeeForm.password}
               onChange={handleChange}
               placeholder={editingId ? 'Leave blank to keep current' : 'Set initial password'}
-              required={editingId === null} // Required only if adding new employee
+              required={editingId === null}
             />
           </div>
           {/* Role Select */}
@@ -238,7 +245,7 @@ function AddEmployee() {
             <select
               id="roles"
               name="roles"
-              value={employeeForm.roles[0] || 'USER'} // Assuming single role selection for now
+              value={employeeForm.roles[0] || 'USER'}
               onChange={handleChange}
               className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
             >
@@ -273,8 +280,8 @@ function AddEmployee() {
           <button
             type="button"
             onClick={() => {
-              setEditingId(null); // Exit editing mode
-              setEmployeeForm({ username: '', email: '', password: '', roles: ['USER'], employeeStatus: 'Active' }); // Reset form
+              setEditingId(null);
+              setEmployeeForm({ username: '', email: '', password: '', roles: ['USER'], employeeStatus: 'Active' });
             }}
             className="btn btn-secondary w-full mt-2"
           >
@@ -306,7 +313,7 @@ function AddEmployee() {
                   <td>{employee.id}</td>
                   <td>{employee.username}</td>
                   <td>{employee.email}</td>
-                  <td>{employee.roles ? employee.roles.join(', ') : 'N/A'}</td> {/* Display roles */}
+                  <td>{employee.roles ? employee.roles.join(', ') : 'N/A'}</td>
                   <td>
                     <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
                       employee.employeeStatus === 'Active' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'

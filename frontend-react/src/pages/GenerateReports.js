@@ -7,13 +7,16 @@ import { toast } from 'react-toastify';
  * display them in a table, and download the generated report as a CSV file.
  */
 function GenerateReports() {
-  const [reportType, setReportType] = useState('payrollSummary'); // State for selected report type
-  const [reportData, setReportData] = useState(null); // State for the generated report structured data (array of objects)
-  const [generating, setGenerating] = useState(false); // State to indicate if report is being generated
-  const [downloadLink, setDownloadLink] = useState(null); // State for the download link URL
+  const [reportType, setReportType] = useState('payrollSummary');
+  const [reportData, setReportData] = useState(null);
+  const [generating, setGenerating] = useState(false);
+  const [downloadLink, setDownloadLink] = useState(null);
+
+  // Define the API_BASE_URL using the environment variable
+  const API_BASE_URL = process.env.REACT_APP_API_BASE_URL; // <--- ADD THIS LINE
 
   // Get JWT token from localStorage for authenticated requests
-  const token = localStorage.getItem('token'); 
+  const token = localStorage.getItem('token');
 
   /**
    * Converts an array of objects into a CSV string.
@@ -37,7 +40,7 @@ function GenerateReports() {
         const value = row[header];
         // Handle values that might contain commas or newlines by quoting them
         return (typeof value === 'string' && (value.includes(',') || value.includes('\n')))
-          ? `"${value.replace(/"/g, '""')}"` // Double quotes inside quoted string
+          ? `"${value.replace(/"/g, '""')}"`
           : value;
       });
       csvRows.push(values.join(','));
@@ -51,53 +54,50 @@ function GenerateReports() {
    * Fetches structured report data from the backend API based on the selected type.
    */
   const handleGenerateReport = async () => {
-    setGenerating(true); // Set generating state to true
-    setReportData(null); // Clear any previous report data
-    setDownloadLink(null); // Clear any previous download link
+    setGenerating(true);
+    setReportData(null);
+    setDownloadLink(null);
 
     try {
       const authHeaders = {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}` // Include JWT token for authentication
+        'Authorization': `Bearer ${token}`
       };
 
-      // Make a POST request to the backend to generate the report
-      const response = await fetch('http://localhost:8080/api/reports/generate', {
+      // Use API_BASE_URL instead of hardcoded localhost
+      const response = await fetch(`${API_BASE_URL}/api/reports/generate`, { // <--- MODIFIED
         method: 'POST',
         headers: authHeaders,
-        body: JSON.stringify({ reportType: reportType }) // Send the selected report type
+        body: JSON.stringify({ reportType: reportType })
       });
 
-      // Check if the response was successful
       if (!response.ok) {
-        const errorData = await response.json(); // Assuming backend sends JSON error
+        const errorData = await response.json();
         throw new Error(errorData.message || `Failed to generate ${reportType} report.`);
       }
 
-      // Assuming the backend returns JSON with a 'reportData' field (an array of objects)
       const data = await response.json();
       const fetchedReportData = data.reportData;
 
       if (!fetchedReportData || fetchedReportData.length === 0) {
-        setReportData([]); // Set to empty array if no data
+        setReportData([]);
         toast.info("No data available for this report type.");
         return;
       }
 
-      setReportData(fetchedReportData); // Set the generated report data
+      setReportData(fetchedReportData);
 
-      // Convert the structured data to CSV for download
       const csvContent = convertToCsv(fetchedReportData);
       const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8' });
       const url = URL.createObjectURL(blob);
-      setDownloadLink(url); // Set the URL for download
+      setDownloadLink(url);
 
       toast.success('Report generated successfully!');
     } catch (err) {
       console.error("Failed to generate report:", err);
       toast.error(err.message || "Failed to generate report. Please try again.");
     } finally {
-      setGenerating(false); // Set generating state back to false
+      setGenerating(false);
     }
   };
 
@@ -109,35 +109,31 @@ function GenerateReports() {
     if (downloadLink) {
       const link = document.createElement('a');
       link.href = downloadLink;
-      link.setAttribute('download', `${reportType}_report.csv`); // Suggest a CSV filename
+      link.setAttribute('download', `${reportType}_report.csv`);
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
 
-      URL.revokeObjectURL(downloadLink); // Clean up the object URL
-      setDownloadLink(null); // Clear the download link state
+      URL.revokeObjectURL(downloadLink);
+      setDownloadLink(null);
     }
   };
 
-  // Determine table headers from the first object in reportData
   const tableHeaders = reportData && reportData.length > 0 ? Object.keys(reportData[0]) : [];
 
   return (
     <div className="page-container p-6 max-w-4xl mx-auto bg-white rounded-lg shadow-md mt-10 mb-10">
       <h2 className="text-3xl font-bold text-center text-gray-800 mb-8">Generate Reports</h2>
 
-      {/* Report Options Section */}
       <div className="mb-8 p-6 border border-gray-200 rounded-lg bg-gray-50">
         <h3 className="text-xl font-semibold text-gray-700 mb-4">Report Options</h3>
         <div className="form-group mb-4">
           <label htmlFor="reportType" className="block text-gray-700 text-sm font-bold mb-2">Select Report Type</label>
-          {/* Apply form-group select styling */}
           <select
             id="reportType"
             value={reportType}
             onChange={(e) => setReportType(e.target.value)}
-            // Removed conflicting Tailwind classes, rely on App.css .form-group select
-            className="form-group select" 
+            className="form-group select"
           >
             <option value="payrollSummary">Payroll Summary</option>
             <option value="attendanceOverview">Attendance Overview</option>
@@ -147,22 +143,17 @@ function GenerateReports() {
         <button
           onClick={handleGenerateReport}
           disabled={generating}
-          // Using btn-primary from App.css
           className={`btn btn-primary w-full ${generating ? 'opacity-50 cursor-not-allowed' : ''}`}
         >
           {generating ? 'Generating Report...' : 'Generate Report'}
         </button>
       </div>
 
-      {/* Report Output Display (Table) */}
       {reportData && (
-        // Apply table-container from App.css
         <div className="table-container mt-8 p-6 border border-gray-200 rounded-lg shadow-sm bg-gray-50">
           <h3 className="text-xl font-semibold text-gray-700 mb-4">Report Output</h3>
           {reportData.length > 0 ? (
-            // Removed overflow-x-auto and other conflicting classes, rely on table-container
             <div className="rounded-md border border-gray-300">
-              {/* Apply data-table from App.css */}
               <table className="data-table">
                 <thead>
                   <tr>
@@ -170,10 +161,9 @@ function GenerateReports() {
                       <th
                         key={index}
                         scope="col"
-                        // Removed conflicting Tailwind classes, rely on App.css .data-table th
                         className=""
                       >
-                        {header.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase())} {/* Format camelCase to Title Case */}
+                        {header.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase())}
                       </th>
                     ))}
                   </tr>
@@ -184,7 +174,6 @@ function GenerateReports() {
                       {tableHeaders.map((header, colIndex) => (
                         <td
                           key={`${rowIndex}-${colIndex}`}
-                          // Removed conflicting Tailwind classes, rely on App.css .data-table td
                           className=""
                         >
                           {row[header]}
@@ -202,7 +191,6 @@ function GenerateReports() {
           {downloadLink && (
             <button
               onClick={handleDownloadReport}
-              // Using btn-primary from App.css, consider a different color for download if needed
               className="btn btn-primary w-full mt-4 bg-green-600 hover:bg-green-700"
             >
               Download Report (CSV)

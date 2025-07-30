@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useCallback } from 'react'; // Import useEffect and useCallback
-import { toast } from 'react-toastify'; // Import toast for notifications
+import React, { useState, useEffect, useCallback } from 'react';
+import { toast } from 'react-toastify';
 
 /**
  * AttendanceRecord Component
@@ -7,13 +7,16 @@ import { toast } from 'react-toastify'; // Import toast for notifications
  * It fetches attendance data from the backend API and displays them in a table.
  */
 function AttendanceRecord() {
-  const [allAttendance, setAllAttendance] = useState([]); // State for fetched attendance data
-  const [loading, setLoading] = useState(true); // State for loading status
-  const [error, setError] = useState(null); // State for error messages
+  const [allAttendance, setAllAttendance] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
   // State for date filters (start and end date for filtering records)
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
+
+  // Define the API_BASE_URL using the environment variable
+  const API_BASE_URL = process.env.REACT_APP_API_BASE_URL; // <--- ADD THIS LINE
 
   // Get JWT token from localStorage for authenticated requests
   const token = localStorage.getItem('token');
@@ -32,7 +35,8 @@ function AttendanceRecord() {
         'Authorization': `Bearer ${token}`
       };
 
-      const response = await fetch('http://localhost:8080/api/attendance/my', {
+      // Use API_BASE_URL instead of hardcoded localhost
+      const response = await fetch(`${API_BASE_URL}/api/attendance/my`, { // <--- MODIFIED
         headers: authHeaders
       });
       if (!response.ok) {
@@ -47,12 +51,7 @@ function AttendanceRecord() {
     } finally {
       setLoading(false);
     }
-  }, [token]); // 'token' is a dependency. 'toast' is removed as it's stable.
-
-  // Fetch attendance records on component mount
-  useEffect(() => {
-    fetchMyAttendanceRecords();
-  }, [fetchMyAttendanceRecords]); // fetchMyAttendanceRecords is now a dependency
+  }, [API_BASE_URL, token]); // Add API_BASE_URL to dependencies. 'toast' is removed as it's stable.
 
   /**
    * Filters the `allAttendance` records based on the `startDate` and `endDate` state.
@@ -140,26 +139,26 @@ function AttendanceRecord() {
                 <th>Clock In</th>
                 <th>Clock Out</th>
                 <th>Status</th>
-                <th>Remarks</th> {/* Added Remarks column */}
+                <th>Remarks</th>
               </tr>
             </thead>
             <tbody>
               {filteredAttendance.map(record => (
                 <tr key={record.id}>
                   <td>{record.date}</td>
-                  <td>{record.clockInTime || '-'}</td> {/* Use clockInTime from backend */}
-                  <td>{record.clockOutTime || '-'}</td> {/* Use clockOutTime from backend */}
+                  <td>{record.clockInTime || '-'}</td>
+                  <td>{record.clockOutTime || '-'}</td>
                   <td>
                     <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
                       record.status === 'Present' ? 'bg-green-100 text-green-800' :
                       record.status === 'Late' ? 'bg-yellow-100 text-yellow-800' :
-                      record.status === 'On Leave' ? 'bg-blue-100 text-blue-800' : // New status for leave
+                      record.status === 'On Leave' ? 'bg-blue-100 text-blue-800' :
                       'bg-red-100 text-red-800'
                     }`}>
                       {record.status}
                     </span>
                   </td>
-                  <td>{record.remarks || '-'}</td> {/* Display remarks */}
+                  <td>{record.remarks || '-'}</td>
                 </tr>
               ))}
             </tbody>

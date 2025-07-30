@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useCallback } from 'react'; // Import useEffect and useCallback
-import { toast } from 'react-toastify'; // Import toast for notifications
+import React, { useState, useEffect, useCallback } from 'react';
+import { toast } from 'react-toastify';
 
 /**
  * SalaryStructure Component
@@ -8,21 +8,20 @@ import { toast } from 'react-toastify'; // Import toast for notifications
  * It interacts with the backend API for CRUD operations on salary components.
  */
 function SalaryStructure() {
-  // State for the new salary component form inputs
   const [newComponent, setNewComponent] = useState({
     name: '',
-    type: 'Earning', // Default type
+    type: 'Earning',
     amount: '',
-    isPercentage: false, // Whether the amount is a percentage
+    isPercentage: false,
   });
-  // State for the list of defined salary components fetched from the API
   const [salaryComponents, setSalaryComponents] = useState([]);
-  // State for tracking which component is being edited (null if adding new)
   const [editingId, setEditingId] = useState(null);
-  const [loading, setLoading] = useState(true); // State for loading status
-  const [error, setError] = useState(null); // State for error messages
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
-  // Get JWT token from localStorage for authenticated requests
+  // Define the API_BASE_URL using the environment variable
+  const API_BASE_URL = process.env.REACT_APP_API_BASE_URL; // <--- ADD THIS LINE
+
   const token = localStorage.getItem('token');
 
   /**
@@ -33,13 +32,13 @@ function SalaryStructure() {
     setLoading(true);
     setError(null);
     try {
-      // Define authHeaders inside useCallback to ensure 'token' is captured correctly
       const authHeaders = {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${token}`
       };
 
-      const response = await fetch('http://localhost:8080/api/salary-components', {
+      // Use API_BASE_URL instead of hardcoded localhost
+      const response = await fetch(`${API_BASE_URL}/api/salary-components`, { // <--- MODIFIED
         headers: authHeaders
       });
       if (!response.ok) {
@@ -54,12 +53,12 @@ function SalaryStructure() {
     } finally {
       setLoading(false);
     }
-  }, [token]); // 'token' is a dependency. 'toast' is removed as it's stable.
+  }, [API_BASE_URL, token]); // Add API_BASE_URL to dependencies
 
   // Fetch components on component mount
   useEffect(() => {
     fetchSalaryComponents();
-  }, [fetchSalaryComponents]); // fetchSalaryComponents is now a dependency
+  }, [fetchSalaryComponents]);
 
   /**
    * Handles changes to form input fields.
@@ -79,19 +78,20 @@ function SalaryStructure() {
    * @param {Object} e - The event object from the form submission.
    */
   const handleSubmit = async (e) => {
-    e.preventDefault(); // Prevent default form submission
+    e.preventDefault();
 
     if (!newComponent.name || !newComponent.amount) {
       toast.error("Component name and amount/rate are required.");
       return;
     }
 
-    const method = editingId ? 'PUT' : 'POST';
+    // Use API_BASE_URL instead of hardcoded localhost
     const url = editingId
-      ? `http://localhost:8080/api/salary-components/${editingId}`
-      : 'http://localhost:8080/api/salary-components';
+      ? `${API_BASE_URL}/api/salary-components/${editingId}` // <--- MODIFIED
+      : `${API_BASE_URL}/api/salary-components`; // <--- MODIFIED
 
-    // Define authHeaders here as well, as it's used in this async function
+    const method = editingId ? 'PUT' : 'POST';
+
     const authHeaders = {
       'Content-Type': 'application/json',
       'Authorization': `Bearer ${token}`
@@ -102,7 +102,6 @@ function SalaryStructure() {
         method: method,
         headers: authHeaders,
         body: JSON.stringify({
-          // Ensure amount is sent as a string for BigDecimal on backend
           ...newComponent,
           amount: String(newComponent.amount)
         })
@@ -114,12 +113,11 @@ function SalaryStructure() {
       }
 
       toast.success(`Component ${editingId ? 'updated' : 'added'} successfully!`);
-      // Reset form fields
       setNewComponent({ name: '', type: 'Earning', amount: '', isPercentage: false });
-      setEditingId(null); // Exit editing mode
-      fetchSalaryComponents(); // Re-fetch updated list
+      setEditingId(null);
+      fetchSalaryComponents();
     } catch (err) {
-      console.error(`Error ${editingId ? 'updating' : 'adding'} component:`, err);
+      console.error(`Error ${editingId ? 'updating' : 'add'} component:`, err);
       toast.error(err.message || `Failed to ${editingId ? 'update' : 'add'} component.`);
     }
   };
@@ -133,14 +131,14 @@ function SalaryStructure() {
       return;
     }
 
-    // Define authHeaders here as well, as it's used in this async function
     const authHeaders = {
       'Content-Type': 'application/json',
       'Authorization': `Bearer ${token}`
     };
 
     try {
-      const response = await fetch(`http://localhost:8080/api/salary-components/${id}`, {
+      // Use API_BASE_URL instead of hardcoded localhost
+      const response = await fetch(`${API_BASE_URL}/api/salary-components/${id}`, { // <--- MODIFIED
         method: 'DELETE',
         headers: authHeaders
       });
@@ -151,7 +149,7 @@ function SalaryStructure() {
       }
 
       toast.info('Component deleted successfully!');
-      fetchSalaryComponents(); // Re-fetch updated list
+      fetchSalaryComponents();
     } catch (err) {
       console.error("Error deleting component:", err);
       toast.error(err.message || "Failed to delete component.");
@@ -164,12 +162,11 @@ function SalaryStructure() {
    * @param {Object} component - The component object to edit.
    */
   const handleEdit = (component) => {
-    // Ensure amount is converted back to string for input field
     setNewComponent({
       ...component,
       amount: String(component.amount)
     });
-    setEditingId(component.id); // Set the ID to indicate editing mode
+    setEditingId(component.id);
   };
 
   if (loading) {
@@ -192,11 +189,9 @@ function SalaryStructure() {
     <div className="page-container p-6 max-w-4xl mx-auto bg-white rounded-lg shadow-md">
       <h2 className="text-3xl font-bold text-center text-gray-800 mb-8">Manage Salary, Taxes & Deductions</h2>
 
-      {/* Add/Edit Salary Component Form */}
       <form onSubmit={handleSubmit} className="mb-8 p-6 border border-gray-200 rounded-lg bg-gray-50">
         <h3 className="text-xl font-semibold text-gray-700 mb-4">{editingId ? 'Edit Component' : 'Add New Component'}</h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-          {/* Component Name Input */}
           <div className="form-group">
             <label htmlFor="name">Component Name</label>
             <input
@@ -209,7 +204,6 @@ function SalaryStructure() {
               required
             />
           </div>
-          {/* Type Select */}
           <div className="form-group">
             <label htmlFor="type">Type</label>
             <select
@@ -224,7 +218,6 @@ function SalaryStructure() {
               <option value="Tax">Tax</option>
             </select>
           </div>
-          {/* Amount/Rate Input */}
           <div className="form-group">
             <label htmlFor="amount">Amount/Rate</label>
             <input
@@ -236,7 +229,6 @@ function SalaryStructure() {
               required
             />
           </div>
-          {/* Is Percentage Checkbox */}
           <div className="flex items-center">
             <input
               type="checkbox"
@@ -251,20 +243,18 @@ function SalaryStructure() {
             </label>
           </div>
         </div>
-        {/* Submit Button */}
         <button
           type="submit"
           className="btn btn-primary w-full"
         >
           {editingId ? 'Update Component' : 'Add Component'}
         </button>
-        {/* Cancel Edit Button (only visible when editing) */}
         {editingId && (
           <button
             type="button"
             onClick={() => {
-              setEditingId(null); // Exit editing mode
-              setNewComponent({ name: '', type: 'Earning', amount: '', isPercentage: false }); // Reset form
+              setEditingId(null);
+              setNewComponent({ name: '', type: 'Earning', amount: '', isPercentage: false });
             }}
             className="btn btn-secondary w-full mt-2"
           >
@@ -273,7 +263,6 @@ function SalaryStructure() {
         )}
       </form>
 
-      {/* Salary Components List Table */}
       <h3 className="text-xl font-semibold text-gray-700 mb-4">Defined Salary Components</h3>
       {salaryComponents.length === 0 ? (
         <p className="text-center text-gray-500">No salary components defined yet.</p>

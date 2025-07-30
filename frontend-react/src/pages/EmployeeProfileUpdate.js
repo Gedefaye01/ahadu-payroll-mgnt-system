@@ -1,4 +1,3 @@
-// EmployeeProfileUpdate.js
 import React, { useState, useEffect, useCallback } from 'react';
 import { toast } from 'react-toastify';
 
@@ -10,7 +9,7 @@ import { toast } from 'react-toastify';
  */
 function EmployeeProfileUpdate() {
   const [profile, setProfile] = useState({
-    fullName: '', // This is the state variable for the input field
+    fullName: '',
     email: '',
     phone: '',
     address: '',
@@ -19,6 +18,9 @@ function EmployeeProfileUpdate() {
   });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+
+  // Define the API_BASE_URL using the environment variable
+  const API_BASE_URL = process.env.REACT_APP_API_BASE_URL; // <--- ADD THIS LINE
 
   const token = localStorage.getItem('token');
 
@@ -35,7 +37,8 @@ function EmployeeProfileUpdate() {
         'Authorization': `Bearer ${token}`
       };
 
-      const response = await fetch('http://localhost:8080/api/my-profile', {
+      // Use API_BASE_URL instead of hardcoded localhost
+      const response = await fetch(`${API_BASE_URL}/api/my-profile`, { // <--- MODIFIED
         headers: authHeaders
       });
       if (!response.ok) {
@@ -43,7 +46,7 @@ function EmployeeProfileUpdate() {
       }
       const data = await response.json();
       setProfile({
-        fullName: data.username || '', // Backend sends 'username', frontend uses 'fullName' for display
+        fullName: data.username || '',
         email: data.email || '',
         phone: data.phone || '',
         address: data.address || '',
@@ -57,7 +60,7 @@ function EmployeeProfileUpdate() {
     } finally {
       setLoading(false);
     }
-  }, [token]);
+  }, [API_BASE_URL, token]); // Add API_BASE_URL to dependencies
 
   useEffect(() => {
     fetchUserProfile();
@@ -87,9 +90,8 @@ function EmployeeProfileUpdate() {
       'Authorization': `Bearer ${token}`
     };
 
-    // --- FIX IS HERE: Change 'fullName' to 'username' to match DTO ---
     const payload = {
-      username: profile.fullName, // Send 'username' to match backend DTO
+      username: profile.fullName,
       email: profile.email,
       phone: profile.phone,
       address: profile.address,
@@ -98,7 +100,8 @@ function EmployeeProfileUpdate() {
     };
 
     try {
-      const response = await fetch('http://localhost:8080/api/my-profile', {
+      // Use API_BASE_URL instead of hardcoded localhost
+      const response = await fetch(`${API_BASE_URL}/api/my-profile`, { // <--- MODIFIED
         method: 'PUT',
         headers: authHeaders,
         body: JSON.stringify(payload)
@@ -147,7 +150,7 @@ function EmployeeProfileUpdate() {
             <input
               type="text"
               id="fullName"
-              name="fullName" // Input name matches state variable
+              name="fullName"
               value={profile.fullName}
               onChange={handleChange}
               required
