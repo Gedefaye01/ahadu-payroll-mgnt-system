@@ -9,4 +9,5 @@ FROM eclipse-temurin:21-jdk-alpine
 WORKDIR /app
 COPY --from=build /app/target/*.jar app.jar
 ENTRYPOINT ["java","-jar","/app.jar"]
-EXPOSE 8080 # Or whatever port your Spring Boot app listens on (e.g., from application.properties)
+EXPOSE 8080
+# Or whatever port your Spring Boot app listens on (e.g., from application.properties)
