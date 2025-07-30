@@ -2,6 +2,7 @@ package com.ahadu.payroll.model;
 
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
+import com.fasterxml.jackson.annotation.JsonIgnore; // <-- IMPORT THIS
 
 import java.util.HashSet;
 import java.util.Set;
@@ -16,11 +17,11 @@ public class User {
     private String password; // Hashed password
     private Set<String> roles = new HashSet<>(); // Storing roles as strings (e.g., "ROLE_USER", "ROLE_ADMIN")
 
-    private String phone; // ADDED
-    private String address; // ADDED
-    private String profilePictureUrl; // ADDED
-    private String emergencyContactName; // ADDED
-    private String emergencyContactPhone; // ADDED
+    private String phone;
+    private String address;
+    private String profilePictureUrl;
+    private String emergencyContactName;
+    private String emergencyContactPhone;
 
     // Constructors
     public User() {
@@ -73,43 +74,43 @@ public class User {
         this.roles = roles;
     }
 
-    public String getPhone() { // ADDED
+    public String getPhone() {
         return phone;
     }
 
-    public void setPhone(String phone) { // ADDED
+    public void setPhone(String phone) {
         this.phone = phone;
     }
 
-    public String getAddress() { // ADDED
+    public String getAddress() {
         return address;
     }
 
-    public void setAddress(String address) { // ADDED
+    public void setAddress(String address) {
         this.address = address;
     }
 
-    public String getProfilePictureUrl() { // ADDED
+    public String getProfilePictureUrl() {
         return profilePictureUrl;
     }
 
-    public void setProfilePictureUrl(String profilePictureUrl) { // ADDED
+    public void setProfilePictureUrl(String profilePictureUrl) {
         this.profilePictureUrl = profilePictureUrl;
     }
 
-    public String getEmergencyContactName() { // ADDED
+    public String getEmergencyContactName() {
         return emergencyContactName;
     }
 
-    public void setEmergencyContactName(String emergencyContactName) { // ADDED
+    public void setEmergencyContactName(String emergencyContactName) {
         this.emergencyContactName = emergencyContactName;
     }
 
-    public String getEmergencyContactPhone() { // ADDED
+    public String getEmergencyContactPhone() {
         return emergencyContactPhone;
     }
 
-    public void setEmergencyContactPhone(String emergencyContactPhone) { // ADDED
+    public void setEmergencyContactPhone(String emergencyContactPhone) {
         this.emergencyContactPhone = emergencyContactPhone;
     }
 
@@ -128,8 +129,11 @@ public class User {
                 '}';
     }
 
+    @JsonIgnore // <-- THIS IS THE RECOMMENDED FIX
     public String getEmployeeStatus() {
-
+        // Keep the UnsupportedOperationException if this method is meant for internal
+        // use
+        // and its implementation is pending, but you don't want it in JSON.
         throw new UnsupportedOperationException("Unimplemented method 'getEmployeeStatus'");
     }
 }
