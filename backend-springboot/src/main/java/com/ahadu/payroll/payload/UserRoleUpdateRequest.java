@@ -4,11 +4,10 @@ import java.util.Set;
 
 /**
  * DTO for updating a user's roles.
- * Contains the user's ID and the set of new roles to assign.
  */
 public class UserRoleUpdateRequest {
     private String userId;
-    private Set<String> roles; // e.g., ["USER"], ["ADMIN"]
+    private Set<String> roles; // Expected to be a set of role names like "USER", "ADMIN"
 
     // Constructors
     public UserRoleUpdateRequest() {
@@ -19,17 +18,18 @@ public class UserRoleUpdateRequest {
         this.roles = roles;
     }
 
-    // Getters and Setters
+    // Getters
     public String getUserId() {
         return userId;
     }
 
-    public void setUserId(String userId) {
-        this.userId = userId;
-    }
-
     public Set<String> getRoles() {
         return roles;
+    }
+
+    // Setters
+    public void setUserId(String userId) {
+        this.userId = userId;
     }
 
     public void setRoles(Set<String> roles) {

@@ -1,6 +1,5 @@
 package com.ahadu.payroll.service;
 
-import com.ahadu.payroll.model.Role;
 import com.ahadu.payroll.model.User;
 import com.ahadu.payroll.repository.RoleRepository;
 import com.ahadu.payroll.repository.UserRepository;
@@ -11,17 +10,12 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
-// import java.util.stream.Collectors;
 
-/**
- * Service class for managing user roles and permissions.
- * Provides methods to retrieve users and update their assigned roles.
- */
 @Service
 public class UserRoleService {
 
     private final UserRepository userRepository;
-    private final RoleRepository roleRepository; // To validate roles against existing ones
+    private final RoleRepository roleRepository; // To validate and retrieve Role objects
 
     @Autowired
     public UserRoleService(UserRepository userRepository, RoleRepository roleRepository) {
@@ -30,47 +24,49 @@ public class UserRoleService {
     }
 
     /**
-     * Retrieves all users with their current roles.
+     * Retrieves all users from the database with their assigned roles.
      * 
      * @return A list of all User objects.
      */
     public List<User> getAllUsersWithRoles() {
+        // Assuming User model already has 'roles' field populated from DB
         return userRepository.findAll();
     }
 
     /**
      * Updates the roles for a specific user.
+     * This method will replace the existing roles with the new set of roles
+     * provided.
+     * It validates that the new roles exist in the Role collection.
      * 
-     * @param userId       The ID of the user whose roles are to be updated.
-     * @param newRoleNames A set of new role names (e.g., "ADMIN", "USER").
-     * @return An Optional containing the updated User if found and updated, or
-     *         empty if not found.
-     * @throws RuntimeException if a specified role name does not exist in the
-     *                          database.
+     * @param userId       The ID of the user to update.
+     * @param newRoleNames A Set of strings representing the names of the new roles
+     *                     (e.g., "USER", "ADMIN").
+     * @return An Optional containing the updated User object, or empty if the user
+     *         is not found.
+     * @throws RuntimeException if any of the provided role names do not exist in
+     *                          the database.
      */
     public Optional<User> updateUserRoles(String userId, Set<String> newRoleNames) {
         return userRepository.findById(userId).map(user -> {
-            Set<String> updatedRoles = new HashSet<>();
+            Set<String> rolesToAssign = new HashSet<>();
 
-            if (newRoleNames == null || newRoleNames.isEmpty()) {
-                // Default to USER role if no roles are provided in the update
-                Role userRole = roleRepository.findByName("USER")
-                        .orElseThrow(() -> new RuntimeException("Error: Default role 'USER' not found."));
-                updatedRoles.add(userRole.getName());
-            } else {
-                // Validate and add provided roles
-                for (String roleName : newRoleNames) {
-                    // Normalize role name to uppercase for consistency with stored roles
-                    String normalizedRoleName = roleName.toUpperCase();
-                    Role role = roleRepository.findByName(normalizedRoleName)
-                            .orElseThrow(
-                                    () -> new RuntimeException("Error: Role '" + normalizedRoleName + "' not found."));
-                    updatedRoles.add(role.getName());
+            // Validate and add roles
+            for (String roleName : newRoleNames) {
+                if (roleRepository.findByName(roleName).isPresent()) {
+                    rolesToAssign.add(roleName);
+                } else {
+                    // Throw an exception if an invalid role name is provided, as per controller's
+                    // catch block
+                    throw new RuntimeException("Role '" + roleName + "' not found in database.");
                 }
             }
 
-            user.setRoles(updatedRoles);
+            user.setRoles(rolesToAssign);
             return userRepository.save(user);
         });
     }
+
+    // You might also add other user-related service methods here,
+    // e.g., createUser, getUserById, deleteUser, changePassword, etc.
 }

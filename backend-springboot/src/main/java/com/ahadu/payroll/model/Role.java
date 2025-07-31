@@ -18,7 +18,7 @@ public class Role {
     @Id
     private String id;
 
-    private String name; // e.g., "ROLE_USER", "ROLE_ADMIN"
+    private String name; // e.g., "USER", "ADMIN"
 
     // --- IMPORTANT: ADD BACK THIS SPECIFIC CONSTRUCTOR ---
     public Role(String name) {
