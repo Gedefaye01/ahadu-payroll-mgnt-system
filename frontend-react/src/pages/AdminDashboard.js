@@ -84,7 +84,7 @@ function AdminDashboard() {
         />
         <LayoutDashboard className="admin-welcome-icon" />
         <h2 className="admin-welcome-title">Welcome, {adminUsername}!</h2>
-        <p className="admin-welcome-text">Your central hub for managing Ahadu Payroll System.</p>
+        <p className="admin-welcome-text">Your Are Resposible For Managing Ahadu Bank's HR System.</p>
       </div>
 
       {/* Activities Grid */}

@@ -6,7 +6,7 @@ import { toast } from 'react-toastify';
  * Header Component
  * Displays the application's header with navigation links.
  * Dynamically adjusts links based on user authentication status and role (Admin/User).
- * Removes dropdown menus and provides direct links to relevant pages when logged in.
+ * Streamlines navigation for logged-in users by removing redundant links.
  */
 function Header() {
   const navigate = useNavigate();
@@ -64,17 +64,13 @@ function Header() {
       </div>
       <div className="header-nav">
         <nav>
-          {/* Links always visible, but conditionally styled/ordered */}
-          <Link to="/">Home</Link> {/* Home link is always there */}
-          <Link to="/about">About Us</Link>
-          <Link to="/contact">Contact Us</Link>
-
           {isAuthenticated ? (
             <>
               {/* Links for authenticated users */}
-              <Link to={dashboardPath}>Dashboard</Link>
-              <Link to="/company-announcements">Announcements</Link>
-              <Link to="/change-password">Change Password</Link>
+              <Link to={dashboardPath}>Dashboard</Link> {/* This is the primary "home" for logged-in users */}
+              <Link to="/about">About Us</Link> {/* Keep About Us for logged-in users */}
+              <Link to="/contact">Contact Us</Link> {/* Keep Contact Us for logged-in users */}
+              {/* Removed Announcements and Change Password as they are on dashboard */}
               {/* Logout button */}
               <button onClick={handleLogout} className="btn btn-secondary ml-4">
                 Logout
@@ -82,7 +78,10 @@ function Header() {
             </>
           ) : (
             <>
-              {/* Links for unauthenticated users (Sign In/Sign Up) */}
+              {/* Links for unauthenticated users */}
+              <Link to="/">Home</Link> {/* Public Home link */}
+              <Link to="/about">About Us</Link>
+              <Link to="/contact">Contact Us</Link>
               <Link to="/signin" className="btn btn-primary">Sign In</Link>
               <Link to="/signup" className="btn btn-secondary">Sign Up</Link>
             </>
