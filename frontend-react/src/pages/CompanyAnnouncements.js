@@ -14,31 +14,47 @@ function CompanyAnnouncements() {
   const [isAdding, setIsAdding] = useState(false);
   const [editingAnnouncement, setEditingAnnouncement] = useState(null);
   const [formTitle, setFormTitle] = useState('');
-  const [formContent, setFormContent] = useState('');
+  const [formContent, setFormContent] = '';
 
   // Define the API_BASE_URL using the environment variable
-  const API_BASE_URL = process.env.REACT_APP_API_BASE_URL; // <--- ADD THIS LINE
+  const API_BASE_URL = process.env.REACT_APP_API_BASE_URL;
 
+  // Determine if the current user is an ADMIN based on localStorage
   const isAdmin = localStorage.getItem('userRole') === 'ADMIN';
-  const token = localStorage.getItem('token');
+  const token = localStorage.getItem('token'); // Retrieve token from localStorage
 
   // Memoize fetchAnnouncements using useCallback to prevent unnecessary re-creations
   const fetchAnnouncements = useCallback(async () => {
     setLoading(true);
     setError(null);
+
+    // --- DEBUGGING LOGS ---
+    console.log("DEBUG: Fetching announcements...");
+    console.log("DEBUG: API_BASE_URL:", API_BASE_URL);
+    console.log("DEBUG: Token from localStorage:", token ? "Present" : "Missing/Null");
+    if (token) {
+        console.log("DEBUG: Token starts with:", token.substring(0, 20) + "..."); // Log first 20 chars
+    }
+    console.log("DEBUG: User Role (isAdmin):", isAdmin);
+    // --- END DEBUGGING LOGS ---
+
     try {
       const authHeaders = {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`
+        'Authorization': `Bearer ${token}` // Ensure token is included
       };
 
-      // Use API_BASE_URL instead of hardcoded localhost
-      const response = await fetch(`${API_BASE_URL}/api/announcements`, { // <--- MODIFIED
+      const response = await fetch(`${API_BASE_URL}/api/announcements`, {
         headers: authHeaders
       });
+
       if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+        // Log the full response status and text for more details on error
+        const errorText = await response.text();
+        console.error(`HTTP Error: ${response.status} - ${response.statusText}`, errorText);
+        throw new Error(`HTTP error! status: ${response.status} - ${errorText}`);
       }
+
       const data = await response.json();
       setAnnouncements(data);
     } catch (err) {
@@ -48,10 +64,11 @@ function CompanyAnnouncements() {
     } finally {
       setLoading(false);
     }
-  }, [API_BASE_URL, token]); // Add API_BASE_URL to dependencies
+  }, [API_BASE_URL, token, isAdmin]); // Added isAdmin to dependencies for completeness
 
   /**
    * Handles submission of the add/edit announcement form.
+   * Only accessible by ADMINs due to backend authorization.
    */
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -61,10 +78,9 @@ function CompanyAnnouncements() {
     }
 
     const method = editingAnnouncement ? 'PUT' : 'POST';
-    // Use API_BASE_URL for both add and edit URLs
     const url = editingAnnouncement
-      ? `${API_BASE_URL}/api/announcements/${editingAnnouncement.id}` // <--- MODIFIED
-      : `${API_BASE_URL}/api/announcements`; // <--- MODIFIED
+      ? `${API_BASE_URL}/api/announcements/${editingAnnouncement.id}`
+      : `${API_BASE_URL}/api/announcements`;
 
     const authHeaders = {
       'Content-Type': 'application/json',
@@ -79,8 +95,9 @@ function CompanyAnnouncements() {
       });
 
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || `Failed to ${editingAnnouncement ? 'update' : 'add'} announcement.`);
+        const errorText = await response.text();
+        console.error(`HTTP Error: ${response.status} - ${response.statusText}`, errorText);
+        throw new Error(errorText || `Failed to ${editingAnnouncement ? 'update' : 'add'} announcement.`);
       }
 
       toast.success(`Announcement ${editingAnnouncement ? 'updated' : 'added'} successfully!`);
@@ -88,7 +105,7 @@ function CompanyAnnouncements() {
       setFormContent('');
       setIsAdding(false);
       setEditingAnnouncement(null);
-      fetchAnnouncements();
+      fetchAnnouncements(); // Re-fetch announcements to show the latest list
     } catch (err) {
       console.error(`Error ${editingAnnouncement ? 'updating' : 'add'} announcement:`, err);
       toast.error(err.message || `Failed to ${editingAnnouncement ? 'update' : 'add'} announcement.`);
@@ -97,6 +114,7 @@ function CompanyAnnouncements() {
 
   /**
    * Handles initiating the edit process for an announcement.
+   * Only visible to ADMINs.
    * @param {Object} announcement The announcement object to edit.
    */
   const handleEditClick = (announcement) => {
@@ -108,9 +126,11 @@ function CompanyAnnouncements() {
 
   /**
    * Handles deleting an announcement.
+   * Only visible to ADMINs.
    * @param {string} id The ID of the announcement to delete.
    */
   const handleDelete = async (id) => {
+    // IMPORTANT: Replace window.confirm with a custom modal for better UX
     if (!window.confirm("Are you sure you want to delete this announcement?")) {
       return;
     }
@@ -121,28 +141,33 @@ function CompanyAnnouncements() {
     };
 
     try {
-      // Use API_BASE_URL instead of hardcoded localhost
-      const response = await fetch(`${API_BASE_URL}/api/announcements/${id}`, { // <--- MODIFIED
+      const response = await fetch(`${API_BASE_URL}/api/announcements/${id}`, {
         method: 'DELETE',
         headers: authHeaders
       });
 
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || "Failed to delete announcement.");
+        const errorText = await response.text();
+        console.error(`HTTP Error: ${response.status} - ${response.statusText}`, errorText);
+        throw new Error(errorText || "Failed to delete announcement.");
       }
 
       toast.success("Announcement deleted successfully!");
-      fetchAnnouncements();
+      fetchAnnouncements(); // Re-fetch announcements to update the list
     } catch (err) {
       console.error("Error deleting announcement:", err);
       toast.error(err.message || "Failed to delete announcement.");
     }
   };
 
+  // Effect hook to fetch announcements on component mount
+  useEffect(() => {
+    fetchAnnouncements();
+  }, [fetchAnnouncements]);
+
   if (loading) {
     return (
-      <div className="page-container p-6 max-w-4xl mx-auto bg-white rounded-lg shadow-md text-center">
+      <div className="page-container p-6 max-w-4xl mx-auto bg-white rounded-lg shadow-md text-center mt-10 mb-10">
         <p className="text-gray-600">Loading announcements...</p>
       </div>
     );
@@ -150,22 +175,23 @@ function CompanyAnnouncements() {
 
   if (error) {
     return (
-      <div className="page-container p-6 max-w-4xl mx-auto bg-white rounded-lg shadow-md text-center">
+      <div className="page-container p-6 max-w-4xl mx-auto bg-white rounded-lg shadow-md text-center mt-10 mb-10">
         <p className="text-red-500">{error}</p>
       </div>
     );
   }
 
   return (
-    <div className="page-container p-6 max-w-4xl mx-auto bg-white rounded-lg shadow-md">
+    <div className="page-container p-6 max-w-4xl mx-auto bg-white rounded-lg shadow-md mt-10 mb-10">
       <h2 className="text-3xl font-bold text-center text-gray-800 mb-8">Company Announcements</h2>
 
+      {/* Admin-only section for adding/editing announcements */}
       {isAdmin && (
         <div className="mb-8 p-6 border border-gray-200 rounded-lg bg-gray-50">
           <button
             onClick={() => {
               setIsAdding(!isAdding);
-              setEditingAnnouncement(null);
+              setEditingAnnouncement(null); // Clear editing state when toggling add form
               setFormTitle('');
               setFormContent('');
             }}
@@ -182,6 +208,7 @@ function CompanyAnnouncements() {
                 <input
                   type="text"
                   id="title"
+                  name="title"
                   value={formTitle}
                   onChange={(e) => setFormTitle(e.target.value)}
                   placeholder="Announcement Title"
@@ -192,6 +219,7 @@ function CompanyAnnouncements() {
                 <label htmlFor="content">Content</label>
                 <textarea
                   id="content"
+                  name="content"
                   value={formContent}
                   onChange={(e) => setFormContent(e.target.value)}
                   rows="5"
@@ -207,6 +235,7 @@ function CompanyAnnouncements() {
         </div>
       )}
 
+      {/* Display all announcements (visible to all authenticated users) */}
       {announcements.length === 0 ? (
         <p className="text-center text-gray-500">No announcements available at this time.</p>
       ) : (
@@ -220,6 +249,7 @@ function CompanyAnnouncements() {
               </p>
               <p className="text-gray-700 leading-relaxed">{announcement.content}</p>
 
+              {/* Admin-only action buttons for each announcement */}
               {isAdmin && (
                 <div className="mt-4 flex justify-end space-x-3">
                   <button
