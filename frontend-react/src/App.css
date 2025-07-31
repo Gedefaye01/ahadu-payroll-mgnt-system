@@ -1313,3 +1313,75 @@ body {
     grid-template-columns: 1fr; /* Single column on small screens */
   }
 }
+/* --- Company Announcements Specific Styles --- */
+/* Styles for the individual announcement cards */
+.announcement-card {
+    background-color: var(--light-card-bg);
+    padding: 1.5rem;
+    border-radius: 0.75rem;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    margin-bottom: 1.5rem; /* Space between cards */
+    border: 1px solid var(--border-color-light);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.announcement-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 12px rgba(0, 0, 0, 0.15);
+}
+
+.announcement-card-title {
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: var(--primary-color);
+    margin-bottom: 0.5rem;
+}
+
+.announcement-card-meta {
+    font-size: 0.9rem;
+    color: var(--text-medium);
+    margin-bottom: 1rem;
+}
+
+.announcement-card-content {
+    color: var(--text-dark);
+    line-height: 1.6;
+    margin-bottom: 1.5rem;
+}
+
+/* Styles for the action buttons within announcement cards */
+.announcement-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.75rem; /* Space between buttons */
+}
+
+.announcement-actions .btn-edit {
+    background-color: #3b82f6; /* Tailwind blue-500 */
+    color: white;
+    padding: 0.6rem 1rem;
+    border-radius: 0.5rem;
+    font-size: 0.9rem;
+    transition: background-color 0.2s ease, transform 0.1s ease;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.announcement-actions .btn-edit:hover {
+    background-color: #2563eb; /* Tailwind blue-600 */
+    transform: translateY(-1px);
+}
+
+.announcement-actions .btn-delete {
+    background-color: #ef4444; /* Tailwind red-500 */
+    color: white;
+    padding: 0.6rem 1rem;
+    border-radius: 0.5rem;
+    font-size: 0.9rem;
+    transition: background-color 0.2s ease, transform 0.1s ease;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.announcement-actions .btn-delete:hover {
+    background-color: #dc2626; /* Tailwind red-600 */
+    transform: translateY(-1px);
+}
