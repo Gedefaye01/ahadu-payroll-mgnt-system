@@ -14,7 +14,7 @@ function CompanyAnnouncements() {
   const [isAdding, setIsAdding] = useState(false);
   const [editingAnnouncement, setEditingAnnouncement] = useState(null);
   const [formTitle, setFormTitle] = useState('');
-  const [formContent, setFormContent] = '';
+  const [formContent, setFormContent] = useState('');
 
   // Define the API_BASE_URL using the environment variable
   const API_BASE_URL = process.env.REACT_APP_API_BASE_URL;
@@ -28,16 +28,6 @@ function CompanyAnnouncements() {
     setLoading(true);
     setError(null);
 
-    // --- DEBUGGING LOGS ---
-    console.log("DEBUG: Fetching announcements...");
-    console.log("DEBUG: API_BASE_URL:", API_BASE_URL);
-    console.log("DEBUG: Token from localStorage:", token ? "Present" : "Missing/Null");
-    if (token) {
-        console.log("DEBUG: Token starts with:", token.substring(0, 20) + "..."); // Log first 20 chars
-    }
-    console.log("DEBUG: User Role (isAdmin):", isAdmin);
-    // --- END DEBUGGING LOGS ---
-
     try {
       const authHeaders = {
         'Content-Type': 'application/json',
@@ -49,9 +39,8 @@ function CompanyAnnouncements() {
       });
 
       if (!response.ok) {
-        // Log the full response status and text for more details on error
         const errorText = await response.text();
-        console.error(`HTTP Error: ${response.status} - ${response.statusText}`, errorText);
+        console.error(`HTTP Error fetching announcements: ${response.status} - ${response.statusText}`, errorText);
         throw new Error(`HTTP error! status: ${response.status} - ${errorText}`);
       }
 
@@ -64,7 +53,7 @@ function CompanyAnnouncements() {
     } finally {
       setLoading(false);
     }
-  }, [API_BASE_URL, token, isAdmin]); // Added isAdmin to dependencies for completeness
+  }, [API_BASE_URL, token]); // Dependencies: API_BASE_URL, token
 
   /**
    * Handles submission of the add/edit announcement form.
@@ -87,17 +76,26 @@ function CompanyAnnouncements() {
       'Authorization': `Bearer ${token}`
     };
 
+    const payload = { title: formTitle, content: formContent };
+
+    // --- DEBUGGING LOGS FOR SUBMIT ---
+    console.log("DEBUG: Submitting announcement...");
+    console.log("DEBUG: Method:", method);
+    console.log("DEBUG: URL:", url);
+    console.log("DEBUG: Payload being sent:", JSON.stringify(payload));
+    // --- END DEBUGGING LOGS ---
+
     try {
       const response = await fetch(url, {
         method: method,
         headers: authHeaders,
-        body: JSON.stringify({ title: formTitle, content: formContent })
+        body: JSON.stringify(payload)
       });
 
       if (!response.ok) {
-        const errorText = await response.text();
-        console.error(`HTTP Error: ${response.status} - ${response.statusText}`, errorText);
-        throw new Error(errorText || `Failed to ${editingAnnouncement ? 'update' : 'add'} announcement.`);
+        const errorData = await response.json(); // Try to parse error response
+        console.error(`HTTP Error during announcement ${method}: ${response.status} - ${response.statusText}`, errorData);
+        throw new Error(errorData.message || `Failed to ${editingAnnouncement ? 'update' : 'add'} announcement.`);
       }
 
       toast.success(`Announcement ${editingAnnouncement ? 'updated' : 'added'} successfully!`);
@@ -109,6 +107,8 @@ function CompanyAnnouncements() {
     } catch (err) {
       console.error(`Error ${editingAnnouncement ? 'updating' : 'add'} announcement:`, err);
       toast.error(err.message || `Failed to ${editingAnnouncement ? 'update' : 'add'} announcement.`);
+    } finally {
+      setLoading(false); // Ensure loading is turned off even on error
     }
   };
 
@@ -147,9 +147,9 @@ function CompanyAnnouncements() {
       });
 
       if (!response.ok) {
-        const errorText = await response.text();
-        console.error(`HTTP Error: ${response.status} - ${response.statusText}`, errorText);
-        throw new Error(errorText || "Failed to delete announcement.");
+        const errorData = await response.json();
+        console.error(`HTTP Error deleting announcement: ${response.status} - ${response.statusText}`, errorData);
+        throw new Error(errorData.message || "Failed to delete announcement.");
       }
 
       toast.success("Announcement deleted successfully!");
