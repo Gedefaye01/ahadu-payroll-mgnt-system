@@ -82,7 +82,7 @@ function Home() {
     <div className="page-container p-6 max-w-4xl mx-auto bg-white rounded-lg shadow-md">
       {/* Page Title */}
       <h1 className="home-page-title text-center mb-8">
-        Welcome to Ahadu Bank's Modern HR Portal
+        Welcome to Ahadu Bank's Modern HRMS Portal
       </h1>
 
       {/* Auto-Scroll Image Carousel */}

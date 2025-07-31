@@ -59,7 +59,7 @@ function Header() {
       <div className="header-logo">
         {/* Link logo to home or dashboard based on login status */}
         <Link to={isAuthenticated ? dashboardPath : '/'}>
-          <img src="/logo1.jpg" alt="Ahadu Bank Logo" /> {/* Ensure logo is in public folder */}
+          <img src="/Ahadu-logo.PNG" alt="Ahadu Bank Logo" /> {/* Ensure logo is in public folder */}
         </Link>
       </div>
       <div className="header-nav">
