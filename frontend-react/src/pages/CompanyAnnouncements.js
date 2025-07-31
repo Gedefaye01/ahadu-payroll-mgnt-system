@@ -1,168 +1,142 @@
-import React, { useState, useEffect } from 'react';
-import { getFirestore, collection, onSnapshot, addDoc, doc, updateDoc, deleteDoc, query, orderBy, serverTimestamp, getDoc } from 'firebase/firestore';
-import { getAuth, onAuthStateChanged, signInWithCustomToken, signInAnonymously } from 'firebase/auth'; // Added signInWithCustomToken, signInAnonymously
-import { initializeApp } from 'firebase/app';
-import { FaEdit, FaTrash, FaPlusCircle, FaBullhorn } from 'react-icons/fa'; // Import icons
-import { toast } from 'react-toastify'; // Import toast for notifications
+import React, { useState, useEffect, useCallback } from 'react';
+import { FaEdit, FaTrash, FaPlusCircle, FaBullhorn } from 'react-icons/fa';
+import { toast } from 'react-toastify';
 
+/**
+ * CompanyAnnouncements Component
+ * Manages company announcements, allowing admins to add, edit, and delete them.
+ * Fetches and persists announcements via the backend API instead of Firebase.
+ */
 function CompanyAnnouncements() {
   const [announcements, setAnnouncements] = useState([]);
   const [newAnnouncementTitle, setNewAnnouncementTitle] = useState('');
-  const [newAnnouncementContent, setNewAnnouncementContent] = '';
+  const [newAnnouncementContent, setNewAnnouncementContent] = useState('');
   const [editingAnnouncement, setEditingAnnouncement] = useState(null);
-  const [user, setUser] = useState(null);
   const [isAdmin, setIsAdmin] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [firebaseInitialized, setFirebaseInitialized] = useState(false); // New state for Firebase init status
   const [error, setError] = useState(null);
 
-  // Firebase config and initialization (using global variables)
-  const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
-  let firebaseConfig = {};
-  try {
-    // Attempt to parse the firebase config. Handle potential errors if it's not valid JSON.
-    firebaseConfig = typeof __firebase_config !== 'undefined' && __firebase_config ? JSON.parse(__firebase_config) : {};
-  } catch (e) {
-    console.error("Error parsing __firebase_config:", e);
-    setError("Invalid Firebase configuration provided. Please check your environment variables (e.g., __firebase_config).");
-  }
+  // Environment variables for API base URL and token
+  const API_BASE_URL = process.env.REACT_APP_API_BASE_URL;
+  const token = localStorage.getItem('token'); // Get authentication token from localStorage
 
-  // Check if firebaseConfig has projectId before attempting to initialize Firebase app
-  if (!firebaseConfig.projectId && !error) { // Only set error if not already set by parse
-    setError("Firebase projectId is missing in the configuration. Please ensure __firebase_config environment variable is correctly set and contains your Firebase project ID.");
-  }
-
-  // Initialize Firebase app, db, and auth only if config is valid
-  const app = firebaseConfig.projectId ? initializeApp(firebaseConfig) : null;
-  const db = app ? getFirestore(app) : null;
-  const auth = app ? getAuth(app) : null;
-
-  useEffect(() => {
-    // If there's a configuration error, stop loading and don't proceed with Firebase operations
-    if (error) {
-      setLoading(false);
-      return;
-    }
-
-    // If Firebase app, db, or auth could not be initialized due to missing config, show error
-    if (!app || !db || !auth) {
-      console.error("Firebase app, db, or auth not initialized due to missing or invalid config.");
-      setError("Firebase is not configured. Please contact support or check deployment settings (e.g., __firebase_config).");
-      setLoading(false);
-      return;
-    }
-
-    setFirebaseInitialized(true); // Mark Firebase as initialized successfully
-
-    const setupAuthAndFirestore = async () => {
-      try {
-        // Attempt to sign in with custom token if available, otherwise anonymously
-        if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-          await signInWithCustomToken(auth, __initial_auth_token);
-        } else {
-          await signInAnonymously(auth);
-        }
-      } catch (authError) {
-        console.error("Firebase authentication failed:", authError);
-        setError("Failed to authenticate with Firebase. Please try again.");
+  /**
+   * Fetches the list of announcements from the backend API.
+   * Uses useCallback to memoize the function.
+   */
+  const fetchAnnouncements = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      if (!token) {
+        // If no token, user is not authenticated, so no announcements to fetch (or unauthorized)
+        setError("Authentication token missing. Please sign in.");
         setLoading(false);
         return;
       }
 
-      // Set up authentication state listener
-      const unsubscribeAuth = onAuthStateChanged(auth, async (currentUser) => {
-        if (currentUser) {
-          setUser(currentUser);
-          // Fetch user role from Firestore
-          const userDocRef = doc(db, `artifacts/${appId}/users/${currentUser.uid}/profile/data`); // Assuming private user profile
-          try {
-            const userDocSnap = await getDoc(userDocRef);
-            if (userDocSnap.exists()) {
-              const userData = userDocSnap.data();
-              if (userData.roles && userData.roles.includes('ADMIN')) { // Ensure role string matches backend
-                setIsAdmin(true);
-              }
-            }
-          } catch (err) {
-            console.error("Error fetching user role:", err);
-            setError("Failed to load user roles.");
-          }
-        } else {
-          setUser(null);
-          setIsAdmin(false);
-        }
-        setLoading(false); // Stop loading once auth state is checked
+      const response = await fetch(`${API_BASE_URL}/api/announcements`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
       });
 
-      // Set up real-time listener for announcements
-      const announcementsCollectionRef = collection(db, `artifacts/${appId}/public/data/announcements`);
-      const q = query(announcementsCollectionRef, orderBy('publishDate', 'desc'));
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || `Failed to fetch announcements: ${response.status}`);
+      }
 
-      const unsubscribeSnapshot = onSnapshot(q, (snapshot) => {
-        const announcementsData = snapshot.docs.map(doc => ({
-          id: doc.id,
-          ...doc.data()
-        }));
-        setAnnouncements(announcementsData);
-      }, (err) => {
-        console.error("Error fetching announcements:", err);
-        setError("Failed to load announcements.");
-        setLoading(false);
-      });
-
-      // Cleanup function for useEffect
-      return () => {
-        unsubscribeAuth();
-        unsubscribeSnapshot();
-      };
-    };
-
-    // Only run setup if Firebase is successfully initialized (no initial errors)
-    if (firebaseInitialized) {
-      setupAuthAndFirestore();
+      const data = await response.json();
+      // Assuming announcements are returned as a list, sorted by publish date descending
+      const sortedData = data.sort((a, b) => new Date(b.publishDate) - new Date(a.publishDate));
+      setAnnouncements(sortedData);
+    } catch (err) {
+      console.error("Error fetching announcements:", err);
+      setError(err.message || "Failed to load announcements.");
+      toast.error(err.message || "Failed to load announcements.");
+    } finally {
+      setLoading(false);
     }
+  }, [API_BASE_URL, token]);
 
-  }, [app, db, auth, appId, firebaseInitialized, error]); // Add app, db, auth, and error to dependencies
+  // Effect hook to fetch announcements and check admin status on component mount and token change
+  useEffect(() => {
+    // Check user role from localStorage for UI rendering
+    const userRole = localStorage.getItem('userRole');
+    setIsAdmin(userRole === 'ADMIN');
 
+    fetchAnnouncements(); // Initial fetch of announcements
+  }, [fetchAnnouncements]); // Re-run when fetchAnnouncements changes (e.g., token updates)
+
+
+  /**
+   * Handles adding a new announcement via the backend API.
+   */
   const handleAddAnnouncement = async (e) => {
     e.preventDefault();
     if (!newAnnouncementTitle.trim() || !newAnnouncementContent.trim()) {
       toast.error('Title and content cannot be empty.');
       return;
     }
-    if (!user) {
+    if (!token) {
       toast.error('You must be logged in to add an announcement.');
       return;
     }
-    if (!db) { // Check if db is initialized before attempting operations
-      toast.error('Firebase database not initialized. Please check configuration.');
+    if (!isAdmin) {
+      toast.error('You do not have permission to add announcements.');
       return;
     }
 
+    setLoading(true);
     try {
-      await addDoc(collection(db, `artifacts/${appId}/public/data/announcements`), {
+      const authorUsername = localStorage.getItem('username') || 'Unknown'; // Get username from localStorage
+      const payload = {
         title: newAnnouncementTitle,
         content: newAnnouncementContent,
-        publishDate: serverTimestamp(),
-        authorId: user.uid,
-        authorUsername: user.displayName || user.email,
+        // Backend will typically set publishDate and authorId/username automatically
+        authorUsername: authorUsername // Pass username for display if backend uses it
+      };
+
+      const response = await fetch(`${API_BASE_URL}/api/announcements`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(payload),
       });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || `Failed to add announcement: ${response.status}`);
+      }
+
       setNewAnnouncementTitle('');
       setNewAnnouncementContent('');
       toast.success('Announcement added successfully!');
+      fetchAnnouncements(); // Re-fetch to update the list
     } catch (err) {
       console.error("Error adding announcement:", err);
-      toast.error("Failed to add announcement.");
-      setError("Failed to add announcement.");
+      setError(err.message || "Failed to add announcement.");
+      toast.error(err.message || "Failed to add announcement.");
+    } finally {
+      setLoading(false);
     }
   };
 
+  /**
+   * Sets the form for editing an existing announcement.
+   */
   const handleEditClick = (announcement) => {
     setEditingAnnouncement(announcement);
     setNewAnnouncementTitle(announcement.title);
     setNewAnnouncementContent(announcement.content);
   };
 
+  /**
+   * Handles updating an existing announcement via the backend API.
+   */
   const handleUpdateAnnouncement = async (e) => {
     e.preventDefault();
     if (!newAnnouncementTitle.trim() || !newAnnouncementContent.trim()) {
@@ -170,36 +144,66 @@ function CompanyAnnouncements() {
       return;
     }
     if (!editingAnnouncement) return;
-    if (!db) { // Check if db is initialized before attempting operations
-      toast.error('Firebase database not initialized. Please check configuration.');
+    if (!token) {
+      toast.error('You must be logged in to update announcements.');
+      return;
+    }
+    if (!isAdmin) {
+      toast.error('You do not have permission to update announcements.');
       return;
     }
 
+    setLoading(true);
     try {
-      const announcementRef = doc(db, `artifacts/${appId}/public/data/announcements`, editingAnnouncement.id);
-      await updateDoc(announcementRef, {
+      const editorUsername = localStorage.getItem('username') || 'Unknown';
+      const payload = {
         title: newAnnouncementTitle,
         content: newAnnouncementContent,
-        lastEdited: serverTimestamp(),
-        editorId: user.uid,
-        editorUsername: user.displayName || user.email,
+        // Backend will typically set lastEdited and editorId/username automatically
+        editorUsername: editorUsername // Pass username for display if backend uses it
+      };
+
+      const response = await fetch(`${API_BASE_URL}/api/announcements/${editingAnnouncement.id}`, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(payload),
       });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || `Failed to update announcement: ${response.status}`);
+      }
+
       setEditingAnnouncement(null);
       setNewAnnouncementTitle('');
       setNewAnnouncementContent('');
       toast.success('Announcement updated successfully!');
+      fetchAnnouncements(); // Re-fetch to update the list
     } catch (err) {
       console.error("Error updating announcement:", err);
-      toast.error("Failed to update announcement.");
-      setError("Failed to update announcement.");
+      setError(err.message || "Failed to update announcement.");
+      toast.error(err.message || "Failed to update announcement.");
+    } finally {
+      setLoading(false);
     }
   };
 
+  /**
+   * Handles deleting an announcement via the backend API.
+   */
   const handleDelete = async (id) => {
-    if (!db) { // Check if db is initialized before attempting operations
-      toast.error('Firebase database not initialized. Please check configuration.');
+    if (!token) {
+      toast.error('You must be logged in to delete announcements.');
       return;
     }
+    if (!isAdmin) {
+      toast.error('You do not have permission to delete announcements.');
+      return;
+    }
+
     // Using a custom modal for confirmation instead of window.confirm
     toast.warn(
       ({ closeToast }) => (
@@ -208,15 +212,29 @@ function CompanyAnnouncements() {
           <button
             className="btn btn-danger mr-2"
             onClick={async () => {
+              setLoading(true); // Indicate loading for the delete operation
               try {
-                await deleteDoc(doc(db, `artifacts/${appId}/public/data/announcements`, id));
+                const response = await fetch(`${API_BASE_URL}/api/announcements/${id}`, {
+                  method: 'DELETE',
+                  headers: {
+                    'Authorization': `Bearer ${token}`,
+                  },
+                });
+
+                if (!response.ok) {
+                  const errorData = await response.json();
+                  throw new Error(errorData.message || `Failed to delete announcement: ${response.status}`);
+                }
+
                 toast.success('Announcement deleted successfully!');
+                fetchAnnouncements(); // Re-fetch to update the list
               } catch (err) {
                 console.error("Error deleting announcement:", err);
-                toast.error("Failed to delete announcement.");
-                setError("Failed to delete announcement.");
+                setError(err.message || "Failed to delete announcement.");
+                toast.error(err.message || "Failed to delete announcement.");
               } finally {
-                closeToast();
+                setLoading(false); // End loading
+                closeToast(); // Close the toast notification
               }
             }}
           >
@@ -236,13 +254,13 @@ function CompanyAnnouncements() {
     );
   };
 
-  // Display error message if there's a configuration or Firebase initialization issue
+  // Display error message if there's a configuration or API issue
   if (error) {
     return <div className="page-container text-center text-red-500 mt-8">Error: {error}</div>;
   }
 
-  // Show loading until Firebase is initialized and authentication state is checked
-  if (loading || !firebaseInitialized) {
+  // Show loading until announcements are fetched
+  if (loading) {
     return <div className="text-center text-gray-600 mt-8">Loading announcements...</div>;
   }
 
@@ -250,7 +268,7 @@ function CompanyAnnouncements() {
     <div className="page-container">
       <h2 className="page-header">Company Announcements</h2>
 
-      {/* Add/Edit Announcement Form */}
+      {/* Add/Edit Announcement Form - Only visible to Admins */}
       {isAdmin && (
         <div className="form-container mb-8">
           <h3 className="card-title">
@@ -316,7 +334,7 @@ function CompanyAnnouncements() {
             <div key={announcement.id} className="announcement-card">
               <h3 className="announcement-card-title">{announcement.title}</h3>
               <p className="announcement-card-meta">
-                Published: {announcement.publishDate?.toDate().toLocaleDateString() || 'N/A'}
+                Published: {new Date(announcement.publishDate).toLocaleDateString() || 'N/A'}
                 {announcement.authorUsername && ` by ${announcement.authorUsername}`}
               </p>
               <p className="announcement-card-content">{announcement.content}</p>
