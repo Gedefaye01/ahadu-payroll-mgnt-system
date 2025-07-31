@@ -56,6 +56,33 @@ function CompanyAnnouncements() {
   }, [API_BASE_URL, token]); // Dependencies: API_BASE_URL, token
 
   /**
+   * Handles changes to the title input field.
+   * @param {Object} e The event object.
+   */
+  const handleFormTitleChange = useCallback((e) => {
+    setFormTitle(e.target.value);
+  }, []); // No dependencies needed as setFormTitle is stable
+
+  /**
+   * Handles changes to the content textarea field.
+   * @param {Object} e The event object.
+   */
+  const handleFormContentChange = useCallback((e) => {
+    setFormContent(e.target.value);
+  }, []); // No dependencies needed as setFormContent is stable
+
+  /**
+   * Toggles the visibility of the add/edit announcement form.
+   * Resets form fields and editing state.
+   */
+  const handleToggleAddForm = useCallback(() => {
+    setIsAdding(prev => !prev);
+    setEditingAnnouncement(null); // Clear editing state when toggling add form
+    setFormTitle('');
+    setFormContent('');
+  }, []); // No dependencies needed for setters
+
+  /**
    * Handles submission of the add/edit announcement form.
    * Only accessible by ADMINs due to backend authorization.
    */
@@ -189,12 +216,7 @@ function CompanyAnnouncements() {
       {isAdmin && (
         <div className="mb-8 p-6 border border-gray-200 rounded-lg bg-gray-50">
           <button
-            onClick={() => {
-              setIsAdding(!isAdding);
-              setEditingAnnouncement(null); // Clear editing state when toggling add form
-              setFormTitle('');
-              setFormContent('');
-            }}
+            onClick={handleToggleAddForm}
             className="btn btn-primary w-full mb-4"
           >
             {isAdding ? 'Cancel' : 'Add New Announcement'}
@@ -210,7 +232,7 @@ function CompanyAnnouncements() {
                   id="title"
                   name="title"
                   value={formTitle}
-                  onChange={(e) => setFormTitle(e.target.value)}
+                  onChange={handleFormTitleChange}
                   placeholder="Announcement Title"
                   required
                 />
@@ -221,7 +243,7 @@ function CompanyAnnouncements() {
                   id="content"
                   name="content"
                   value={formContent}
-                  onChange={(e) => setFormContent(e.target.value)}
+                  onChange={handleFormContentChange}
                   rows="5"
                   placeholder="Announcement content..."
                   required
