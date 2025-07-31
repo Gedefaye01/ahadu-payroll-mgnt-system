@@ -1,5 +1,5 @@
 import React from 'react';
-import Card from '../components/Card';
+import Card from '../components/Card'; // Assuming this component exists and is correctly imported
 
 function PayrollDashboard() {
   const stats = [
@@ -8,7 +8,7 @@ function PayrollDashboard() {
     { label: 'Total Paid Last Month', value: 'ETB 2,543,120.50' },
     { label: 'Next Payroll Date', value: 'July 30, 2024' },
   ];
-  
+
   return (
     <div>
       <h1 className="page-header">Payroll Dashboard</h1>

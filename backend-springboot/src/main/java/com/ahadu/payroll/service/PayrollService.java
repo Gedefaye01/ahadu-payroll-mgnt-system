@@ -8,9 +8,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode; // Import for rounding
 import java.time.LocalDate;
 import java.util.List;
-import java.util.Optional; // Added import for Optional
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 /**
@@ -31,36 +32,60 @@ public class PayrollService {
 
     /**
      * Processes payroll for all active employees for a given period.
-     * This is a simplified example. In a real system, this would involve
-     * more complex calculations based on salary components, taxes, deductions, etc.
+     * This implementation now uses employee-specific salary, tax, and commission
+     * rates.
+     * * @param payPeriodStart The start date of the payroll period.
      * 
-     * @param payPeriodStart The start date of the payroll period.
-     * @param payPeriodEnd   The end date of the payroll period.
+     * @param payPeriodEnd The end date of the payroll period.
      * @return A list of generated Payroll records.
      */
     public List<Payroll> processPayroll(LocalDate payPeriodStart, LocalDate payPeriodEnd) {
-        // Fetch all active employees (assuming 'Active' status)
+        // Fetch all active employees (assuming 'Active' status from
+        // User.getEmployeeStatus())
         List<User> activeEmployees = userRepository.findAll().stream()
                 .filter(user -> "Active".equalsIgnoreCase(user.getEmployeeStatus()))
                 .collect(Collectors.toList());
 
-        // Simulate payroll generation for each active employee
+        // Generate payroll for each active employee
         List<Payroll> generatedPayrolls = activeEmployees.stream().map(employee -> {
-            // Placeholder for actual payroll calculation logic
-            // In a real scenario, you'd fetch salary components, calculate taxes,
-            // deductions, etc.
-            BigDecimal grossPay = new BigDecimal("5000.00"); // Example gross pay
-            BigDecimal deductions = new BigDecimal("750.00"); // Example deductions
-            BigDecimal netPay = grossPay.subtract(deductions);
+            // Retrieve employee-specific financial data
+            BigDecimal baseSalary = employee.getBaseSalary() != null ? employee.getBaseSalary() : BigDecimal.ZERO;
+            BigDecimal taxPercentage = employee.getTaxPercentage() != null ? employee.getTaxPercentage()
+                    : BigDecimal.ZERO;
+            BigDecimal commissionPercentage = employee.getCommissionPercentage() != null
+                    ? employee.getCommissionPercentage()
+                    : BigDecimal.ZERO;
+
+            // --- REAL PAYROLL CALCULATION LOGIC ---
+            // Example: Calculate commission based on base salary (you might adjust this)
+            BigDecimal commission = baseSalary.multiply(commissionPercentage).setScale(2, RoundingMode.HALF_UP);
+
+            // Calculate Gross Pay (Base Salary + Commission)
+            BigDecimal grossPay = baseSalary.add(commission).setScale(2, RoundingMode.HALF_UP);
+
+            // Calculate Tax Deduction
+            BigDecimal taxDeduction = grossPay.multiply(taxPercentage).setScale(2, RoundingMode.HALF_UP);
+
+            // Placeholder for other deductions (e.g., pension, insurance, etc.)
+            // You would fetch these from other models or configuration
+            BigDecimal otherDeductions = new BigDecimal("100.00").setScale(2, RoundingMode.HALF_UP); // Example fixed
+                                                                                                     // deduction
+
+            // Calculate Total Deductions
+            BigDecimal totalDeductions = taxDeduction.add(otherDeductions).setScale(2, RoundingMode.HALF_UP);
+
+            // Calculate Net Pay
+            BigDecimal netPay = grossPay.subtract(totalDeductions).setScale(2, RoundingMode.HALF_UP);
+            // --- END REAL PAYROLL CALCULATION LOGIC ---
 
             return new Payroll(
                     employee.getId(),
                     payPeriodStart,
                     payPeriodEnd,
                     grossPay,
-                    deductions,
+                    totalDeductions,
                     netPay,
-                    "Processed" // Status
+                    "Processed" // Status after processing
             );
         }).collect(Collectors.toList());
 
@@ -70,19 +95,19 @@ public class PayrollService {
 
     /**
      * Retrieves all payroll runs, ordered by pay period end date descending.
-     * 
-     * @return A list of all Payroll records.
+     * * @return A list of all Payroll records.
      */
     public List<Payroll> getAllPayrollRuns() {
         // Assuming you want to sort by latest payrolls first
-        return payrollRepository.findAll(); // You might add sorting here if needed, e.g., Sort.by(Sort.Direction.DESC,
-                                            // "payPeriodEnd")
+        // You might add sorting here if needed, e.g., Sort.by(Sort.Direction.DESC,
+        // "payPeriodEnd")
+        return payrollRepository.findAll();
     }
 
     /**
      * Retrieves payrolls for a specific employee.
+     * * @param employeeId The ID of the employee.
      * 
-     * @param employeeId The ID of the employee.
      * @return A list of Payroll records for the specified employee.
      */
     public List<Payroll> getPayrollsByEmployeeId(String employeeId) {
@@ -91,8 +116,8 @@ public class PayrollService {
 
     /**
      * Retrieves a single payroll record by its ID.
+     * * @param id The ID of the payroll record.
      * 
-     * @param id The ID of the payroll record.
      * @return An Optional containing the Payroll if found, or empty if not.
      */
     public Optional<Payroll> getPayrollById(String id) {

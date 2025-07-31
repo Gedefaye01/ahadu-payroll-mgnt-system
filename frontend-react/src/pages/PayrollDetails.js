@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { toast } from 'react-toastify';
+import { toast } from 'react-toastify'; // Import toast for notifications
+import { format } from 'date-fns'; // Import format for date formatting
 
 /**
  * PayrollDetails Component
@@ -12,8 +13,7 @@ function PayrollDetails() {
   const [error, setError] = useState(null);
 
   // Define the API_BASE_URL using the environment variable
-  const API_BASE_URL = process.env.REACT_APP_API_BASE_URL; // <--- ADD THIS LINE
-
+  const API_BASE_URL = process.env.REACT_APP_API_BASE_URL;
   const token = localStorage.getItem('token');
 
   /**
@@ -30,14 +30,16 @@ function PayrollDetails() {
       };
 
       // Use API_BASE_URL instead of hardcoded localhost
-      const response = await fetch(`${API_BASE_URL}/api/payroll/my-payslips`, { // <--- MODIFIED
+      const response = await fetch(`${API_BASE_URL}/api/payroll/my-payslips`, {
         headers: authHeaders
       });
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
       const data = await response.json();
-      setPayslips(data);
+      // Sort payslips by end date in descending order to show most recent first
+      const sortedPayslips = data.sort((a, b) => new Date(b.payPeriodEnd) - new Date(a.payPeriodEnd));
+      setPayslips(sortedPayslips);
     } catch (err) {
       console.error("Failed to fetch payslips:", err);
       setError("Failed to load your payslips. Please try again.");
@@ -61,7 +63,7 @@ function PayrollDetails() {
   const handleDownloadPayslip = (payslipId) => {
     toast.info(`Simulating download for payslip ID: ${payslipId}`);
     // Example: Triggering a backend endpoint for download
-    // window.open(`${API_BASE_URL}/api/payroll/payslips/${payslipId}/download`, '_blank'); // <--- Example of how you would use API_BASE_URL for download
+    // window.open(`${API_BASE_URL}/api/payroll/payslips/${payslipId}/download`, '_blank');
   };
 
   if (loading) {
@@ -102,13 +104,17 @@ function PayrollDetails() {
             <tbody>
               {payslips.map(payslip => (
                 <tr key={payslip.id}>
-                  <td>{payslip.payPeriodStart} to {payslip.payPeriodEnd}</td>
-                  <td>${payslip.grossPay ? payslip.grossPay.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '0.00'}</td>
-                  <td>${payslip.totalDeductions ? payslip.totalDeductions.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '0.00'}</td>
-                  <td>${payslip.netPay ? payslip.netPay.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '0.00'}</td>
+                  {/* Format dates using date-fns for consistent display */}
+                  <td>{format(new Date(payslip.payPeriodStart), 'PP')} to {format(new Date(payslip.payPeriodEnd), 'PP')}</td>
+                  {/* Use toFixed(2) for consistent decimal places and toLocaleString for formatting */}
+                  <td>${payslip.grossPay ? payslip.grossPay.toFixed(2).toLocaleString() : '0.00'}</td>
+                  <td>${payslip.totalDeductions ? payslip.totalDeductions.toFixed(2).toLocaleString() : '0.00'}</td>
+                  <td>${payslip.netPay ? payslip.netPay.toFixed(2).toLocaleString() : '0.00'}</td>
                   <td>
                     <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                      payslip.status === 'Processed' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'
+                      payslip.status === 'Processed' ? 'bg-green-100 text-green-800' :
+                      payslip.status === 'Completed' ? 'bg-blue-100 text-blue-800' : // Aligning with AdminPayrollManagement
+                      'bg-yellow-100 text-yellow-800' // Fallback for other statuses
                     }`}>
                       {payslip.status}
                     </span>

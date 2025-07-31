@@ -1,40 +1,103 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { toast } from 'react-toastify'; // Import toast for notifications
+import { format } from 'date-fns'; // Import format for date formatting
 
 /**
  * AdminPayrollManagement Component
- * Allows administrators to simulate payroll processing and view recent runs.
- * It uses mock data for payroll runs.
+ * Allows administrators to process payroll for real employee data
+ * and view recent payroll runs fetched from the backend.
  */
 function AdminPayrollManagement() {
   const [processing, setProcessing] = useState(false); // State to indicate if payroll is currently processing
+  const [payrollRuns, setPayrollRuns] = useState([]); // State for the list of payroll runs from API
+  const [payPeriodStart, setPayPeriodStart] = useState(''); // State for start date input
+  const [payPeriodEnd, setPayPeriodEnd] = useState(''); // State for end date input
   const [lastProcessed, setLastProcessed] = useState(null); // State to store the timestamp of the last processing
-  // State for the list of payroll runs (mock data). In a real app, this would be fetched from an API.
-  const [payrollRuns, setPayrollRuns] = useState([
-    { id: 1, date: '2024-06-30', status: 'Completed', totalAmount: '150,000 USD' },
-    { id: 2, date: '2024-05-31', status: 'Completed', totalAmount: '145,000 USD' },
-  ]);
+
+  const API_BASE_URL = process.env.REACT_APP_API_BASE_URL;
+  const token = localStorage.getItem('token'); // Get the authentication token
+
+  /**
+   * Fetches the list of all payroll runs from the backend.
+   */
+  const fetchPayrollRuns = async () => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/payroll/runs`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const data = await response.json();
+      // Assuming data is a list of payroll objects
+      // Sort by date descending to show most recent first
+      const sortedData = data.sort((a, b) => new Date(b.payPeriodEnd) - new Date(a.payPeriodEnd));
+      setPayrollRuns(sortedData);
+
+      // Update last processed time if there are any runs
+      if (sortedData.length > 0) {
+        setLastProcessed(format(new Date(sortedData[0].payPeriodEnd), 'PPP HH:mm')); // Format date for display
+      } else {
+        setLastProcessed(null);
+      }
+
+    } catch (error) {
+      console.error("Failed to fetch payroll runs:", error);
+      toast.error("Failed to load payroll history.");
+    }
+  };
+
+  // Effect hook to fetch payroll runs on component mount
+  useEffect(() => {
+    fetchPayrollRuns();
+  }, []); // Empty dependency array means this runs once on mount
 
   /**
    * Handles the action to process payroll.
-   * Simulates an asynchronous operation and updates the UI accordingly.
+   * Sends the pay period dates to the backend API.
    */
-  const handleProcessPayroll = () => {
+  const handleProcessPayroll = async () => {
+    if (!payPeriodStart || !payPeriodEnd) {
+      toast.error("Please select both start and end dates for the payroll period.");
+      return;
+    }
+
     setProcessing(true); // Set processing state to true
-    // Simulate API call or background task for payroll processing
-    setTimeout(() => {
-      const now = new Date();
-      const newRun = {
-        id: payrollRuns.length + 1, // Simple ID generation
-        date: now.toISOString().slice(0, 10), // Get current date in YYYY-MM-DD format
-        status: 'Completed',
-        totalAmount: '160,000 USD' // Mock amount for the new run
-      };
-      setLastProcessed(now.toLocaleString()); // Update last processed timestamp
-      setPayrollRuns([newRun, ...payrollRuns]); // Add the new run to the beginning of the list
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/payroll/process`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          payPeriodStart: payPeriodStart,
+          payPeriodEnd: payPeriodEnd,
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || `Payroll processing failed with status: ${response.status}`);
+      }
+
+      // Assuming the backend returns the newly generated payrolls or a success message
+      toast.success('Payroll processing completed successfully!');
+      setPayPeriodStart(''); // Clear dates after successful processing
+      setPayPeriodEnd('');
+      fetchPayrollRuns(); // Re-fetch payroll runs to update the table
+    } catch (error) {
+      console.error("Error processing payroll:", error);
+      toast.error(error.message || "An error occurred during payroll processing.");
+    } finally {
       setProcessing(false); // Set processing state back to false
-      toast.success('Payroll processing completed successfully!'); // Use toast
-    }, 2000); // Simulate 2-second processing time
+    }
   };
 
   return (
@@ -47,10 +110,32 @@ function AdminPayrollManagement() {
         <p className="text-gray-600 mb-4">
           Last Payroll Processed: {lastProcessed || 'Never'}
         </p>
+        <div className="flex flex-col md:flex-row gap-4 mb-4 justify-center">
+          <div className="form-group flex-1">
+            <label htmlFor="payPeriodStart" className="block text-gray-700 text-sm font-bold mb-2">Pay Period Start Date</label>
+            <input
+              type="date"
+              id="payPeriodStart"
+              value={payPeriodStart}
+              onChange={(e) => setPayPeriodStart(e.target.value)}
+              className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+            />
+          </div>
+          <div className="form-group flex-1">
+            <label htmlFor="payPeriodEnd" className="block text-gray-700 text-sm font-bold mb-2">Pay Period End Date</label>
+            <input
+              type="date"
+              id="payPeriodEnd"
+              value={payPeriodEnd}
+              onChange={(e) => setPayPeriodEnd(e.target.value)}
+              className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+            />
+          </div>
+        </div>
         <button
           onClick={handleProcessPayroll}
-          disabled={processing} // Disable button while processing
-          className={`btn ${processing ? 'bg-gray-400 cursor-not-allowed' : 'btn-primary bg-green-600 hover:bg-green-700 text-white shadow-md'}`}
+          disabled={processing || !payPeriodStart || !payPeriodEnd} // Disable if processing or dates are not selected
+          className={`btn ${processing || !payPeriodStart || !payPeriodEnd ? 'bg-gray-400 cursor-not-allowed' : 'btn-primary bg-green-600 hover:bg-green-700 text-white shadow-md'}`}
         >
           {processing ? 'Processing Payroll...' : 'Process Payroll Now'}
         </button>
@@ -66,24 +151,32 @@ function AdminPayrollManagement() {
             <thead>
               <tr>
                 <th>Run ID</th>
-                <th>Date</th>
+                <th>Employee ID</th> {/* Added Employee ID column */}
+                <th>Pay Period</th>
+                <th>Gross Pay</th>
+                <th>Deductions</th>
+                <th>Net Pay</th>
                 <th>Status</th>
-                <th>Total Amount</th>
               </tr>
             </thead>
             <tbody>
               {payrollRuns.map(run => (
                 <tr key={run.id}>
                   <td>{run.id}</td>
-                  <td>{run.date}</td>
+                  <td>{run.employeeId}</td> {/* Display Employee ID */}
+                  <td>{format(new Date(run.payPeriodStart), 'PP')} - {format(new Date(run.payPeriodEnd), 'PP')}</td>
+                  <td>{run.grossPay ? `$${run.grossPay.toFixed(2)}` : 'N/A'}</td>
+                  <td>{run.totalDeductions ? `$${run.totalDeductions.toFixed(2)}` : 'N/A'}</td>
+                  <td>{run.netPay ? `$${run.netPay.toFixed(2)}` : 'N/A'}</td>
                   <td>
                     <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                      run.status === 'Completed' ? 'bg-blue-100 text-blue-800' : 'bg-yellow-100 text-yellow-800'
+                      run.status === 'Processed' ? 'bg-green-100 text-green-800' :
+                      run.status === 'Completed' ? 'bg-blue-100 text-blue-800' : // Assuming 'Completed' is also a valid status
+                      'bg-yellow-100 text-yellow-800' // For other statuses like 'Pending'
                     }`}>
                       {run.status}
                     </span>
                   </td>
-                  <td>{run.totalAmount}</td>
                 </tr>
               ))}
             </tbody>

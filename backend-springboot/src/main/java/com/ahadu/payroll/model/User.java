@@ -4,6 +4,7 @@ import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
 import com.fasterxml.jackson.annotation.JsonIgnore; // <-- IMPORT THIS
 
+import java.math.BigDecimal; // Import BigDecimal for monetary values
 import java.util.HashSet;
 import java.util.Set;
 
@@ -23,6 +24,13 @@ public class User {
     private String emergencyContactName;
     private String emergencyContactPhone;
 
+    // --- NEW FIELDS FOR PAYROLL ---
+    private BigDecimal baseSalary; // Base salary of the employee
+    private BigDecimal taxPercentage; // Tax rate as a percentage (e.g., 0.15 for 15%)
+    private BigDecimal commissionPercentage; // Commission rate as a percentage (e.g., 0.02 for 2%)
+    private String status; // e.g., "Active", "Inactive", "On Leave"
+    // --- END NEW FIELDS ---
+
     // Constructors
     public User() {
     }
@@ -31,6 +39,7 @@ public class User {
         this.username = username;
         this.email = email;
         this.password = password;
+        this.status = "Active"; // Default status for new users
     }
 
     // Getters and Setters
@@ -46,6 +55,7 @@ public class User {
         return username;
     }
 
+    // Corrected the typo here: removed the duplicate 'void'
     public void setUsername(String username) {
         this.username = username;
     }
@@ -114,6 +124,43 @@ public class User {
         this.emergencyContactPhone = emergencyContactPhone;
     }
 
+    // --- NEW GETTERS AND SETTERS FOR PAYROLL FIELDS ---
+    public BigDecimal getBaseSalary() {
+        return baseSalary;
+    }
+
+    public void setBaseSalary(BigDecimal baseSalary) {
+        this.baseSalary = baseSalary;
+    }
+
+    public BigDecimal getTaxPercentage() {
+        return taxPercentage;
+    }
+
+    public void setTaxPercentage(BigDecimal taxPercentage) {
+        this.taxPercentage = taxPercentage;
+    }
+
+    public BigDecimal getCommissionPercentage() {
+        return commissionPercentage;
+    }
+
+    public void setCommissionPercentage(BigDecimal commissionPercentage) {
+        this.commissionPercentage = commissionPercentage;
+    }
+
+    // Implemented getEmployeeStatus based on the new 'status' field
+    @JsonIgnore // Prevents this from being serialized to JSON if you don't want it in API
+                // responses
+    public String getEmployeeStatus() {
+        return this.status;
+    }
+
+    public void setStatus(String status) {
+        this.status = status;
+    }
+    // --- END NEW GETTERS AND SETTERS ---
+
     @Override
     public String toString() {
         return "User{" +
@@ -126,14 +173,10 @@ public class User {
                 ", profilePictureUrl='" + profilePictureUrl + '\'' +
                 ", emergencyContactName='" + emergencyContactName + '\'' +
                 ", emergencyContactPhone='" + emergencyContactPhone + '\'' +
+                ", baseSalary=" + baseSalary + // Include new fields in toString
+                ", taxPercentage=" + taxPercentage +
+                ", commissionPercentage=" + commissionPercentage +
+                ", status='" + status + '\'' +
                 '}';
-    }
-
-    @JsonIgnore // <-- THIS IS THE RECOMMENDED FIX
-    public String getEmployeeStatus() {
-        // Keep the UnsupportedOperationException if this method is meant for internal
-        // use
-        // and its implementation is pending, but you don't want it in JSON.
-        throw new UnsupportedOperationException("Unimplemented method 'getEmployeeStatus'");
     }
 }

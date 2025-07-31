@@ -36,9 +36,9 @@ public class PayrollController { // Removed @PreAuthorize at class level to allo
     /**
      * Endpoint to trigger payroll processing for a given period.
      * Only accessible by ADMINs.
+     * * @param request A DTO containing the start and end dates for the payroll
+     * period.
      * 
-     * @param request A DTO containing the start and end dates for the payroll
-     *                period.
      * @return ResponseEntity with a list of generated Payroll records and CREATED
      *         status.
      */
@@ -55,8 +55,7 @@ public class PayrollController { // Removed @PreAuthorize at class level to allo
 
     /**
      * Retrieves all payroll runs. Only accessible by ADMINs.
-     * 
-     * @return ResponseEntity with a list of all Payroll records.
+     * * @return ResponseEntity with a list of all Payroll records.
      */
     @GetMapping("/runs")
     @PreAuthorize("hasAuthority('ADMIN')") // Specific authorization for admin actions
@@ -68,8 +67,8 @@ public class PayrollController { // Removed @PreAuthorize at class level to allo
     /**
      * Retrieves a single payroll record by its ID. Only accessible by ADMINs.
      * This might be used for viewing details of a specific payslip.
+     * * @param id The ID of the payroll record.
      * 
-     * @param id The ID of the payroll record.
      * @return ResponseEntity with the Payroll object or not found status.
      */
     @GetMapping("/runs/{id}")
@@ -83,8 +82,7 @@ public class PayrollController { // Removed @PreAuthorize at class level to allo
     /**
      * Retrieves payroll records (payslips) for the authenticated employee.
      * Accessible by both USERs and ADMINs (to view their own payslips).
-     * 
-     * @return ResponseEntity with a list of Payroll records for the current user.
+     * * @return ResponseEntity with a list of Payroll records for the current user.
      */
     @GetMapping("/my-payslips")
     @PreAuthorize("hasAnyAuthority('USER', 'ADMIN')") // Accessible by both USER and ADMIN
