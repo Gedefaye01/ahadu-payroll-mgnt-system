@@ -42,13 +42,39 @@ import ProtectedRoute from './components/ProtectedRoute'; // Ensure this path is
 export default function App() {
   useHeaderScroll(); // Call the custom hook
 
+  // Function to determine if the user is authenticated
+  const isAuthenticated = () => {
+    return !!localStorage.getItem('token');
+  };
+
+  // Function to get the user's role
+  const getUserRole = () => {
+    return localStorage.getItem('userRole');
+  };
+
   return (
     <div className="flex flex-col min-h-screen font-inter">
       <Header />
       <main className="flex-grow">
         <Routes>
           {/* Public Routes - Accessible to everyone */}
-          <Route path="/" element={<Home />} />
+          {/* Conditional rendering for the root path:
+              If authenticated, redirect to the appropriate dashboard.
+              Otherwise, show the public Home page. */}
+          <Route
+            path="/"
+            element={
+              isAuthenticated() ? (
+                getUserRole() === 'ADMIN' ? (
+                  <Navigate to="/admin-dashboard" replace />
+                ) : (
+                  <Navigate to="/employee-profile" replace />
+                )
+              ) : (
+                <Home />
+              )
+            }
+          />
           <Route path="/about" element={<About />} />
           <Route path="/contact" element={<ContactUs />} />
           <Route path="/signin" element={<SignIn />} />
@@ -57,12 +83,13 @@ export default function App() {
           <Route path="/terms" element={<TermsOfService />} />
 
           {/* Dashboard Redirect: Redirects to the appropriate dashboard based on stored role */}
+          {/* This route is still useful if someone directly navigates to /dashboard */}
           <Route
             path="/dashboard"
             element={
-              localStorage.getItem('userRole') === 'ADMIN' ? (
+              getUserRole() === 'ADMIN' ? (
                 <Navigate to="/admin-dashboard" replace />
-              ) : localStorage.getItem('userRole') === 'USER' ? (
+              ) : getUserRole() === 'USER' ? (
                 <Navigate to="/employee-profile" replace />
               ) : (
                 <Navigate to="/signin" replace />
@@ -72,10 +99,12 @@ export default function App() {
 
           {/* Protected Routes for Users and Admins (shared access) */}
           <Route element={<ProtectedRoute allowedRoles={['USER', 'ADMIN']} />}>
-            <Route path="/payslip" element={<div className="page-container">User Payslip Placeholder</div>} />
-            <Route path="/profile" element={<div className="page-container">User Profile Placeholder</div>} />
+            {/* These routes are now directly accessible from the header for logged-in users */}
             <Route path="/change-password" element={<ChangePassword />} />
             <Route path="/company-announcements" element={<CompanyAnnouncements />} />
+            {/* Placeholder routes that might be removed or replaced by actual components */}
+            <Route path="/payslip" element={<div className="page-container">User Payslip Placeholder</div>} />
+            <Route path="/profile" element={<div className="page-container">User Profile Placeholder</div>} />
           </Route>
 
           {/* Protected Routes specifically for Employees */}
