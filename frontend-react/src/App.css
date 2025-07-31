@@ -1,8 +1,8 @@
 /* --- Root Variables (for easier theming) --- */
 :root {
-    --primary-color: #7b1235; /* Ahadu Bank Primary Color */
+    --primary-color: #75073d; /* Ahadu Bank Primary Color */
     --secondary-color: #d4af37; /* Ahadu Bank Secondary Color (Gold) */
-    --dark-primary: #7b1235; /* Darker shade for footer/hover */
+    --dark-primary: #75073d; /* Darker shade for footer/hover */
     --light-bg: #f4f7f6; /* Light grey background */
     --light-card-bg: #ffffff; /* White for cards */
     --light-section-bg: #fcfcfc; /* Very light grey for sections */
@@ -79,7 +79,7 @@ body {
 .text-green-800 { color: #065f46; }
 .bg-red-100 { background-color: #fee2e2; }
 .text-red-800 { color: #991b1b; }
-.text-indigo-600 { color: #4f46e5; }
+.text-indigo-600 { color: #75073d; }
 .hover\:text-indigo-900:hover { color: #312e81; }
 .text-red-600 { color: #dc2626; }
 .hover\:text-red-900:hover { color: #7f1d1d; }
