@@ -13,14 +13,16 @@ import {
 
 /**
  * EmployeeProfile Component
- * Provides a personalized dashboard for employees, displaying a welcome message
- * and a grid of cards for various employee-specific activities.
+ * Provides a personalized dashboard for employees, displaying a welcome message,
+ * the user's profile photo, and a grid of cards for various employee-specific activities.
  */
 function EmployeeProfile() {
   const navigate = useNavigate();
 
-  // Get employee username from localStorage, default to 'Employee' if not found
+  // Get employee username and photo URL from localStorage.
+  // Default to 'Employee' and a placeholder image if not found.
   const employeeUsername = localStorage.getItem('username') || 'Employee';
+  const userPhotoUrl = localStorage.getItem('userPhotoUrl') || 'https://placehold.co/100x100/E0F2F7/000000?text=User';
 
   // Define employee activities with their details
   const employeeActivities = [
@@ -71,22 +73,30 @@ function EmployeeProfile() {
   return (
     <div className="page-container p-6 max-w-6xl mx-auto bg-white rounded-lg shadow-md min-h-screen">
       {/* Welcome Section */}
-      <div className="employee-welcome-section"> {/* Corrected: Removed curly braces around string */}
-        <LayoutDashboard className="employee-welcome-icon" /> {/* Corrected: Removed curly braces around string */}
+      <div className="employee-welcome-section">
+        {/* User Profile Photo */}
+        <img
+          src={userPhotoUrl}
+          alt="User Profile"
+          className="employee-profile-photo" // New class for the photo
+          // Fallback for broken image links
+          onError={(e) => { e.target.onerror = null; e.target.src = 'https://placehold.co/100x100/E0F2F7/000000?text=User'; }}
+        />
+        <LayoutDashboard className="employee-welcome-icon" />
         <h2 className="employee-welcome-title">Hello, {employeeUsername}!</h2>
         <p className="employee-welcome-text">Your personal dashboard for Ahadu Payroll System.</p>
       </div>
 
       {/* Activities Grid */}
-      <div className="employee-activities-grid"> {/* Corrected: Removed curly braces around string */}
+      <div className="employee-activities-grid">
         {employeeActivities.map((activity, index) => (
           <div
             key={index}
-            className="employee-activity-card" // Corrected: Removed curly braces around string
+            className="employee-activity-card"
             onClick={() => navigate(activity.path)}
           >
             {activity.icon && (
-              <activity.icon className="employee-activity-icon" /> // Corrected: Removed curly braces around string
+              <activity.icon className="employee-activity-icon" />
             )}
             <h3 className="employee-activity-title">{activity.title}</h3>
             <p className="employee-activity-description">{activity.description}</p>
@@ -95,7 +105,7 @@ function EmployeeProfile() {
                 e.stopPropagation();
                 navigate(activity.path);
               }}
-              className="btn btn-primary employee-activity-button" // Corrected: Removed curly braces around string
+              className="btn btn-primary employee-activity-button"
             >
               Go to {activity.title.split(' ')[0]}
             </button>
