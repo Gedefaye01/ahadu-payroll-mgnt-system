@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import axios from 'axios';
+import { toast } from 'react-toastify'; // Ensure react-toastify is installed and configured
 
 const ChangePassword = () => {
   const [formData, setFormData] = useState({
@@ -9,43 +9,54 @@ const ChangePassword = () => {
   });
 
   const [loading, setLoading] = useState(false);
-  const [successMessage, setSuccessMessage] = useState('');
-  const [errorMessage, setErrorMessage] = useState('');
+  // Removed successMessage and errorMessage states as toast will handle messages
+  // const [successMessage, setSuccessMessage] = useState('');
+  // const [errorMessage, setErrorMessage] = useState('');
+
+  // Define the API_BASE_URL using the environment variable
+  const API_BASE_URL = process.env.REACT_APP_API_BASE_URL;
 
   const handleChange = (e) => {
     setFormData({
       ...formData,
       [e.target.name]: e.target.value
     });
-    setSuccessMessage('');
-    setErrorMessage('');
+    // No need to clear messages here, toast handles its own display
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
 
     if (formData.newPassword !== formData.confirmNewPassword) {
-      setErrorMessage('New passwords do not match.');
+      toast.error('New passwords do not match.'); // Use toast for error
       return;
     }
 
+    setLoading(true);
+
     try {
-      setLoading(true);
       const token = localStorage.getItem('token'); // Adjust based on your storage
-      const response = await axios.post(
-        '/api/users/change-password',
+      const response = await fetch(
+        `${API_BASE_URL}/api/users/change-password`, // Use fetch and API_BASE_URL
         {
-          oldPassword: formData.oldPassword,
-          newPassword: formData.newPassword
-        },
-        {
+          method: 'POST',
           headers: {
+            'Content-Type': 'application/json',
             Authorization: `Bearer ${token}`
-          }
+          },
+          body: JSON.stringify({
+            oldPassword: formData.oldPassword,
+            newPassword: formData.newPassword
+          })
         }
       );
 
-      setSuccessMessage('Password changed successfully.');
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to change password.');
+      }
+
+      toast.success('Password changed successfully.'); // Use toast for success
       setFormData({
         oldPassword: '',
         newPassword: '',
@@ -53,8 +64,8 @@ const ChangePassword = () => {
       });
     } catch (error) {
       console.error('Password change error:', error);
-      setErrorMessage(
-        error.response?.data?.message || 'Failed to change password.'
+      toast.error(
+        error.message || 'Failed to change password.' // Use error.message directly
       );
     } finally {
       setLoading(false);
@@ -62,10 +73,10 @@ const ChangePassword = () => {
   };
 
   return (
-    <div className="change-password-page">
-      <h2>Change Password</h2>
+    <div className="page-container p-6 max-w-4xl mx-auto bg-white rounded-lg shadow-md mt-10 mb-10">
+      <h2 className="text-3xl font-bold text-center text-gray-800 mb-8">Change Password</h2> {/* Updated styling */}
 
-      <form onSubmit={handleSubmit} className="change-password-form">
+      <form onSubmit={handleSubmit} className="p-6 border border-gray-200 rounded-lg bg-gray-50"> {/* Applied form-container like styling */}
         <div className="form-group">
           <label htmlFor="oldPassword">Current Password</label>
           <input
@@ -75,6 +86,7 @@ const ChangePassword = () => {
             value={formData.oldPassword}
             onChange={handleChange}
             required
+            className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" // Applied form input styling
           />
         </div>
 
@@ -87,6 +99,7 @@ const ChangePassword = () => {
             value={formData.newPassword}
             onChange={handleChange}
             required
+            className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" // Applied form input styling
           />
         </div>
 
@@ -99,13 +112,19 @@ const ChangePassword = () => {
             value={formData.confirmNewPassword}
             onChange={handleChange}
             required
+            className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" // Applied form input styling
           />
         </div>
 
-        {errorMessage && <p className="error-text">{errorMessage}</p>}
-        {successMessage && <p className="success-text">{successMessage}</p>}
+        {/* Removed direct message display, toast handles it */}
+        {/* {errorMessage && <p className="error-text">{errorMessage}</p>}
+        {successMessage && <p className="success-text">{successMessage}</p>} */}
 
-        <button type="submit" disabled={loading}>
+        <button
+          type="submit"
+          className="btn btn-primary w-full" // Applied btn btn-primary classes for consistent styling
+          disabled={loading}
+        >
           {loading ? 'Changing Password...' : 'Change Password'}
         </button>
       </form>
