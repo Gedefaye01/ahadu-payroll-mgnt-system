@@ -71,7 +71,7 @@ export default function App() {
                   <Navigate to="/employee-profile" replace />
                 )
               ) : (
-                <Home />
+                <Home /> // This line explicitly renders the Home component when not authenticated
               )
             }
           />

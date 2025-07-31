@@ -1,8 +1,8 @@
 /* --- Root Variables (for easier theming) --- */
 :root {
-    --primary-color: #721430; /* Ahadu Bank Primary Color */
+    --primary-color: #7b1235; /* Ahadu Bank Primary Color */
     --secondary-color: #d4af37; /* Ahadu Bank Secondary Color (Gold) */
-    --dark-primary: #721430; /* Darker shade for footer/hover */
+    --dark-primary: #7b1235; /* Darker shade for footer/hover */
     --light-bg: #f4f7f6; /* Light grey background */
     --light-card-bg: #ffffff; /* White for cards */
     --light-section-bg: #fcfcfc; /* Very light grey for sections */
