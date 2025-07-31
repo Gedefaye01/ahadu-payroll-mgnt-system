@@ -18,6 +18,9 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+import org.springframework.web.filter.CorsFilter; // New import
+import org.springframework.boot.web.servlet.FilterRegistrationBean; // New import
+import org.springframework.core.Ordered; // New import
 
 import com.ahadu.payroll.service.CustomUserDetailsService;
 
@@ -42,7 +45,9 @@ public class SecurityConfig {
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
                 .csrf(csrf -> csrf.disable())
-                .cors(cors -> cors.configurationSource(corsConfigurationSource()))
+                .cors(cors -> cors.configurationSource(corsConfigurationSource())) // Keep this for completeness, though
+                                                                                   // the FilterRegistrationBean might
+                                                                                   // take precedence
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api/auth/**", "/error").permitAll()
                         .requestMatchers("/api/employees/**").hasAuthority("ADMIN")
@@ -54,7 +59,8 @@ public class SecurityConfig {
                         .hasAuthority("ADMIN")
                         .requestMatchers("/api/salary-components/**").hasAuthority("ADMIN")
                         .requestMatchers("/api/announcements/admin/**").hasAuthority("ADMIN")
-                        .requestMatchers("/api/payroll/my/**", "/api/payslips/**").hasAnyAuthority("USER", "ADMIN")
+                        .requestMatchers("/api/payroll/my-payslips", "/api/payroll/employee/**")
+                        .hasAnyAuthority("USER", "ADMIN") // Ensure specific employee endpoint is covered
                         .requestMatchers("/api/leave-requests/submit", "/api/leave-requests/my/**")
                         .hasAnyAuthority("USER", "ADMIN")
                         .requestMatchers("/api/attendance/my/**", "/api/attendance/clock/**")
@@ -81,8 +87,6 @@ public class SecurityConfig {
                 .map(String::trim)
                 .collect(Collectors.toList());
 
-        // Use allowedOriginPatterns to support wildcard and multiple origins with
-        // credentials
         config.setAllowedOriginPatterns(allowedOriginsList);
 
         config.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
@@ -109,5 +113,14 @@ public class SecurityConfig {
     @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
+    }
+
+    // NEW BEAN: Explicit CorsFilter Registration to ensure it runs early
+    @Bean
+    public FilterRegistrationBean<CorsFilter> corsFilterRegistrationBean() {
+        FilterRegistrationBean<CorsFilter> bean = new FilterRegistrationBean<>(
+                new CorsFilter(corsConfigurationSource()));
+        bean.setOrder(Ordered.HIGHEST_PRECEDENCE); // This ensures it runs before Spring Security's filters
+        return bean;
     }
 }
