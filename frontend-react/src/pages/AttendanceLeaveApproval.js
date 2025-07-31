@@ -1,22 +1,26 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { toast } from 'react-toastify';
+import { format } from 'date-fns'; // Import format for date formatting
 
 /**
  * AttendanceLeaveApproval Component
  * Allows administrators to oversee attendance records and approve/reject leave requests.
  * It interacts with the backend API for fetching all attendance and leave requests,
- * and for updating leave request statuses.
+ * for updating leave request statuses, and now for fetching real-time attendance overview statistics.
  */
 function AttendanceLeaveApproval() {
   const [allLeaveRequests, setAllLeaveRequests] = useState([]);
   const [allAttendanceRecords, setAllAttendanceRecords] = useState([]);
+  const [attendanceStats, setAttendanceStats] = useState({ // New state for aggregated attendance stats
+    totalEmployees: 0,
+    presentToday: 0,
+    onLeaveToday: 0,
+    absentToday: 0,
+  });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // Define the API_BASE_URL using the environment variable
-  const API_BASE_URL = process.env.REACT_APP_API_BASE_URL; // <--- ADD THIS LINE
-
-  // Get JWT token from localStorage for authenticated requests
+  const API_BASE_URL = process.env.REACT_APP_API_BASE_URL;
   const token = localStorage.getItem('token');
   const authHeaders = {
     'Content-Type': 'application/json',
@@ -29,8 +33,7 @@ function AttendanceLeaveApproval() {
    */
   const fetchAllLeaveRequests = useCallback(async () => {
     try {
-      // Use API_BASE_URL instead of hardcoded localhost
-      const response = await fetch(`${API_BASE_URL}/api/leave-requests/all`, { // <--- MODIFIED
+      const response = await fetch(`${API_BASE_URL}/api/leave-requests/admin/all`, { // Assuming an admin endpoint for all requests
         headers: authHeaders
       });
       if (!response.ok) {
@@ -43,7 +46,7 @@ function AttendanceLeaveApproval() {
       toast.error("Failed to load all leave requests.");
       setError("Failed to load leave requests. Please try again.");
     }
-  }, [API_BASE_URL, token, toast]); // Add API_BASE_URL to dependencies
+  }, [API_BASE_URL, token]); // Dependencies: API_BASE_URL, token
 
   /**
    * Fetches all attendance records from the backend API.
@@ -51,8 +54,7 @@ function AttendanceLeaveApproval() {
    */
   const fetchAllAttendanceRecords = useCallback(async () => {
     try {
-      // Use API_BASE_URL instead of hardcoded localhost
-      const response = await fetch(`${API_BASE_URL}/api/attendance/all`, { // <--- MODIFIED
+      const response = await fetch(`${API_BASE_URL}/api/attendance/admin/all`, { // Assuming an admin endpoint for all records
         headers: authHeaders
       });
       if (!response.ok) {
@@ -65,17 +67,45 @@ function AttendanceLeaveApproval() {
       toast.error("Failed to load all attendance records.");
       setError("Failed to load attendance records. Please try again.");
     }
-  }, [API_BASE_URL, token, toast]); // Add API_BASE_URL to dependencies
+  }, [API_BASE_URL, token]); // Dependencies: API_BASE_URL, token
 
-  // Fetch data on component mount
+  /**
+   * Fetches aggregated attendance statistics from the backend API.
+   * This is a NEW function to get the overview directly from the server.
+   * Memoized with useCallback.
+   */
+  const fetchAttendanceStats = useCallback(async () => {
+    try {
+      // Assuming a new backend endpoint for attendance overview for admins
+      const response = await fetch(`${API_BASE_URL}/api/attendance/admin/overview`, {
+        headers: authHeaders
+      });
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      const data = await response.json();
+      setAttendanceStats(data); // Assuming backend returns { totalEmployees, presentToday, onLeaveToday, absentToday }
+    } catch (err) {
+      console.error("Failed to fetch attendance overview:", err);
+      toast.error("Failed to load attendance overview.");
+      setError("Failed to load attendance overview. Please try again.");
+    }
+  }, [API_BASE_URL, token]); // Dependencies: API_BASE_URL, token
+
+  // Fetch all data on component mount
   useEffect(() => {
     const loadData = async () => {
       setLoading(true);
-      await Promise.all([fetchAllLeaveRequests(), fetchAllAttendanceRecords()]);
+      // Fetch all three sets of data concurrently
+      await Promise.all([
+        fetchAllLeaveRequests(),
+        fetchAllAttendanceRecords(),
+        fetchAttendanceStats() // Call the new function
+      ]);
       setLoading(false);
     };
     loadData();
-  }, [fetchAllLeaveRequests, fetchAllAttendanceRecords]);
+  }, [fetchAllLeaveRequests, fetchAllAttendanceRecords, fetchAttendanceStats]); // Add fetchAttendanceStats to dependencies
 
   /**
    * Handles approving or rejecting a leave request.
@@ -83,13 +113,13 @@ function AttendanceLeaveApproval() {
    * @param {string} status - The new status ('approve' or 'reject').
    */
   const handleApproveReject = async (requestId, status) => {
+    // IMPORTANT: Replace window.confirm with a custom modal for better UX
     if (!window.confirm(`Are you sure you want to ${status} this leave request?`)) {
       return;
     }
 
     try {
-      // Use API_BASE_URL instead of hardcoded localhost
-      const response = await fetch(`${API_BASE_URL}/api/leave-requests/${requestId}/${status}`, { // <--- MODIFIED
+      const response = await fetch(`${API_BASE_URL}/api/leave-requests/admin/${requestId}/${status}`, { // Assuming admin endpoint for update
         method: 'PUT',
         headers: authHeaders
       });
@@ -101,6 +131,7 @@ function AttendanceLeaveApproval() {
 
       toast.success(`Leave request ${status}d successfully!`);
       fetchAllLeaveRequests(); // Re-fetch all leave requests to update the list
+      fetchAttendanceStats(); // Re-fetch stats in case leave status affects 'on leave today' count
     } catch (err) {
       console.error(`Error ${status}ing leave request:`, err);
       toast.error(err.message || `Failed to ${status} leave request.`);
@@ -108,18 +139,6 @@ function AttendanceLeaveApproval() {
   };
 
   const pendingLeaveRequests = allLeaveRequests.filter(req => req.status === 'Pending');
-
-  // Simple attendance overview calculation from fetched data
-  const attendanceOverview = {
-    totalEmployees: new Set(allAttendanceRecords.map(rec => rec.employeeId)).size,
-    // These would need more sophisticated logic based on current date and clock-in/out times
-    // For now, these are placeholders or based on simplified logic.
-    // To get accurate "today" stats, you'd filter `allAttendanceRecords` by `LocalDate.now()`
-    presentToday: allAttendanceRecords.filter(rec => rec.status === 'Present' && new Date(rec.date).toDateString() === new Date().toDateString()).length,
-    onLeaveToday: allLeaveRequests.filter(req => req.status === 'Approved' && new Date(req.startDate) <= new Date() && new Date(req.endDate) >= new Date()).length,
-    absentToday: allAttendanceRecords.filter(rec => rec.status === 'Absent' && new Date(rec.date).toDateString() === new Date().toDateString()).length,
-  };
-
 
   if (loading) {
     return (
@@ -145,10 +164,10 @@ function AttendanceLeaveApproval() {
       <div className="mb-8 p-6 border border-gray-200 rounded-lg bg-gray-50">
         <h3 className="text-xl font-semibold text-gray-700 mb-4">Attendance Overview (Today)</h3>
         <div className="grid grid-cols-2 gap-4 text-gray-700">
-          <p><strong>Total Employees:</strong> {attendanceOverview.totalEmployees}</p>
-          <p><strong>Present:</strong> <span className="text-green-600 font-bold">{attendanceOverview.presentToday}</span></p>
-          <p><strong>On Leave:</strong> <span className="text-yellow-600 font-bold">{attendanceOverview.onLeaveToday}</span></p>
-          <p><strong>Absent:</strong> <span className="text-red-600 font-bold">{attendanceOverview.absentToday}</span></p>
+          <p><strong>Total Employees:</strong> {attendanceStats.totalEmployees}</p> {/* Use data from new state */}
+          <p><strong>Present:</strong> <span className="text-green-600 font-bold">{attendanceStats.presentToday}</span></p> {/* Use data from new state */}
+          <p><strong>On Leave:</strong> <span className="text-yellow-600 font-bold">{attendanceStats.onLeaveToday}</span></p> {/* Use data from new state */}
+          <p><strong>Absent:</strong> <span className="text-red-600 font-bold">{attendanceStats.absentToday}</span></p> {/* Use data from new state */}
         </div>
       </div>
 
@@ -173,9 +192,9 @@ function AttendanceLeaveApproval() {
               {pendingLeaveRequests.map(req => (
                 <tr key={req.id}>
                   <td>{req.id}</td>
-                  <td>{req.employeeUsername}</td>
+                  <td>{req.employeeUsername}</td> {/* Assuming backend provides employeeUsername */}
                   <td>{req.leaveType}</td>
-                  <td>{req.startDate} to {req.endDate}</td>
+                  <td>{format(new Date(req.startDate), 'PP')} to {format(new Date(req.endDate), 'PP')}</td> {/* Format dates */}
                   <td>{req.reason}</td>
                   <td className="table-actions text-center">
                     <button
@@ -219,9 +238,9 @@ function AttendanceLeaveApproval() {
               {allLeaveRequests.map(req => (
                 <tr key={req.id}>
                   <td>{req.id}</td>
-                  <td>{req.employeeUsername}</td>
+                  <td>{req.employeeUsername}</td> {/* Assuming backend provides employeeUsername */}
                   <td>{req.leaveType}</td>
-                  <td>{req.startDate} to {req.endDate}</td>
+                  <td>{format(new Date(req.startDate), 'PP')} to {format(new Date(req.endDate), 'PP')}</td> {/* Format dates */}
                   <td>
                     <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
                       req.status === 'Approved' ? 'bg-green-100 text-green-800' :
@@ -231,7 +250,48 @@ function AttendanceLeaveApproval() {
                       {req.status}
                     </span>
                   </td>
-                  <td>{new Date(req.requestDate).toLocaleDateString()}</td>
+                  <td>{format(new Date(req.requestDate), 'PP')}</td> {/* Format date */}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+
+      {/* All Attendance Records Table */}
+      <h3 className="text-xl font-semibold text-gray-700 mt-8 mb-4">All Attendance Records</h3>
+      {allAttendanceRecords.length === 0 ? (
+        <p className="text-center text-gray-500">No attendance records.</p>
+      ) : (
+        <div className="table-container">
+          <table className="data-table">
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Employee</th>
+                <th>Date</th>
+                <th>Clock In</th>
+                <th>Clock Out</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              {allAttendanceRecords.map(rec => (
+                <tr key={rec.id}>
+                  <td>{rec.id}</td>
+                  <td>{rec.employeeUsername}</td> {/* Assuming backend provides employeeUsername */}
+                  <td>{format(new Date(rec.date), 'PP')}</td>
+                  <td>{rec.clockInTime || 'N/A'}</td>
+                  <td>{rec.clockOutTime || 'N/A'}</td>
+                  <td>
+                    <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                      rec.status === 'Present' ? 'bg-green-100 text-green-800' :
+                      rec.status === 'Absent' ? 'bg-red-100 text-red-800' :
+                      'bg-yellow-100 text-yellow-800' // For other statuses like 'On Leave' if applicable
+                    }`}>
+                      {rec.status}
+                    </span>
+                  </td>
                 </tr>
               ))}
             </tbody>

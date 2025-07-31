@@ -1,6 +1,7 @@
 package com.ahadu.payroll.model;
 
 import org.springframework.data.annotation.Id;
+import org.springframework.data.annotation.Transient; // Import for @Transient
 import org.springframework.data.mongodb.core.mapping.Document;
 import java.time.LocalDate;
 import java.time.LocalTime;
@@ -21,6 +22,9 @@ public class Attendance {
     private LocalTime clockOutTime;
     private String status; // e.g., "Present", "Absent", "Late", "On Leave"
     private String remarks; // Additional notes (e.g., reason for absence/late)
+
+    @Transient // This field will not be persisted to MongoDB
+    private String employeeUsername; // To hold the employee's username for frontend display
 
     // Constructors
     public Attendance() {
@@ -92,5 +96,14 @@ public class Attendance {
 
     public void setRemarks(String remarks) {
         this.remarks = remarks;
+    }
+
+    // Getter and Setter for the transient employeeUsername
+    public String getEmployeeUsername() {
+        return employeeUsername;
+    }
+
+    public void setEmployeeUsername(String employeeUsername) {
+        this.employeeUsername = employeeUsername;
     }
 }

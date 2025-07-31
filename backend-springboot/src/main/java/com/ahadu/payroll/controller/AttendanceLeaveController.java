@@ -2,6 +2,7 @@ package com.ahadu.payroll.controller;
 
 import com.ahadu.payroll.model.Attendance;
 import com.ahadu.payroll.model.LeaveRequest;
+import com.ahadu.payroll.payload.AttendanceOverviewResponse; // Import the new DTO
 import com.ahadu.payroll.security.UserDetailsImpl;
 import com.ahadu.payroll.service.AttendanceService;
 import com.ahadu.payroll.service.LeaveRequestService;
@@ -59,7 +60,8 @@ public class AttendanceLeaveController {
     @GetMapping("/attendance/all")
     @PreAuthorize("hasAuthority('ADMIN')")
     public ResponseEntity<List<Attendance>> getAllAttendance() {
-        List<Attendance> attendanceRecords = attendanceService.getAllAttendance();
+        // Service method will now populate employeeUsername
+        List<Attendance> attendanceRecords = attendanceService.getAllAttendanceWithUsernames();
         return ResponseEntity.ok(attendanceRecords);
     }
 
@@ -73,14 +75,16 @@ public class AttendanceLeaveController {
         }
 
         UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
-        List<Attendance> myAttendance = attendanceService.getAttendanceByEmployeeId(userDetails.getId());
+        // Service method will now populate employeeUsername
+        List<Attendance> myAttendance = attendanceService.getAttendanceByEmployeeIdWithUsernames(userDetails.getId());
         return ResponseEntity.ok(myAttendance);
     }
 
     @GetMapping("/attendance/employee/{employeeId}")
     @PreAuthorize("hasAuthority('ADMIN')")
     public ResponseEntity<List<Attendance>> getAttendanceByEmployeeId(@PathVariable String employeeId) {
-        List<Attendance> attendance = attendanceService.getAttendanceByEmployeeId(employeeId);
+        // Service method will now populate employeeUsername
+        List<Attendance> attendance = attendanceService.getAttendanceByEmployeeIdWithUsernames(employeeId);
         return ResponseEntity.ok(attendance);
     }
 
@@ -92,9 +96,24 @@ public class AttendanceLeaveController {
             @RequestParam("endDate") String endDateString) {
         LocalDate startDate = LocalDate.parse(startDateString);
         LocalDate endDate = LocalDate.parse(endDateString);
-        List<Attendance> attendance = attendanceService.getAttendanceByEmployeeIdAndDateRange(employeeId, startDate,
+        // Service method will now populate employeeUsername
+        List<Attendance> attendance = attendanceService.getAttendanceByEmployeeIdAndDateRangeWithUsernames(employeeId,
+                startDate,
                 endDate);
         return ResponseEntity.ok(attendance);
+    }
+
+    /**
+     * NEW ENDPOINT: Retrieves aggregated attendance overview statistics for admins.
+     * Accessible only by ADMINs.
+     * 
+     * @return ResponseEntity with AttendanceOverviewResponse DTO.
+     */
+    @GetMapping("/attendance/admin/overview")
+    @PreAuthorize("hasAuthority('ADMIN')")
+    public ResponseEntity<AttendanceOverviewResponse> getAttendanceOverview() {
+        AttendanceOverviewResponse overview = attendanceService.getAttendanceOverview();
+        return ResponseEntity.ok(overview);
     }
 
     // --- Leave Request Endpoints ---
@@ -110,6 +129,7 @@ public class AttendanceLeaveController {
 
         UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
         leaveRequest.setEmployeeId(userDetails.getId());
+        // Frontend already sets this, but backend can re-verify/set
         leaveRequest.setEmployeeUsername(userDetails.getUsername());
         LeaveRequest submittedRequest = leaveRequestService.submitLeaveRequest(leaveRequest);
         return new ResponseEntity<>(submittedRequest, HttpStatus.CREATED);
@@ -118,7 +138,9 @@ public class AttendanceLeaveController {
     @GetMapping("/leave-requests/all")
     @PreAuthorize("hasAuthority('ADMIN')")
     public ResponseEntity<List<LeaveRequest>> getAllLeaveRequests() {
-        List<LeaveRequest> leaveRequests = leaveRequestService.getAllLeaveRequests();
+        // Assuming leaveRequestService.getAllLeaveRequests() will also be updated to
+        // populate employeeUsername
+        List<LeaveRequest> leaveRequests = leaveRequestService.getAllLeaveRequestsWithUsernames();
         return ResponseEntity.ok(leaveRequests);
     }
 
@@ -132,7 +154,10 @@ public class AttendanceLeaveController {
         }
 
         UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
-        List<LeaveRequest> myLeaveRequests = leaveRequestService.getLeaveRequestsByEmployeeId(userDetails.getId());
+        // Assuming leaveRequestService.getLeaveRequestsByEmployeeId() will also be
+        // updated to populate employeeUsername
+        List<LeaveRequest> myLeaveRequests = leaveRequestService
+                .getLeaveRequestsByEmployeeIdWithUsernames(userDetails.getId());
         return ResponseEntity.ok(myLeaveRequests);
     }
 

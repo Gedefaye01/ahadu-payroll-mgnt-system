@@ -1,9 +1,10 @@
 package com.ahadu.payroll.model;
 
 import org.springframework.data.annotation.Id;
+import org.springframework.data.annotation.Transient; // Import for @Transient
 import org.springframework.data.mongodb.core.mapping.Document;
 import java.time.LocalDate;
-import java.time.LocalDateTime;
+import java.time.LocalDateTime; // For requestDate
 
 /**
  * Represents an employee's leave request.
@@ -15,26 +16,26 @@ public class LeaveRequest {
     @Id
     private String id;
 
-    private String employeeId; // ID of the employee requesting leave
-    private String employeeUsername; // Username of the employee
-    private String leaveType; // e.g., "Sick Leave", "Vacation", "Personal Leave"
+    private String employeeId; // Reference to the User ID
+    private String leaveType; // e.g., "Sick Leave", "Annual Leave", "Maternity Leave"
     private LocalDate startDate;
     private LocalDate endDate;
     private String reason;
     private String status; // e.g., "Pending", "Approved", "Rejected"
-    private LocalDateTime requestDate; // Date when the request was made
-    private String approvedBy; // ID of the admin who approved/rejected (optional)
+    private LocalDateTime requestDate; // When the request was submitted
+    private String approvedBy; // ID of the admin who approved/rejected
+
+    @Transient // This field will not be persisted to MongoDB
+    private String employeeUsername; // To hold the employee's username for frontend display
 
     // Constructors
     public LeaveRequest() {
-        this.requestDate = LocalDateTime.now(); // Default to current request date
+        this.requestDate = LocalDateTime.now(); // Default to current timestamp
         this.status = "Pending"; // Default status
     }
 
-    public LeaveRequest(String employeeId, String employeeUsername, String leaveType, LocalDate startDate,
-            LocalDate endDate, String reason) {
+    public LeaveRequest(String employeeId, String leaveType, LocalDate startDate, LocalDate endDate, String reason) {
         this.employeeId = employeeId;
-        this.employeeUsername = employeeUsername;
         this.leaveType = leaveType;
         this.startDate = startDate;
         this.endDate = endDate;
@@ -58,14 +59,6 @@ public class LeaveRequest {
 
     public void setEmployeeId(String employeeId) {
         this.employeeId = employeeId;
-    }
-
-    public String getEmployeeUsername() {
-        return employeeUsername;
-    }
-
-    public void setEmployeeUsername(String employeeUsername) {
-        this.employeeUsername = employeeUsername;
     }
 
     public String getLeaveType() {
@@ -122,5 +115,14 @@ public class LeaveRequest {
 
     public void setApprovedBy(String approvedBy) {
         this.approvedBy = approvedBy;
+    }
+
+    // Getter and Setter for the transient employeeUsername
+    public String getEmployeeUsername() {
+        return employeeUsername;
+    }
+
+    public void setEmployeeUsername(String employeeUsername) {
+        this.employeeUsername = employeeUsername;
     }
 }
