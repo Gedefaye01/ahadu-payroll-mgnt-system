@@ -1,6 +1,6 @@
 /* --- Root Variables (for easier theming) --- */
 :root {
-    --primary-color: #612235; /* Ahadu Bank Primary Color */
+    --primary-color: #75073d; /* Ahadu Bank Primary Color */
     --secondary-color: #d4af37; /* Ahadu Bank Secondary Color (Gold) */
     --dark-primary: #4a1a2b; /* Darker shade for footer/hover */
     --light-bg: #f4f7f6; /* Light grey background */
@@ -106,12 +106,6 @@ body {
     transition: transform 0.3s ease, filter 0.3s ease;
     /* Adjusted filter to try and match logo color to primary-color */
     filter: brightness(0.9) contrast(1.2) sepia(0.5) hue-rotate(-20deg) saturate(2);
-}
-
-.header-logo img:hover {
-    transform: scale(1.08);
-    /* Apply filter on hover too, slightly brighter */
-    filter: brightness(1.1) contrast(1.2) sepia(0.5) hue-rotate(-20deg) saturate(2);
 }
 
 .header-nav nav {
