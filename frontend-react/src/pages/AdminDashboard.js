@@ -8,7 +8,9 @@ import {
   Shield,
   CalendarCheck,
   Briefcase,
-  LayoutDashboard // For the main dashboard icon
+  LayoutDashboard, // For the main dashboard icon
+  Megaphone, // Added for Company Announcements
+  KeyRound // Added for Change Password
 } from 'lucide-react';
 
 /**
@@ -20,9 +22,10 @@ function AdminDashboard() {
   const navigate = useNavigate();
 
   // Get admin username and photo URL from localStorage.
-  // Default to 'Admin' and a placeholder image if not found.
+  // Default to 'Admin' and a fallback image if not found.
   const adminUsername = localStorage.getItem('username') || 'Admin';
-  const userPhotoUrl = localStorage.getItem('userPhotoUrl') || 'https://placehold.co/100x100/E0F2F7/000000?text=User';
+  // Fallback to a default image in the public folder if userPhotoUrl is not set or invalid
+  const userPhotoUrl = localStorage.getItem('userPhotoUrl') || '/default-user-avatar.png'; // Assuming a default avatar exists in your public folder
 
   // Define dashboard activities with their details
   const dashboardActivities = [
@@ -30,13 +33,13 @@ function AdminDashboard() {
       title: 'Manage Employees',
       description: 'Add, edit, and remove employee records.',
       icon: Users,
-      path: '/manage-employees',
+      path: '/add-employee', // Corrected path based on App.js routes
     },
     {
       title: 'Payroll Processing',
       description: 'Run payroll, generate payslips, and manage payroll cycles.',
       icon: DollarSign,
-      path: '/process-payroll',
+      path: '/admin-payroll-management', // Corrected path
     },
     {
       title: 'System Settings',
@@ -54,7 +57,7 @@ function AdminDashboard() {
       title: 'User Roles & Permissions',
       description: 'Define and assign roles, manage access controls.',
       icon: Shield,
-      path: '/manage-roles',
+      path: '/user-role-management', // Corrected path
     },
     {
       title: 'Attendance & Leave Approvals',
@@ -68,23 +71,36 @@ function AdminDashboard() {
       icon: Briefcase,
       path: '/salary-structure',
     },
+    // Adding Change Password and Company Announcements as they were removed from Header
+    {
+      title: 'Company Announcements',
+      description: 'View and manage company-wide announcements.',
+      icon: Megaphone,
+      path: '/company-announcements',
+    },
+    {
+      title: 'Change Password',
+      description: 'Change your administrator account password.',
+      icon: KeyRound,
+      path: '/change-password',
+    },
   ];
 
   return (
-    <div className="page-container"> {/* Removed inline styling classes */}
+    <div className="page-container"> {/* Uses page-container from App.css */}
       {/* Welcome Section */}
       <div className="admin-welcome-section">
         {/* User Profile Photo */}
         <img
           src={userPhotoUrl}
           alt="User Profile"
-          className="admin-profile-photo" // Class for the photo, consistent with employee-profile
-          // Fallback for broken image links
+          className="admin-profile-photo"
+          // Fallback for broken image links or if userPhotoUrl is not a valid image
           onError={(e) => { e.target.onerror = null; e.target.src = 'https://placehold.co/100x100/E0F2F7/000000?text=User'; }}
         />
         <LayoutDashboard className="admin-welcome-icon" />
         <h2 className="admin-welcome-title">Welcome, {adminUsername}!</h2>
-        <p className="admin-welcome-text">Your Are Resposible For Managing Ahadu Bank's HR System.</p>
+        <p className="admin-welcome-text">Your central hub for managing Ahadu Payroll System.</p>
       </div>
 
       {/* Activities Grid */}
@@ -102,7 +118,7 @@ function AdminDashboard() {
             <p className="admin-activity-description">{activity.description}</p>
             <button
               onClick={(e) => {
-                e.stopPropagation();
+                e.stopPropagation(); // Prevent card's onClick from firing
                 navigate(activity.path);
               }}
               className="btn btn-primary admin-activity-button"

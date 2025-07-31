@@ -20,9 +20,10 @@ function EmployeeProfile() {
   const navigate = useNavigate();
 
   // Get employee username and photo URL from localStorage.
-  // Default to 'Employee' and a placeholder image if not found.
+  // Default to 'Employee' and a fallback image if not found.
   const employeeUsername = localStorage.getItem('username') || 'Employee';
-  const userPhotoUrl = localStorage.getItem('userPhotoUrl') || 'https://placehold.co/100x100/E0F2F7/000000?text=User';
+  // Fallback to a default image in the public folder if userPhotoUrl is not set or invalid
+  const userPhotoUrl = localStorage.getItem('userPhotoUrl') || '/default-user-avatar.png'; // Assuming a default avatar exists in your public folder
 
   // Define employee activities with their details
   const employeeActivities = [
@@ -71,7 +72,7 @@ function EmployeeProfile() {
   ];
 
   return (
-    <div className="page-container"> {/* This class defines the main page layout and styling */}
+    <div className="page-container">
       {/* Welcome Section */}
       <div className="employee-welcome-section">
         {/* User Profile Photo */}
@@ -79,7 +80,7 @@ function EmployeeProfile() {
           src={userPhotoUrl}
           alt="User Profile"
           className="employee-profile-photo"
-          // Fallback for broken image links
+          // Fallback for broken image links or if userPhotoUrl is not a valid image
           onError={(e) => { e.target.onerror = null; e.target.src = 'https://placehold.co/100x100/E0F2F7/000000?text=User'; }}
         />
         <LayoutDashboard className="employee-welcome-icon" />
