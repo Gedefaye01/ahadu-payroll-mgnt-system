@@ -43,6 +43,8 @@ function Header() {
     localStorage.removeItem('token');
     localStorage.removeItem('userRole');
     localStorage.removeItem('userId'); // Also remove userId if stored
+    localStorage.removeItem('username'); // Clear username on logout
+    localStorage.removeItem('userPhotoUrl'); // Clear user photo URL on logout
     setIsAuthenticated(false);
     setUserRole(null);
     toast.info("You have been logged out.");
@@ -62,6 +64,11 @@ function Header() {
       </div>
       <div className="header-nav">
         <nav>
+          {/* Links always visible, but conditionally styled/ordered */}
+          <Link to="/">Home</Link> {/* Home link is always there */}
+          <Link to="/about">About Us</Link>
+          <Link to="/contact">Contact Us</Link>
+
           {isAuthenticated ? (
             <>
               {/* Links for authenticated users */}
@@ -75,10 +82,7 @@ function Header() {
             </>
           ) : (
             <>
-              {/* Links for unauthenticated users */}
-              <Link to="/">Home</Link>
-              <Link to="/about">About Us</Link>
-              <Link to="/contact">Contact Us</Link>
+              {/* Links for unauthenticated users (Sign In/Sign Up) */}
               <Link to="/signin" className="btn btn-primary">Sign In</Link>
               <Link to="/signup" className="btn btn-secondary">Sign Up</Link>
             </>

@@ -14,7 +14,7 @@ function EmployeeProfileUpdate() {
     address: '',
     emergencyContactName: '',
     emergencyContactPhone: '',
-    profilePictureUrl: '', // New field for profile picture URL
+    profilePictureUrl: '', // Field for profile picture URL
   });
   const [selectedFile, setSelectedFile] = useState(null);
   const [filePreview, setFilePreview] = useState(null);
@@ -22,12 +22,13 @@ function EmployeeProfileUpdate() {
   const [error, setError] = useState(null);
   const fileInputRef = useRef(null); // Ref for the hidden file input
 
+  // Ensure these environment variables are correctly set in your project
   const API_BASE_URL = process.env.REACT_APP_API_BASE_URL;
   const token = localStorage.getItem('token');
 
   /**
    * Fetches the current user's profile data from the backend API.
-   * Memoized with useCallback.
+   * Memoized with useCallback to prevent unnecessary re-renders.
    */
   const fetchUserProfile = useCallback(async () => {
     setLoading(true);
@@ -55,6 +56,12 @@ function EmployeeProfileUpdate() {
         profilePictureUrl: data.profilePictureUrl || '', // Set the existing URL
       });
       setFilePreview(data.profilePictureUrl || null); // Set preview to existing URL
+      // Also update localStorage with the fetched photo URL
+      if (data.profilePictureUrl) {
+        localStorage.setItem('userPhotoUrl', data.profilePictureUrl);
+      } else {
+        localStorage.removeItem('userPhotoUrl');
+      }
     } catch (err) {
       console.error("Failed to fetch user profile:", err);
       setError("Failed to load your profile. Please try again.");
@@ -64,12 +71,13 @@ function EmployeeProfileUpdate() {
     }
   }, [API_BASE_URL, token]);
 
+  // Effect hook to fetch user profile data on component mount
   useEffect(() => {
     fetchUserProfile();
   }, [fetchUserProfile]);
 
   /**
-   * Handles changes to form input fields.
+   * Handles changes to form input fields, updating the profile state.
    */
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -77,7 +85,7 @@ function EmployeeProfileUpdate() {
   };
 
   /**
-   * Handles file selection for profile picture.
+   * Handles file selection for profile picture, creating a local URL for preview.
    */
   const handleFileChange = (e) => {
     const file = e.target.files[0];
@@ -86,13 +94,14 @@ function EmployeeProfileUpdate() {
       setFilePreview(URL.createObjectURL(file)); // Create a local URL for preview
     } else {
       setSelectedFile(null);
-      setFilePreview(profile.profilePictureUrl || null); // Revert to existing or clear
+      // Revert to existing URL if available, otherwise clear preview
+      setFilePreview(profile.profilePictureUrl || null);
     }
   };
 
   /**
-   * Uploads the selected profile picture.
-   * This is a separate function as file uploads often require a different Content-Type.
+   * Uploads the selected profile picture to a dedicated endpoint.
+   * Returns the new URL if successful, otherwise null.
    */
   const uploadProfilePicture = async () => {
     if (!selectedFile) return null; // No file to upload
@@ -100,13 +109,14 @@ function EmployeeProfileUpdate() {
     setLoading(true);
     try {
       const formData = new FormData();
-      formData.append('profilePicture', selectedFile); // 'profilePicture' is the field name your backend expects
+      formData.append('profilePicture', selectedFile); // 'profilePicture' is the expected field name
 
       const response = await fetch(`${API_BASE_URL}/api/my-profile/upload-picture`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
-          // DO NOT set 'Content-Type': 'multipart/form-data' here. The browser does it automatically with FormData.
+          // DO NOT set 'Content-Type': 'multipart/form-data' here.
+          // The browser automatically sets it with the correct boundary when using FormData.
         },
         body: formData,
       });
@@ -118,10 +128,11 @@ function EmployeeProfileUpdate() {
 
       const result = await response.json();
       toast.success('Profile picture uploaded successfully!');
-      // Update the profile with the new URL received from the backend
+      // Update the profile state with the new URL received from the backend
       setProfile(prev => ({ ...prev, profilePictureUrl: result.profilePictureUrl }));
       setFilePreview(result.profilePictureUrl); // Update preview with actual URL
       setSelectedFile(null); // Clear selected file after successful upload
+      localStorage.setItem('userPhotoUrl', result.profilePictureUrl); // PERSIST PHOTO URL TO LOCALSTORAGE
       return result.profilePictureUrl; // Return the new URL
     } catch (err) {
       console.error("Error uploading profile picture:", err);
@@ -134,7 +145,8 @@ function EmployeeProfileUpdate() {
   };
 
   /**
-   * Handles the form submission for profile data.
+   * Handles the overall form submission for profile data.
+   * This includes conditionally uploading a new photo before updating other details.
    */
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -148,27 +160,25 @@ function EmployeeProfileUpdate() {
         setLoading(false);
         return;
       }
-      // If photo uploaded successfully, the profile state is already updated.
+      // If photo uploaded successfully, the profile state and localStorage are already updated.
     }
 
-    // Now, send the rest of the profile data (excluding profilePictureUrl from payload,
-    // as it's managed by the separate upload or already in profile state)
+    // Now, send the rest of the profile data
     const authHeaders = {
       'Content-Type': 'application/json',
       'Authorization': `Bearer ${token}`
     };
 
     const payload = {
-      username: profile.fullName,
+      username: profile.fullName, // Assuming backend expects 'username'
       email: profile.email,
       phone: profile.phone,
       address: profile.address,
       emergencyContactName: profile.emergencyContactName,
       emergencyContactPhone: profile.emergencyContactPhone,
-      // Do NOT send profilePictureUrl here if it's updated via a separate endpoint.
-      // Or, if your backend PUT endpoint can handle it, send the updated URL.
-      // For this example, we assume it's handled by the separate upload.
-      // If your PUT endpoint needs it: profilePictureUrl: profile.profilePictureUrl
+      // If your backend's PUT endpoint expects profilePictureUrl in the main payload,
+      // include it here: profilePictureUrl: profile.profilePictureUrl
+      // Otherwise, assume it's handled by the separate upload endpoint.
     };
 
     try {
@@ -184,7 +194,11 @@ function EmployeeProfileUpdate() {
       }
 
       toast.success('Profile details updated successfully!');
-      fetchUserProfile(); // Re-fetch to ensure latest data
+      // Update username in localStorage if it changed
+      if (localStorage.getItem('username') !== profile.fullName) {
+        localStorage.setItem('username', profile.fullName);
+      }
+      fetchUserProfile(); // Re-fetch to ensure the latest data is displayed
     } catch (err) {
       console.error("Error updating profile details:", err);
       toast.error(err.message || "Failed to update profile details.");
@@ -193,7 +207,7 @@ function EmployeeProfileUpdate() {
     }
   };
 
-
+  // Loading and error states for user feedback
   if (loading) {
     return (
       <div className="page-container p-6 max-w-4xl mx-auto bg-white rounded-lg shadow-md text-center mt-10 mb-10">
@@ -222,7 +236,13 @@ function EmployeeProfileUpdate() {
             onClick={() => fileInputRef.current.click()}
           >
             {filePreview ? (
-              <img src={filePreview} alt="Profile" className="w-full h-full object-cover" />
+              <img
+                src={filePreview}
+                alt="Profile"
+                className="w-full h-full object-cover"
+                // Fallback for broken image links
+                onError={(e) => { e.target.onerror = null; e.target.src = 'https://placehold.co/128x128/E0F2F7/000000?text=User'; }}
+              />
             ) : (
               <span className="text-sm text-center">No Photo</span>
             )}
@@ -245,7 +265,6 @@ function EmployeeProfileUpdate() {
             Upload Photo
           </button>
         </div>
-
 
         <h3 className="text-xl font-semibold text-gray-700 mb-4">Personal Information</h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
