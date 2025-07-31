@@ -1,8 +1,8 @@
 /* --- Root Variables (for easier theming) --- */
 :root {
-    --primary-color: #75073d; /* Ahadu Bank Primary Color */
+    --primary-color: #612235; /* Ahadu Bank Primary Color */
     --secondary-color: #d4af37; /* Ahadu Bank Secondary Color (Gold) */
-    --dark-primary: #75073d; /* Darker shade for footer/hover */
+    --dark-primary: #4a1a2b; /* Darker shade for footer/hover */
     --light-bg: #f4f7f6; /* Light grey background */
     --light-card-bg: #ffffff; /* White for cards */
     --light-section-bg: #fcfcfc; /* Very light grey for sections */
@@ -79,7 +79,7 @@ body {
 .text-green-800 { color: #065f46; }
 .bg-red-100 { background-color: #fee2e2; }
 .text-red-800 { color: #991b1b; }
-.text-indigo-600 { color: #75073d; }
+.text-indigo-600 { color: #4f46e5; }
 .hover\:text-indigo-900:hover { color: #312e81; }
 .text-red-600 { color: #dc2626; }
 .hover\:text-red-900:hover { color: #7f1d1d; }
@@ -108,10 +108,11 @@ body {
     filter: brightness(0.9) contrast(1.2) sepia(0.5) hue-rotate(-20deg) saturate(2);
 }
 
-/* .header-logo img:hover {
+.header-logo img:hover {
     transform: scale(1.08);
+    /* Apply filter on hover too, slightly brighter */
     filter: brightness(1.1) contrast(1.2) sepia(0.5) hue-rotate(-20deg) saturate(2);
-} */
+}
 
 .header-nav nav {
     display: flex;
@@ -1043,26 +1044,32 @@ body {
     box-shadow: 0 0 0 3px rgba(97, 34, 53, 0.1);
 }
 
+/* Standardize change-password-button to match btn-primary */
 .change-password-button {
-    background-color: var(--primary-color);
+    background-color: var(--primary-color); /* Use primary color */
     color: white;
     font-weight: 600;
-    padding: 0.75rem;
+    padding: 0.9rem 1.8rem; /* Match btn padding */
     width: 100%;
-    border: none;
-    border-radius: 0.5rem;
+    border: none; /* Remove border */
+    border-radius: 0.75rem; /* Match btn border-radius */
     cursor: pointer;
-    transition: all 0.2s ease-in-out;
+    transition: background-color 0.3s ease, transform 0.2s ease, box-shadow 0.2s ease; /* Match btn transitions */
+    box-shadow: 0 5px 18px rgba(97,34,53,0.25); /* Match btn-primary shadow */
 }
 
 .change-password-button:hover {
-    background-color: var(--dark-primary);
-    transform: scale(1.02);
+    background-color: var(--dark-primary); /* Match btn-primary hover */
+    transform: translateY(-3px); /* Match btn-primary hover lift */
+    box-shadow: 0 8px 25px rgba(97,34,53,0.35); /* Match btn-primary hover shadow */
 }
 
 .change-password-button:disabled {
     opacity: 0.6;
     cursor: not-allowed;
+    background-color: var(--primary-color); /* Keep primary color but with opacity */
+    box-shadow: none; /* No shadow when disabled */
+    transform: none; /* No transform when disabled */
 }
 
 /* --- Employee Profile Specific Styles --- */
@@ -1099,7 +1106,7 @@ body {
 .employee-welcome-title {
   font-size: 2.5rem;
   font-weight: 800;
-  color: var(--primary-color); /* Using theme variable */
+  color: var(--text-dark); /* Using theme variable */
   margin-bottom: 0.75rem;
 }
 
@@ -1236,7 +1243,7 @@ body {
   background-color: var(--light-card-bg); /* White background */
   padding: 1.5rem; /* p-6 */
   border-radius: 0.75rem; /* rounded-xl */
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.05); /* shadow-lg */
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06); /* shadow-lg */
   transition: all 0.3s ease-in-out; /* transition-all duration-300 */
   cursor: pointer;
   display: flex;
@@ -1301,7 +1308,6 @@ body {
     grid-template-columns: 1fr; /* Single column on small screens */
   }
 }
-
 /* --- Company Announcements Specific Styles --- */
 /* Styles for the individual announcement cards */
 .announcement-card {

@@ -344,7 +344,7 @@ function EmployeeProfileUpdate() {
 
         <button
           type="submit"
-          className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-md focus:outline-none focus:shadow-outline w-full transition duration-200 ease-in-out transform hover:scale-105"
+          className="btn btn-primary w-full" // Applied btn btn-primary classes
           disabled={loading}
         >
           {loading ? 'Saving Changes...' : 'Save Changes'}
