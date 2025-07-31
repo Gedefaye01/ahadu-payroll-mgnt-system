@@ -1357,7 +1357,7 @@ body {
 }
 
 .announcement-actions .btn-edit {
-    background-color: #3b82f6; /* Tailwind blue-500 */
+    background-color: var(--primary-color); /* Tailwind blue-500 */
     color: white;
     padding: 0.6rem 1rem;
     border-radius: 0.5rem;
@@ -1367,12 +1367,12 @@ body {
 }
 
 .announcement-actions .btn-edit:hover {
-    background-color: #2563eb; /* Tailwind blue-600 */
+    background-color: var(--primary-color); /* Tailwind blue-600 */
     transform: translateY(-1px);
 }
 
 .announcement-actions .btn-delete {
-    background-color: #ef4444; /* Tailwind red-500 */
+    background-color: var(--primary-color); /* Tailwind red-500 */
     color: white;
     padding: 0.6rem 1rem;
     border-radius: 0.5rem;
@@ -1382,6 +1382,6 @@ body {
 }
 
 .announcement-actions .btn-delete:hover {
-    background-color: #dc2626; /* Tailwind red-600 */
+    background-color: var(--primary-color); /* Tailwind red-600 */
     transform: translateY(-1px);
 }
