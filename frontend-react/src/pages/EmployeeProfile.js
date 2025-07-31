@@ -71,14 +71,14 @@ function EmployeeProfile() {
   ];
 
   return (
-    <div className="page-container p-6 max-w-6xl mx-auto bg-white rounded-lg shadow-md min-h-screen">
+    <div className="page-container"> {/* This class defines the main page layout and styling */}
       {/* Welcome Section */}
       <div className="employee-welcome-section">
         {/* User Profile Photo */}
         <img
           src={userPhotoUrl}
           alt="User Profile"
-          className="employee-profile-photo" // New class for the photo
+          className="employee-profile-photo"
           // Fallback for broken image links
           onError={(e) => { e.target.onerror = null; e.target.src = 'https://placehold.co/100x100/E0F2F7/000000?text=User'; }}
         />

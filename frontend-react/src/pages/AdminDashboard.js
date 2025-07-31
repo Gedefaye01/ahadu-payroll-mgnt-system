@@ -13,14 +13,16 @@ import {
 
 /**
  * AdminDashboard Component
- * Provides a central hub for administrators, displaying a welcome message
- * and a grid of cards for various administrative activities.
+ * Provides a central hub for administrators, displaying a welcome message,
+ * the user's profile photo, and a grid of cards for various administrative activities.
  */
 function AdminDashboard() {
   const navigate = useNavigate();
 
-  // Get admin username from localStorage, default to 'Admin' if not found
+  // Get admin username and photo URL from localStorage.
+  // Default to 'Admin' and a placeholder image if not found.
   const adminUsername = localStorage.getItem('username') || 'Admin';
+  const userPhotoUrl = localStorage.getItem('userPhotoUrl') || 'https://placehold.co/100x100/E0F2F7/000000?text=User';
 
   // Define dashboard activities with their details
   const dashboardActivities = [
@@ -69,24 +71,32 @@ function AdminDashboard() {
   ];
 
   return (
-    <div className="page-container p-6 max-w-6xl mx-auto bg-white rounded-lg shadow-md min-h-screen">
+    <div className="page-container"> {/* Removed inline styling classes */}
       {/* Welcome Section */}
-      <div className="admin-welcome-section"> {/* Corrected: Removed curly braces around string */}
-        <LayoutDashboard className="admin-welcome-icon" /> {/* Corrected: Removed curly braces around string */}
+      <div className="admin-welcome-section">
+        {/* User Profile Photo */}
+        <img
+          src={userPhotoUrl}
+          alt="User Profile"
+          className="admin-profile-photo" // Class for the photo, consistent with employee-profile
+          // Fallback for broken image links
+          onError={(e) => { e.target.onerror = null; e.target.src = 'https://placehold.co/100x100/E0F2F7/000000?text=User'; }}
+        />
+        <LayoutDashboard className="admin-welcome-icon" />
         <h2 className="admin-welcome-title">Welcome, {adminUsername}!</h2>
         <p className="admin-welcome-text">Your central hub for managing Ahadu Payroll System.</p>
       </div>
 
       {/* Activities Grid */}
-      <div className="admin-activities-grid"> {/* Corrected: Removed curly braces around string */}
+      <div className="admin-activities-grid">
         {dashboardActivities.map((activity, index) => (
           <div
             key={index}
-            className="admin-activity-card" // Corrected: Removed curly braces around string
+            className="admin-activity-card"
             onClick={() => navigate(activity.path)}
           >
             {activity.icon && (
-              <activity.icon className="admin-activity-icon" /> // Corrected: Removed curly braces around string
+              <activity.icon className="admin-activity-icon" />
             )}
             <h3 className="admin-activity-title">{activity.title}</h3>
             <p className="admin-activity-description">{activity.description}</p>
@@ -95,7 +105,7 @@ function AdminDashboard() {
                 e.stopPropagation();
                 navigate(activity.path);
               }}
-              className="btn btn-primary admin-activity-button" // Corrected: Removed curly braces around string
+              className="btn btn-primary admin-activity-button"
             >
               Go to {activity.title.split(' ')[0]}
             </button>

@@ -1162,3 +1162,121 @@ body {
     grid-template-columns: 1fr;
   }
 }
+/* --- Admin Dashboard Specific Styles --- */
+.admin-welcome-section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  margin-bottom: 2.5rem; /* mb-10 */
+  padding: 2rem; /* p-8 */
+  background: linear-gradient(to right, var(--light-section-bg), var(--light-bg)); /* Using theme variables */
+  border-radius: 1rem; /* rounded-2xl */
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05); /* shadow-xl */
+}
+
+.admin-profile-photo {
+  width: 8rem; /* w-32 */
+  height: 8rem; /* h-32 */
+  border-radius: 50%; /* rounded-full */
+  border: 4px solid var(--secondary-color); /* Using theme variable */
+  margin-bottom: 1rem; /* mb-4 */
+  object-fit: cover; /* Ensures image covers the area without distortion */
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06); /* shadow-lg */
+}
+
+.admin-welcome-icon {
+  color: var(--primary-color); /* Using theme variable */
+  width: 4rem; /* w-16 */
+  height: 4rem; /* h-16 */
+  margin-bottom: 1rem; /* mb-4 */
+}
+
+.admin-welcome-title {
+  font-size: 2.5rem; /* text-4xl */
+  font-weight: 800; /* font-extrabold */
+  color: var(--text-dark); /* Using theme variable */
+  margin-bottom: 0.75rem; /* mb-3 */
+}
+
+.admin-welcome-text {
+  font-size: 1.125rem; /* text-lg */
+  color: var(--text-medium); /* Using theme variable */
+}
+
+.admin-activities-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); /* Responsive grid */
+  gap: 2rem; /* gap-8 */
+}
+
+.admin-activity-card {
+  background-color: var(--light-card-bg); /* White background */
+  padding: 1.5rem; /* p-6 */
+  border-radius: 0.75rem; /* rounded-xl */
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06); /* shadow-lg */
+  transition: all 0.3s ease-in-out; /* transition-all duration-300 */
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  border: 1px solid var(--border-color-light); /* Using theme variable */
+}
+
+.admin-activity-card:hover {
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05); /* hover:shadow-2xl */
+  transform: translateY(-0.25rem); /* hover:-translate-y-1 */
+}
+
+.admin-activity-icon {
+  color: var(--primary-color); /* Using theme variable */
+  width: 3.5rem; /* w-14 */
+  height: 3.5rem; /* h-14 */
+  margin-bottom: 1rem; /* mb-4 */
+}
+
+.admin-activity-title {
+  font-size: 1.5rem; /* text-2xl */
+  font-weight: 600; /* font-semibold */
+  color: var(--text-dark); /* Using theme variable */
+  margin-bottom: 0.5rem; /* mb-2 */
+}
+
+.admin-activity-description {
+  color: var(--text-medium); /* Using theme variable */
+  font-size: 1rem; /* text-base */
+  margin-bottom: 1rem; /* mb-4 */
+  flex-grow: 1; /* Allows description to take available space */
+}
+
+.btn-primary.admin-activity-button { /* Specificity for this button */
+  background-color: var(--primary-color); /* Using theme variable */
+  color: white;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+}
+
+.btn-primary.admin-activity-button:hover {
+  background-color: var(--dark-primary); /* Using theme variable */
+}
+
+.btn-primary.admin-activity-button:focus {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(97, 34, 53, 0.5); /* Using primary color with opacity */
+}
+
+/* Responsive Adjustments for Admin Dashboard */
+@media (max-width: 768px) {
+  .admin-welcome-title {
+    font-size: 2rem; /* Smaller title on small screens */
+  }
+
+  .admin-welcome-text {
+    font-size: 1rem; /* Smaller text on small screens */
+  }
+
+  .admin-activities-grid {
+    grid-template-columns: 1fr; /* Single column on small screens */
+  }
+}
