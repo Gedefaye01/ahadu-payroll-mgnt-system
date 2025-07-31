@@ -2,8 +2,14 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
-import Card from '../components/Card';
+import Card from '../components/Card'; // Assuming this component exists and is correctly imported
 
+/**
+ * SignIn Component
+ * Handles user authentication, including sending credentials to the backend,
+ * storing user data (token, role, userId, username, photo URL) in localStorage,
+ * and redirecting to the appropriate dashboard.
+ */
 function SignIn() {
   const navigate = useNavigate();
   const [formData, setFormData] = useState({ email: '', password: '' });
@@ -26,12 +32,14 @@ function SignIn() {
     // Clear any existing auth info BEFORE attempting new login
     localStorage.removeItem('token');
     localStorage.removeItem('userRole');
-    localStorage.removeItem('userId'); // Ensure userId is also cleared
+    localStorage.removeItem('userId');
+    localStorage.removeItem('username'); // Clear username on new login attempt
+    localStorage.removeItem('userPhotoUrl'); // Clear user photo URL on new login attempt
 
     setLoading(true);
 
     const payload = {
-      username: formData.email.trim(),
+      username: formData.email.trim(), // Assuming backend expects email as 'username' for signin
       password: formData.password,
     };
 
@@ -55,10 +63,13 @@ function SignIn() {
           assignedRole = 'ADMIN';
         }
 
-        // Store token, role, and userId
+        // Store token, role, userId, username, and profilePictureUrl
         localStorage.setItem('token', data.token);
         localStorage.setItem('userRole', assignedRole);
-        localStorage.setItem('userId', data.id); // <--- THIS IS THE CRUCIAL ADDITION
+        localStorage.setItem('userId', data.id);
+        // Store the actual username and profilePictureUrl from the backend response
+        localStorage.setItem('username', data.username || formData.email.split('@')[0]); // Use backend username, fallback to email part
+        localStorage.setItem('userPhotoUrl', data.profilePictureUrl || ''); // Store photo URL, or empty string if not provided
 
         // Verify if selected login type matches assigned role
         if (
@@ -72,7 +83,9 @@ function SignIn() {
           // Remove incorrect token and role if mismatch
           localStorage.removeItem('token');
           localStorage.removeItem('userRole');
-          localStorage.removeItem('userId'); // Clear userId too on mismatch
+          localStorage.removeItem('userId');
+          localStorage.removeItem('username');
+          localStorage.removeItem('userPhotoUrl');
           setLoading(false);
           return;
         }
