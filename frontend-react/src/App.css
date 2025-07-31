@@ -569,29 +569,17 @@ body {
     border-radius: 0.5rem; /* More rounded action buttons */
     transition: background-color 0.2s ease, transform 0.1s ease;
     user-select: none;
-    border: 1px solid; /* Add border for better visibility */
+    border: none; /* Removed border to match announcement buttons */
+    color: white; /* Ensure text is white */
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); /* Consistent shadow */
+    background-color: var(--primary-color); /* All action buttons now use primary color */
 }
 
-.table-actions button.text-indigo-600 { /* Edit button */
-    border-color: #4f46e5;
-    background-color: #e0e7ff; /* Light indigo background */
-    color: #4f46e5;
-}
-
-.table-actions button.text-indigo-600:hover {
-    background-color: #c7d2fe;
-    color: #312e81;
-}
-
-.table-actions button.text-red-600 { /* Delete button */
-    border-color: var(--error-color);
-    background-color: #fee2e2; /* Light red background */
-    color: var(--error-color);
-}
-
-.table-actions button.text-red-600:hover {
-    background-color: #fecaca;
-    color: #991b1b;
+/* Updated table action buttons to use primary color */
+.table-actions button.text-indigo-600:hover, /* Edit button hover */
+.table-actions button.text-red-600:hover { /* Delete button hover */
+    background-color: var(--dark-primary); /* Darker primary for hover */
+    transform: translateY(-1px);
 }
 
 
@@ -1111,7 +1099,7 @@ body {
 .employee-welcome-title {
   font-size: 2.5rem;
   font-weight: 800;
-  color: var(--text-dark); /* Using theme variable */
+  color: var(--primary-color); /* Using theme variable */
   margin-bottom: 0.75rem;
 }
 
@@ -1248,7 +1236,7 @@ body {
   background-color: var(--light-card-bg); /* White background */
   padding: 1.5rem; /* p-6 */
   border-radius: 0.75rem; /* rounded-xl */
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06); /* shadow-lg */
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.05); /* shadow-lg */
   transition: all 0.3s ease-in-out; /* transition-all duration-300 */
   cursor: pointer;
   display: flex;
@@ -1313,6 +1301,7 @@ body {
     grid-template-columns: 1fr; /* Single column on small screens */
   }
 }
+
 /* --- Company Announcements Specific Styles --- */
 /* Styles for the individual announcement cards */
 .announcement-card {
@@ -1357,31 +1346,33 @@ body {
 }
 
 .announcement-actions .btn-edit {
-    background-color: var(--primary-color); /* Tailwind blue-500 */
+    background-color: var(--primary-color); /* Changed to primary-color */
     color: white;
     padding: 0.6rem 1rem;
     border-radius: 0.5rem;
     font-size: 0.9rem;
     transition: background-color 0.2s ease, transform 0.1s ease;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    border: none; /* Ensure no border */
 }
 
 .announcement-actions .btn-edit:hover {
-    background-color: var(--primary-color); /* Tailwind blue-600 */
+    background-color: var(--dark-primary); /* Darker primary for hover */
     transform: translateY(-1px);
 }
 
 .announcement-actions .btn-delete {
-    background-color: var(--primary-color); /* Tailwind red-500 */
+    background-color: var(--primary-color); /* Changed to primary-color */
     color: white;
     padding: 0.6rem 1rem;
     border-radius: 0.5rem;
     font-size: 0.9rem;
     transition: background-color 0.2s ease, transform 0.1s ease;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    border: none; /* Ensure no border */
 }
 
 .announcement-actions .btn-delete:hover {
-    background-color: var(--primary-color); /* Tailwind red-600 */
+    background-color: var(--dark-primary); /* Darker primary for hover */
     transform: translateY(-1px);
 }
