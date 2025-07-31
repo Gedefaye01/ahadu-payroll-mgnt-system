@@ -96,7 +96,7 @@ body {
     position: sticky;
     top: 0;
     z-index: 1000;
-    flex-wrap: wrap;
+    flex-wrap: wrap; /* Allow items to wrap */
     border-bottom-left-radius: 8px; /* Subtle rounded corners */
     border-bottom-right-radius: 8px;
 }
@@ -104,44 +104,43 @@ body {
 .header-logo img {
     height: 55px; /* Slightly larger logo */
     transition: transform 0.3s ease, filter 0.3s ease;
-    /* Attempt to match logo color to primary-color */
-    /* This filter might need adjustment based on your original logo's colors */
-    /* It's best to edit the logo image itself to match the primary-color */
-    filter: brightness(0.8) sepia(1) hue-rotate(300deg) saturate(2); /* Adjust values as needed */
+    /* Adjusted filter to try and match logo color to primary-color */
+    filter: brightness(0.9) contrast(1.2) sepia(0.5) hue-rotate(-20deg) saturate(2);
 }
 
 .header-logo img:hover {
     transform: scale(1.08);
-    filter: brightness(1.1) brightness(0.8) sepia(1) hue-rotate(300deg) saturate(2); /* Apply filter on hover too */
+    filter: brightness(1.1) contrast(1.2) sepia(0.5) hue-rotate(-20deg) saturate(2);
 }
 
 .header-nav nav {
     display: flex;
     align-items: center;
-    flex-wrap: wrap;
+    flex-wrap: wrap; /* Allow navigation items to wrap */
     justify-content: center;
 }
 
 .header-nav nav a,
 .header-nav nav button {
-    margin: 0 1rem; /* Consistent spacing */
+    margin: 0 0.8rem; /* Reduced horizontal margin for more space */
     text-decoration: none;
     color: var(--text-on-dark);
-    font-weight: 600; /* Slightly bolder */
+    font-weight: 600;
     transition: color 0.3s ease, transform 0.2s ease;
-    padding: 0.6rem 0.2rem; /* More vertical padding */
+    padding: 0.6rem 0.2rem;
     background: none;
     border: none;
     cursor: pointer;
-    font-size: 1.05rem; /* Slightly larger font */
-    position: relative; /* For underline effect */
+    font-size: 1.05rem;
+    position: relative;
+    white-space: nowrap; /* Prevent text from wrapping within a link/button */
 }
 
 .header-nav nav a:hover,
 .header-nav nav button:hover,
 .header-nav nav a.active {
     color: var(--secondary-color);
-    transform: translateY(-3px); /* More noticeable lift */
+    transform: translateY(-3px);
 }
 
 .header-nav nav a::after,
@@ -165,27 +164,57 @@ body {
 /* Responsive header adjustments */
 @media (max-width: 768px) {
     .app-header {
-        flex-direction: column;
+        flex-direction: column; /* Keep column for overall header layout */
         padding: 1rem;
-        border-radius: 0; /* No rounded corners on small screens */
+        border-radius: 0;
+    }
+    .header-nav {
+        width: 100%; /* Ensure nav container takes full width */
+        margin-top: 1rem;
     }
     .header-nav nav {
-        margin-top: 1rem;
-        flex-direction: column;
+        flex-direction: row; /* Keep navigation items in a row */
+        justify-content: space-around; /* Distribute items evenly */
         width: 100%;
+        flex-wrap: wrap; /* Allow wrapping if items are too wide */
     }
     .header-nav nav a,
     .header-nav nav button {
-        margin: 0.5rem 0;
-        width: 100%;
+        margin: 0.5rem 0.4rem; /* Adjust margin for mobile */
+        font-size: 0.9rem; /* Smaller font for mobile */
+        padding: 0.5rem 0.8rem; /* Adjusted padding */
         text-align: center;
-        padding: 0.8rem 0;
+        flex-shrink: 0; /* Prevent shrinking too much */
+        flex-grow: 1; /* Allow growing to fill space */
+        min-width: 80px; /* Minimum width for each button */
+        box-sizing: border-box; /* Include padding and border in element's total width */
     }
     .header-nav nav a::after,
     .header-nav nav button::after {
-        display: none; /* Hide underline on mobile for full-width buttons */
+        display: none; /* Hide underline on mobile for cleaner look */
+    }
+    /* Specific adjustment for the logout button on mobile if it's a different style */
+    .header-nav nav .btn-secondary {
+        margin-left: 0; /* Remove extra left margin */
     }
 }
+
+@media (max-width: 480px) {
+    .app-header {
+        padding: 0.8rem;
+    }
+    .header-logo img {
+        height: 45px;
+    }
+    .header-nav nav a,
+    .header-nav nav button {
+        margin: 0.4rem 0.2rem; /* Even tighter spacing on very small screens */
+        font-size: 0.85rem;
+        padding: 0.4rem 0.6rem;
+        min-width: 70px;
+    }
+}
+
 
 /* --- Footer Styles --- */
 .app-footer {
