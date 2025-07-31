@@ -15,7 +15,8 @@
     "react-scripts": "^5.0.1",
     "react-slick": "^0.30.3",
     "react-toastify": "^11.0.5",
-    "slick-carousel": "^1.8.1"
+    "slick-carousel": "^1.8.1",
+    "firebase": "^9.x.x"
   },
   "scripts": {
     "start": "serve -s build -l $PORT",
