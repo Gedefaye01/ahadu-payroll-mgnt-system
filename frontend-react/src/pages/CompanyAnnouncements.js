@@ -1,297 +1,247 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import { toast } from 'react-toastify';
+import React, { useState, useEffect } from 'react';
+import { getFirestore, collection, onSnapshot, addDoc, doc, updateDoc, deleteDoc, query, orderBy, serverTimestamp } from 'firebase/firestore';
+import { getAuth, onAuthStateChanged } from 'firebase/auth';
+import { initializeApp } from 'firebase/app';
+import { FaEdit, FaTrash, FaPlusCircle, FaBullhorn } from 'react-icons/fa'; // Import icons
 
-/**
- * CompanyAnnouncements Component
- * Displays a list of company-wide announcements for employees.
- * For ADMIN users, it also provides functionality to add, edit, and delete announcements.
- * It interacts with the backend API for CRUD operations.
- */
 function CompanyAnnouncements() {
   const [announcements, setAnnouncements] = useState([]);
+  const [newAnnouncementTitle, setNewAnnouncementTitle] = useState('');
+  const [newAnnouncementContent, setNewAnnouncementContent] = useState('');
+  const [editingAnnouncement, setEditingAnnouncement] = useState(null);
+  const [user, setUser] = useState(null);
+  const [isAdmin, setIsAdmin] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [isAdding, setIsAdding] = useState(false);
-  const [editingAnnouncement, setEditingAnnouncement] = useState(null);
-  const [formTitle, setFormTitle] = useState('');
-  const [formContent, setFormContent] = useState('');
 
-  // Define the API_BASE_URL using the environment variable
-  const API_BASE_URL = process.env.REACT_APP_API_BASE_URL;
+  // Firebase config and initialization (using global variables)
+  const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+  const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
+  const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
 
-  // Determine if the current user is an ADMIN based on localStorage
-  const isAdmin = localStorage.getItem('userRole') === 'ADMIN';
-  const token = localStorage.getItem('token'); // Retrieve token from localStorage
+  const app = initializeApp(firebaseConfig);
+  const db = getFirestore(app);
+  const auth = getAuth(app);
 
-  // Memoize fetchAnnouncements using useCallback to prevent unnecessary re-creations
-  const fetchAnnouncements = useCallback(async () => {
-    setLoading(true);
-    setError(null);
-
-    try {
-      const authHeaders = {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}` // Ensure token is included
-      };
-
-      const response = await fetch(`${API_BASE_URL}/api/announcements`, {
-        headers: authHeaders
-      });
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error(`HTTP Error fetching announcements: ${response.status} - ${response.statusText}`, errorText);
-        throw new Error(`HTTP error! status: ${response.status} - ${errorText}`);
+  useEffect(() => {
+    const unsubscribeAuth = onAuthStateChanged(auth, async (currentUser) => {
+      if (currentUser) {
+        setUser(currentUser);
+        // Check if user is admin (assuming roles are stored in Firestore 'users' collection)
+        const userDocRef = doc(db, `artifacts/${appId}/users/${currentUser.uid}/profile/data`);
+        try {
+          const userDocSnap = await getDoc(userDocRef);
+          if (userDocSnap.exists()) {
+            const userData = userDocSnap.data();
+            if (userData.roles && userData.roles.includes('admin')) {
+              setIsAdmin(true);
+            }
+          }
+        } catch (err) {
+          console.error("Error fetching user role:", err);
+          setError("Failed to load user roles.");
+        }
+      } else {
+        setUser(null);
+        setIsAdmin(false);
       }
-
-      const data = await response.json();
-      setAnnouncements(data);
-    } catch (err) {
-      console.error("Failed to fetch announcements:", err);
-      setError("Failed to load announcements. Please try again.");
-      toast.error("Failed to load announcements.");
-    } finally {
       setLoading(false);
-    }
-  }, [API_BASE_URL, token]); // Dependencies: API_BASE_URL, token
+    });
 
-  /**
-   * Handles changes to the title input field.
-   * @param {Object} e The event object.
-   */
-  const handleFormTitleChange = useCallback((e) => {
-    setFormTitle(e.target.value);
-  }, []); // No dependencies needed as setFormTitle is stable
+    const announcementsCollectionRef = collection(db, `artifacts/${appId}/public/data/announcements`);
+    const q = query(announcementsCollectionRef, orderBy('publishDate', 'desc'));
 
-  /**
-   * Handles changes to the content textarea field.
-   * @param {Object} e The event object.
-   */
-  const handleFormContentChange = useCallback((e) => {
-    setFormContent(e.target.value);
-  }, []); // No dependencies needed as setFormContent is stable
+    const unsubscribeSnapshot = onSnapshot(q, (snapshot) => {
+      const announcementsData = snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      }));
+      setAnnouncements(announcementsData);
+    }, (err) => {
+      console.error("Error fetching announcements:", err);
+      setError("Failed to load announcements.");
+      setLoading(false);
+    });
 
-  /**
-   * Toggles the visibility of the add/edit announcement form.
-   * Resets form fields and editing state.
-   */
-  const handleToggleAddForm = useCallback(() => {
-    setIsAdding(prev => !prev);
-    setEditingAnnouncement(null); // Clear editing state when toggling add form
-    setFormTitle('');
-    setFormContent('');
-  }, []); // No dependencies needed for setters
+    return () => {
+      unsubscribeAuth();
+      unsubscribeSnapshot();
+    };
+  }, [db, auth, appId]);
 
-  /**
-   * Handles submission of the add/edit announcement form.
-   * Only accessible by ADMINs due to backend authorization.
-   */
-  const handleSubmit = async (e) => {
+  const handleAddAnnouncement = async (e) => {
     e.preventDefault();
-    if (!formTitle || !formContent) {
-      toast.error("Title and content cannot be empty.");
+    if (!newAnnouncementTitle.trim() || !newAnnouncementContent.trim()) {
+      alert('Title and content cannot be empty.'); // Using alert for simplicity, consider a modal
+      return;
+    }
+    if (!user) {
+      alert('You must be logged in to add an announcement.');
       return;
     }
 
-    const method = editingAnnouncement ? 'PUT' : 'POST';
-    const url = editingAnnouncement
-      ? `${API_BASE_URL}/api/announcements/${editingAnnouncement.id}`
-      : `${API_BASE_URL}/api/announcements`;
-
-    const authHeaders = {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${token}`
-    };
-
-    const payload = { title: formTitle, content: formContent };
-
-    // --- DEBUGGING LOGS FOR SUBMIT ---
-    console.log("DEBUG: Submitting announcement...");
-    console.log("DEBUG: Method:", method);
-    console.log("DEBUG: URL:", url);
-    console.log("DEBUG: Payload being sent:", JSON.stringify(payload));
-    // --- END DEBUGGING LOGS ---
-
     try {
-      const response = await fetch(url, {
-        method: method,
-        headers: authHeaders,
-        body: JSON.stringify(payload)
+      await addDoc(collection(db, `artifacts/${appId}/public/data/announcements`), {
+        title: newAnnouncementTitle,
+        content: newAnnouncementContent,
+        publishDate: serverTimestamp(),
+        authorId: user.uid,
+        authorUsername: user.displayName || user.email, // Use display name or email
       });
-
-      if (!response.ok) {
-        const errorData = await response.json(); // Try to parse error response
-        console.error(`HTTP Error during announcement ${method}: ${response.status} - ${response.statusText}`, errorData);
-        throw new Error(errorData.message || `Failed to ${editingAnnouncement ? 'update' : 'add'} announcement.`);
-      }
-
-      toast.success(`Announcement ${editingAnnouncement ? 'updated' : 'added'} successfully!`);
-      setFormTitle('');
-      setFormContent('');
-      setIsAdding(false);
-      setEditingAnnouncement(null);
-      fetchAnnouncements(); // Re-fetch announcements to show the latest list
+      setNewAnnouncementTitle('');
+      setNewAnnouncementContent('');
     } catch (err) {
-      console.error(`Error ${editingAnnouncement ? 'updating' : 'add'} announcement:`, err);
-      toast.error(err.message || `Failed to ${editingAnnouncement ? 'update' : 'add'} announcement.`);
-    } finally {
-      setLoading(false); // Ensure loading is turned off even on error
+      console.error("Error adding announcement:", err);
+      setError("Failed to add announcement.");
     }
   };
 
-  /**
-   * Handles initiating the edit process for an announcement.
-   * Only visible to ADMINs.
-   * @param {Object} announcement The announcement object to edit.
-   */
   const handleEditClick = (announcement) => {
     setEditingAnnouncement(announcement);
-    setFormTitle(announcement.title);
-    setFormContent(announcement.content);
-    setIsAdding(true);
+    setNewAnnouncementTitle(announcement.title);
+    setNewAnnouncementContent(announcement.content);
   };
 
-  /**
-   * Handles deleting an announcement.
-   * Only visible to ADMINs.
-   * @param {string} id The ID of the announcement to delete.
-   */
-  const handleDelete = async (id) => {
-    // IMPORTANT: Replace window.confirm with a custom modal for better UX
-    if (!window.confirm("Are you sure you want to delete this announcement?")) {
+  const handleUpdateAnnouncement = async (e) => {
+    e.preventDefault();
+    if (!newAnnouncementTitle.trim() || !newAnnouncementContent.trim()) {
+      alert('Title and content cannot be empty.');
       return;
     }
-
-    const authHeaders = {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${token}`
-    };
+    if (!editingAnnouncement) return;
 
     try {
-      const response = await fetch(`${API_BASE_URL}/api/announcements/${id}`, {
-        method: 'DELETE',
-        headers: authHeaders
+      const announcementRef = doc(db, `artifacts/${appId}/public/data/announcements`, editingAnnouncement.id);
+      await updateDoc(announcementRef, {
+        title: newAnnouncementTitle,
+        content: newAnnouncementContent,
+        lastEdited: serverTimestamp(),
+        editorId: user.uid,
+        editorUsername: user.displayName || user.email,
       });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        console.error(`HTTP Error deleting announcement: ${response.status} - ${response.statusText}`, errorData);
-        throw new Error(errorData.message || "Failed to delete announcement.");
-      }
-
-      toast.success("Announcement deleted successfully!");
-      fetchAnnouncements(); // Re-fetch announcements to update the list
+      setEditingAnnouncement(null);
+      setNewAnnouncementTitle('');
+      setNewAnnouncementContent('');
     } catch (err) {
-      console.error("Error deleting announcement:", err);
-      toast.error(err.message || "Failed to delete announcement.");
+      console.error("Error updating announcement:", err);
+      setError("Failed to update announcement.");
     }
   };
 
-  // Effect hook to fetch announcements on component mount
-  useEffect(() => {
-    fetchAnnouncements();
-  }, [fetchAnnouncements]);
+  const handleDelete = async (id) => {
+    if (window.confirm('Are you sure you want to delete this announcement?')) { // Using confirm for simplicity
+      try {
+        await deleteDoc(doc(db, `artifacts/${appId}/public/data/announcements`, id));
+      } catch (err) {
+        console.error("Error deleting announcement:", err);
+        setError("Failed to delete announcement.");
+      }
+    }
+  };
 
   if (loading) {
-    return (
-      <div className="page-container p-6 max-w-4xl mx-auto bg-white rounded-lg shadow-md text-center mt-10 mb-10">
-        <p className="text-gray-600">Loading announcements...</p>
-      </div>
-    );
+    return <div className="text-center text-gray-600 mt-8">Loading announcements...</div>;
   }
 
   if (error) {
-    return (
-      <div className="page-container p-6 max-w-4xl mx-auto bg-white rounded-lg shadow-md text-center mt-10 mb-10">
-        <p className="text-red-500">{error}</p>
-      </div>
-    );
+    return <div className="text-center text-red-500 mt-8">Error: {error}</div>;
   }
 
   return (
-    <div className="page-container p-6 max-w-4xl mx-auto bg-white rounded-lg shadow-md mt-10 mb-10">
-      <h2 className="text-3xl font-bold text-center text-gray-800 mb-8">Company Announcements</h2>
+    <div className="page-container">
+      <h2 className="page-header">Company Announcements</h2>
 
-      {/* Admin-only section for adding/editing announcements */}
+      {/* Add/Edit Announcement Form */}
       {isAdmin && (
-        <div className="mb-8 p-6 border border-gray-200 rounded-lg bg-gray-50">
-          <button
-            onClick={handleToggleAddForm}
-            className="btn btn-primary w-full mb-4"
-          >
-            {isAdding ? 'Cancel' : 'Add New Announcement'}
-          </button>
-
-          {isAdding && (
-            <form onSubmit={handleSubmit} className="mt-4">
-              <h3 className="text-xl font-semibold text-gray-700 mb-4">{editingAnnouncement ? 'Edit Announcement' : 'New Announcement'}</h3>
-              <div className="form-group">
-                <label htmlFor="title">Title</label>
-                <input
-                  type="text"
-                  id="title"
-                  name="title"
-                  value={formTitle}
-                  onChange={handleFormTitleChange}
-                  placeholder="Announcement Title"
-                  required
-                />
-              </div>
-              <div className="form-group">
-                <label htmlFor="content">Content</label>
-                <textarea
-                  id="content"
-                  name="content"
-                  value={formContent}
-                  onChange={handleFormContentChange}
-                  rows="5"
-                  placeholder="Announcement content..."
-                  required
-                ></textarea>
-              </div>
-              <button type="submit" className="btn btn-primary w-full mt-4">
-                {editingAnnouncement ? 'Update Announcement' : 'Publish Announcement'}
+        <div className="form-container mb-8">
+          <h3 className="card-title">
+            {editingAnnouncement ? 'Edit Announcement' : 'Add New Announcement'}
+          </h3>
+          <form onSubmit={editingAnnouncement ? handleUpdateAnnouncement : handleAddAnnouncement}>
+            <div className="form-group">
+              <label htmlFor="title">Title</label>
+              <input
+                type="text"
+                id="title"
+                value={newAnnouncementTitle}
+                onChange={(e) => setNewAnnouncementTitle(e.target.value)}
+                placeholder="Enter announcement title"
+                required
+              />
+            </div>
+            <div className="form-group">
+              <label htmlFor="content">Content</label>
+              <textarea
+                id="content"
+                value={newAnnouncementContent}
+                onChange={(e) => setNewAnnouncementContent(e.target.value)}
+                placeholder="Write your announcement here..."
+                rows="5"
+                required
+              ></textarea>
+            </div>
+            <button type="submit" className="btn btn-primary w-full">
+              {editingAnnouncement ? (
+                <>
+                  <FaEdit className="mr-2" /> Update Announcement
+                </>
+              ) : (
+                <>
+                  <FaPlusCircle className="mr-2" /> Add Announcement
+                </>
+              )}
+            </button>
+            {editingAnnouncement && (
+              <button
+                type="button"
+                onClick={() => {
+                  setEditingAnnouncement(null);
+                  setNewAnnouncementTitle('');
+                  setNewAnnouncementContent('');
+                }}
+                className="btn btn-secondary w-full mt-4"
+              >
+                Cancel Edit
               </button>
-            </form>
-          )}
+            )}
+          </form>
         </div>
       )}
 
-      {/* Display all announcements (visible to all authenticated users) */}
-      {announcements.length === 0 ? (
-        <p className="text-center text-gray-500">No announcements available at this time.</p>
-      ) : (
-        <div className="space-y-6">
-          {announcements.map(announcement => (
-            <div key={announcement.id} className="bg-gray-50 p-6 border border-gray-200 rounded-lg shadow-sm">
-              <h3 className="text-xl font-semibold text-gray-800 mb-2">{announcement.title}</h3>
-              <p className="text-sm text-gray-500 mb-3">
-                Published: {new Date(announcement.publishDate).toLocaleDateString()}
+      {/* Announcements List */}
+      <div className="announcements-list mt-8">
+        {announcements.length === 0 ? (
+          <p className="text-center text-gray-600">No announcements published yet.</p>
+        ) : (
+          announcements.map((announcement) => (
+            <div key={announcement.id} className="announcement-card">
+              <h3 className="announcement-card-title">{announcement.title}</h3>
+              <p className="announcement-card-meta">
+                Published: {announcement.publishDate?.toDate().toLocaleDateString() || 'N/A'}
                 {announcement.authorUsername && ` by ${announcement.authorUsername}`}
               </p>
-              <p className="text-gray-700 leading-relaxed">{announcement.content}</p>
+              <p className="announcement-card-content">{announcement.content}</p>
 
-              {/* Admin-only action buttons for each announcement */}
               {isAdmin && (
-                <div className="mt-4 flex justify-end space-x-3">
+                <div className="announcement-actions">
                   <button
                     onClick={() => handleEditClick(announcement)}
-                    className="btn bg-blue-500 hover:bg-blue-600 text-white text-sm py-2 px-4 rounded-md"
+                    className="btn-edit" // ONLY use this custom class
                   >
-                    Edit
+                    <FaEdit className="mr-1" /> Edit
                   </button>
                   <button
                     onClick={() => handleDelete(announcement.id)}
-                    className="btn bg-red-500 hover:bg-red-600 text-white text-sm py-2 px-4 rounded-md"
+                    className="btn-delete" // ONLY use this custom class
                   >
-                    Delete
+                    <FaTrash className="mr-1" /> Delete
                   </button>
                 </div>
               )}
             </div>
-          ))}
-        </div>
-      )}
+          ))
+        )}
+      </div>
     </div>
   );
 }
