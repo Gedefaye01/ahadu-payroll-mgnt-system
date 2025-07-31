@@ -108,10 +108,10 @@ body {
     filter: brightness(0.9) contrast(1.2) sepia(0.5) hue-rotate(-20deg) saturate(2);
 }
 
-.header-logo img:hover {
+/* .header-logo img:hover {
     transform: scale(1.08);
     filter: brightness(1.1) contrast(1.2) sepia(0.5) hue-rotate(-20deg) saturate(2);
-}
+} */
 
 .header-nav nav {
     display: flex;

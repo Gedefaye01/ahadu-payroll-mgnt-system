@@ -102,7 +102,7 @@ function Footer() {
               gap: '8px',
             }}
           >
-            {/* Label above social icons */}
+            {/* Label above social icons
             <div
               style={{
                 fontWeight: '600',
@@ -112,7 +112,7 @@ function Footer() {
               }}
             >
               Follow us on our social medias:
-            </div>
+            </div> */}
 
             {/* Social media icons */}
             <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
