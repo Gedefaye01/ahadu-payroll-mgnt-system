@@ -81,11 +81,11 @@ function EmployeeProfile() {
           alt="User Profile"
           className="employee-profile-photo"
           // Fallback for broken image links or if userPhotoUrl is not a valid image
-          onError={(e) => { e.target.onerror = null; e.target.src = 'https://placehold.co/100x100/E0F2F7/000000?text=User'; }}
+          onError={(e) => { e.target.onerror = null; e.target.src = '/icon.jpg'; }}
         />
         <LayoutDashboard className="employee-welcome-icon" />
         <h2 className="employee-welcome-title">Hello, {employeeUsername}!</h2>
-        <p className="employee-welcome-text">Your personal dashboard for Ahadu Payroll System.</p>
+        <p className="employee-welcome-text">Your personal dashboard for Ahadu Bank Payroll System.</p>
       </div>
 
       {/* Activities Grid */}

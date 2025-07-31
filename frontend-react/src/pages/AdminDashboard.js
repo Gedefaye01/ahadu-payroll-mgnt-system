@@ -96,11 +96,12 @@ function AdminDashboard() {
           alt="User Profile"
           className="admin-profile-photo"
           // Fallback for broken image links or if userPhotoUrl is not a valid image
-          onError={(e) => { e.target.onerror = null; e.target.src = 'https://placehold.co/100x100/E0F2F7/000000?text=User'; }}
+          onError={(e) => { e.target.onerror = null; e.target.src = '/icon.jpg'; }}
         />
         <LayoutDashboard className="admin-welcome-icon" />
         <h2 className="admin-welcome-title">Welcome, {adminUsername}!</h2>
-        <p className="admin-welcome-text">Your central hub for managing Ahadu Payroll System.</p>
+        <p className="admin-welcome-text">Your Are Responsible For Managing Ahadu Bank's
+          HRMS.</p>
       </div>
 
       {/* Activities Grid */}
