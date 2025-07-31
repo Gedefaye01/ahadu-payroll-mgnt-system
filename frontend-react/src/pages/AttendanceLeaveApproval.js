@@ -33,7 +33,8 @@ function AttendanceLeaveApproval() {
    */
   const fetchAllLeaveRequests = useCallback(async () => {
     try {
-      const response = await fetch(`${API_BASE_URL}/api/leave-requests/admin/all`, { // Assuming an admin endpoint for all requests
+      // Corrected endpoint: Removed '/admin' to match backend controller
+      const response = await fetch(`${API_BASE_URL}/api/leave-requests/all`, {
         headers: authHeaders
       });
       if (!response.ok) {
@@ -54,7 +55,8 @@ function AttendanceLeaveApproval() {
    */
   const fetchAllAttendanceRecords = useCallback(async () => {
     try {
-      const response = await fetch(`${API_BASE_URL}/api/attendance/admin/all`, { // Assuming an admin endpoint for all records
+      // Corrected endpoint: Removed '/admin' to match backend controller
+      const response = await fetch(`${API_BASE_URL}/api/attendance/all`, {
         headers: authHeaders
       });
       if (!response.ok) {
@@ -76,7 +78,7 @@ function AttendanceLeaveApproval() {
    */
   const fetchAttendanceStats = useCallback(async () => {
     try {
-      // Assuming a new backend endpoint for attendance overview for admins
+      // This endpoint was already correct as per backend plans
       const response = await fetch(`${API_BASE_URL}/api/attendance/admin/overview`, {
         headers: authHeaders
       });
@@ -119,7 +121,8 @@ function AttendanceLeaveApproval() {
     }
 
     try {
-      const response = await fetch(`${API_BASE_URL}/api/leave-requests/admin/${requestId}/${status}`, { // Assuming admin endpoint for update
+      // Corrected endpoint: Removed '/admin' to match backend controller
+      const response = await fetch(`${API_BASE_URL}/api/leave-requests/${requestId}/${status}`, {
         method: 'PUT',
         headers: authHeaders
       });
@@ -164,10 +167,10 @@ function AttendanceLeaveApproval() {
       <div className="mb-8 p-6 border border-gray-200 rounded-lg bg-gray-50">
         <h3 className="text-xl font-semibold text-gray-700 mb-4">Attendance Overview (Today)</h3>
         <div className="grid grid-cols-2 gap-4 text-gray-700">
-          <p><strong>Total Employees:</strong> {attendanceStats.totalEmployees}</p> {/* Use data from new state */}
-          <p><strong>Present:</strong> <span className="text-green-600 font-bold">{attendanceStats.presentToday}</span></p> {/* Use data from new state */}
-          <p><strong>On Leave:</strong> <span className="text-yellow-600 font-bold">{attendanceStats.onLeaveToday}</span></p> {/* Use data from new state */}
-          <p><strong>Absent:</strong> <span className="text-red-600 font-bold">{attendanceStats.absentToday}</span></p> {/* Use data from new state */}
+          <p><strong>Total Employees:</strong> {attendanceStats.totalEmployees}</p>
+          <p><strong>Present:</strong> <span className="text-green-600 font-bold">{attendanceStats.presentToday}</span></p>
+          <p><strong>On Leave:</strong> <span className="text-yellow-600 font-bold">{attendanceStats.onLeaveToday}</span></p>
+          <p><strong>Absent:</strong> <span className="text-red-600 font-bold">{attendanceStats.absentToday}</span></p>
         </div>
       </div>
 
@@ -192,9 +195,9 @@ function AttendanceLeaveApproval() {
               {pendingLeaveRequests.map(req => (
                 <tr key={req.id}>
                   <td>{req.id}</td>
-                  <td>{req.employeeUsername}</td> {/* Assuming backend provides employeeUsername */}
+                  <td>{req.employeeUsername}</td>
                   <td>{req.leaveType}</td>
-                  <td>{format(new Date(req.startDate), 'PP')} to {format(new Date(req.endDate), 'PP')}</td> {/* Format dates */}
+                  <td>{format(new Date(req.startDate), 'PP')} to {format(new Date(req.endDate), 'PP')}</td>
                   <td>{req.reason}</td>
                   <td className="table-actions text-center">
                     <button
@@ -238,9 +241,9 @@ function AttendanceLeaveApproval() {
               {allLeaveRequests.map(req => (
                 <tr key={req.id}>
                   <td>{req.id}</td>
-                  <td>{req.employeeUsername}</td> {/* Assuming backend provides employeeUsername */}
+                  <td>{req.employeeUsername}</td>
                   <td>{req.leaveType}</td>
-                  <td>{format(new Date(req.startDate), 'PP')} to {format(new Date(req.endDate), 'PP')}</td> {/* Format dates */}
+                  <td>{format(new Date(req.startDate), 'PP')} to {format(new Date(req.endDate), 'PP')}</td>
                   <td>
                     <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
                       req.status === 'Approved' ? 'bg-green-100 text-green-800' :
@@ -250,7 +253,7 @@ function AttendanceLeaveApproval() {
                       {req.status}
                     </span>
                   </td>
-                  <td>{format(new Date(req.requestDate), 'PP')}</td> {/* Format date */}
+                  <td>{format(new Date(req.requestDate), 'PP')}</td>
                 </tr>
               ))}
             </tbody>
@@ -279,7 +282,7 @@ function AttendanceLeaveApproval() {
               {allAttendanceRecords.map(rec => (
                 <tr key={rec.id}>
                   <td>{rec.id}</td>
-                  <td>{rec.employeeUsername}</td> {/* Assuming backend provides employeeUsername */}
+                  <td>{rec.employeeUsername}</td>
                   <td>{format(new Date(rec.date), 'PP')}</td>
                   <td>{rec.clockInTime || 'N/A'}</td>
                   <td>{rec.clockOutTime || 'N/A'}</td>
@@ -287,7 +290,7 @@ function AttendanceLeaveApproval() {
                     <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
                       rec.status === 'Present' ? 'bg-green-100 text-green-800' :
                       rec.status === 'Absent' ? 'bg-red-100 text-red-800' :
-                      'bg-yellow-100 text-yellow-800' // For other statuses like 'On Leave' if applicable
+                      'bg-yellow-100 text-yellow-800'
                     }`}>
                       {rec.status}
                     </span>
