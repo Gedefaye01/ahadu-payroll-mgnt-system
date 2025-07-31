@@ -31,6 +31,7 @@ function About() {
         <p className="text-gray-700 leading-relaxed mb-4">
           At Ahadu Bank, Our purpose is to Pioneer avant-garde financial services for promoting the economic welfare of Ethiopians.
         </p>
+        <h3 className="text-2xl font-semibold text-gray-700 mb-4">Our Vision</h3>
         <p className="text-gray-700 leading-relaxed">
           Our vision is to take a lead role in the financial sector, in 2025 E.C , in support of the aspirations of the citizenry and the country.
         </p>
