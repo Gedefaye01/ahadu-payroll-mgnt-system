@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { toast } from 'react-toastify';
+import { toast } from 'react-toastify'; // Ensure react-toastify is installed and configured
 
 /**
  * AttendanceRecord Component
@@ -16,7 +16,7 @@ function AttendanceRecord() {
   const [endDate, setEndDate] = useState('');
 
   // Define the API_BASE_URL using the environment variable
-  const API_BASE_URL = process.env.REACT_APP_API_BASE_URL; // <--- ADD THIS LINE
+  const API_BASE_URL = process.env.REACT_APP_API_BASE_URL;
 
   // Get JWT token from localStorage for authenticated requests
   const token = localStorage.getItem('token');
@@ -36,7 +36,7 @@ function AttendanceRecord() {
       };
 
       // Use API_BASE_URL instead of hardcoded localhost
-      const response = await fetch(`${API_BASE_URL}/api/attendance/my`, { // <--- MODIFIED
+      const response = await fetch(`${API_BASE_URL}/api/attendance/my`, {
         headers: authHeaders
       });
       if (!response.ok) {
@@ -51,7 +51,12 @@ function AttendanceRecord() {
     } finally {
       setLoading(false);
     }
-  }, [API_BASE_URL, token]); // Add API_BASE_URL to dependencies. 'toast' is removed as it's stable.
+  }, [API_BASE_URL, token]); // Add API_BASE_URL to dependencies.
+
+  // Effect hook to fetch attendance records on component mount
+  useEffect(() => {
+    fetchMyAttendanceRecords();
+  }, [fetchMyAttendanceRecords]); // Dependency array: re-run effect if fetchMyAttendanceRecords changes
 
   /**
    * Filters the `allAttendance` records based on the `startDate` and `endDate` state.
