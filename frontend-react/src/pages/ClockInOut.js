@@ -272,7 +272,7 @@ function ClockInOut() {
           ></textarea>
           <button
             onClick={handleUpdateRemarks}
-            className="btn btn-secondary mt-4 w-full sm:w-auto"
+            className="btn btn-primary bg-blue-600 hover:bg-blue-700 text-white shadow-md"
             disabled={loading || !currentAttendance}
           >
             Update Remarks
