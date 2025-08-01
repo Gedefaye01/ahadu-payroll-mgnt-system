@@ -19,10 +19,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import jakarta.validation.Valid;
+import java.util.List; // ADD THIS IMPORT STATEMENT
 
 @RestController
-// IMPORTANT: Updated to handle multiple endpoints.
-// Now, this controller can handle requests for both /api/my-profile and /api/users
 @RequestMapping({"/api/my-profile", "/api/users"})
 @CrossOrigin(origins = "https://ahadu-payroll-mgnt-system-frontend.onrender.com", maxAge = 3600)
 public class UserProfileController {
@@ -37,8 +36,7 @@ public class UserProfileController {
         this.userProfileService = userProfileService;
         this.fileStorageService = fileStorageService;
     }
-    
-    // Original endpoint for a single user's profile
+
     @PreAuthorize("hasAnyAuthority('USER', 'ADMIN')")
     @GetMapping("/api/my-profile")
     public ResponseEntity<User> getMyProfile(@AuthenticationPrincipal UserDetailsImpl userDetails) {
@@ -47,7 +45,6 @@ public class UserProfileController {
                 .orElse(new ResponseEntity<>(HttpStatus.NOT_FOUND));
     }
 
-    // Original endpoint for updating a single user's profile
     @PreAuthorize("hasAnyAuthority('USER', 'ADMIN')")
     @PutMapping("/api/my-profile")
     public ResponseEntity<User> updateMyProfile(
@@ -58,7 +55,6 @@ public class UserProfileController {
                 .orElse(new ResponseEntity<>(HttpStatus.NOT_FOUND));
     }
 
-    // Original endpoint for changing password
     @PreAuthorize("hasAnyAuthority('USER', 'ADMIN')")
     @PutMapping("/api/my-profile/change-password")
     public ResponseEntity<?> changePassword(
@@ -88,7 +84,6 @@ public class UserProfileController {
         }
     }
 
-    // Original endpoint for uploading profile picture
     @PreAuthorize("hasAnyAuthority('USER', 'ADMIN')")
     @PostMapping("/api/my-profile/upload-picture")
     public ResponseEntity<ApiResponse> uploadProfilePicture(
@@ -111,7 +106,6 @@ public class UserProfileController {
         }
     }
     
-    // NEW ENDPOINT: This will handle the request from your AdminPayrollManagement.js file
     @PreAuthorize("hasAuthority('ADMIN')")
     @GetMapping("/api/users")
     public ResponseEntity<List<User>> getAllUsers() {
