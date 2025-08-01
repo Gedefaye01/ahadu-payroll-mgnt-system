@@ -2,25 +2,29 @@ package com.ahadu.payroll.model;
 
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
+
 import java.math.BigDecimal;
 import java.time.LocalDate;
 
-@Document(collection = "paychecks")
+@Document
 public class Paycheck {
-
     @Id
     private String id;
     private String payrollRunId;
     private String employeeId;
-    private String employeeUsername;
+    private String employeeUsername; // Store username for easier access
     private LocalDate payPeriodStart;
     private LocalDate payPeriodEnd;
+    
     private BigDecimal grossPay;
-    private BigDecimal totalDeductions;
-    private BigDecimal netPay;
     private BigDecimal commissionAmount;
     private BigDecimal taxDeduction;
     private BigDecimal providentFundDeduction;
+    private BigDecimal latePenaltyDeduction; // NEW FIELD
+    private BigDecimal absentPenaltyDeduction; // NEW FIELD
+    private BigDecimal totalDeductions;
+    private BigDecimal netPay;
+    
     private String status; // DRAFT, APPROVED, PAID
 
     // Getters and Setters
@@ -38,16 +42,20 @@ public class Paycheck {
     public void setPayPeriodEnd(LocalDate payPeriodEnd) { this.payPeriodEnd = payPeriodEnd; }
     public BigDecimal getGrossPay() { return grossPay; }
     public void setGrossPay(BigDecimal grossPay) { this.grossPay = grossPay; }
-    public BigDecimal getTotalDeductions() { return totalDeductions; }
-    public void setTotalDeductions(BigDecimal totalDeductions) { this.totalDeductions = totalDeductions; }
-    public BigDecimal getNetPay() { return netPay; }
-    public void setNetPay(BigDecimal netPay) { this.netPay = netPay; }
     public BigDecimal getCommissionAmount() { return commissionAmount; }
     public void setCommissionAmount(BigDecimal commissionAmount) { this.commissionAmount = commissionAmount; }
     public BigDecimal getTaxDeduction() { return taxDeduction; }
     public void setTaxDeduction(BigDecimal taxDeduction) { this.taxDeduction = taxDeduction; }
     public BigDecimal getProvidentFundDeduction() { return providentFundDeduction; }
     public void setProvidentFundDeduction(BigDecimal providentFundDeduction) { this.providentFundDeduction = providentFundDeduction; }
+    public BigDecimal getLatePenaltyDeduction() { return latePenaltyDeduction; } // NEW GETTER
+    public void setLatePenaltyDeduction(BigDecimal latePenaltyDeduction) { this.latePenaltyDeduction = latePenaltyDeduction; } // NEW SETTER
+    public BigDecimal getAbsentPenaltyDeduction() { return absentPenaltyDeduction; } // NEW GETTER
+    public void setAbsentPenaltyDeduction(BigDecimal absentPenaltyDeduction) { this.absentPenaltyDeduction = absentPenaltyDeduction; } // NEW SETTER
+    public BigDecimal getTotalDeductions() { return totalDeductions; }
+    public void setTotalDeductions(BigDecimal totalDeductions) { this.totalDeductions = totalDeductions; }
+    public BigDecimal getNetPay() { return netPay; }
+    public void setNetPay(BigDecimal netPay) { this.netPay = netPay; }
     public String getStatus() { return status; }
     public void setStatus(String status) { this.status = status; }
 }

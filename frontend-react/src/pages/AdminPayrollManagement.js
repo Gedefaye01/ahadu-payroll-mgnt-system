@@ -5,14 +5,16 @@ import { format, subMonths, startOfMonth, endOfMonth } from 'date-fns';
 function AdminPayrollManagement() {
     const [payrollRuns, setPayrollRuns] = useState([]);
     const [draftPayroll, setDraftPayroll] = useState(null);
-    const [payPeriodStart, setPayPeriodStart] = useState('');
-    const [payPeriodEnd, setPayPeriodEnd] = useState('');
+    const [payPeriodStart, setPayPeriodStart] = useState(format(startOfMonth(new Date()), 'yyyy-MM-dd'));
+    const [payPeriodEnd, setPayPeriodEnd] = useState(format(endOfMonth(new Date()), 'yyyy-MM-dd'));
+    const [employees, setEmployees] = useState([]);
+    const [detailedPayrolls, setDetailedPayrolls] = useState([]);
     const [lastProcessed, setLastProcessed] = useState(null);
     const [loading, setLoading] = useState(true);
     const [processing, setProcessing] = useState(false);
     const [viewDetails, setViewDetails] = useState(false);
     const [selectedRun, setSelectedRun] = useState(null);
-    const [hasShownInitialPrompt, setHasShownInitialPrompt] = useState(false); // New state to prevent repeated prompts
+    const [hasShownInitialPrompt, setHasShownInitialPrompt] = useState(false);
 
     const API_BASE_URL = process.env.REACT_APP_API_BASE_URL;
     const token = localStorage.getItem('token');
@@ -21,16 +23,43 @@ function AdminPayrollManagement() {
         'Content-Type': 'application/json',
     };
 
+    const fetchEmployees = useCallback(async () => {
+        try {
+            const response = await fetch(`${API_BASE_URL}/api/users`, { headers: authHeaders });
+            if (!response.ok) throw new Error(`Failed to fetch employees: ${response.status}`);
+            const data = await response.json();
+            setEmployees(data);
+            setDetailedPayrolls(data.map(emp => ({
+                employeeId: emp.id,
+                employeeUsername: emp.username,
+                baseSalary: emp.baseSalary || 0,
+                commissionAmount: 0,
+                taxDeduction: 0,
+                providentFundDeduction: 0,
+                latePenaltyDeduction: 0,
+                absentPenaltyDeduction: 0,
+            })));
+        } catch (error) {
+            console.error("Failed to fetch employees:", error);
+            toast.error("Failed to load employee list.");
+        }
+    }, [API_BASE_URL, authHeaders]);
+
+    const handleInputChange = (employeeId, field, value) => {
+        setDetailedPayrolls(prev =>
+            prev.map(payroll =>
+                payroll.employeeId === employeeId ? { ...payroll, [field]: parseFloat(value) || 0 } : payroll
+            )
+        );
+    };
+
     const handlePreviewPayroll = async (start, end) => {
         setProcessing(true);
         try {
-            const response = await fetch(`${API_BASE_URL}/api/payroll/preview`, {
+            const response = await fetch(`${API_BASE_URL}/api/payroll/preview?payPeriodStart=${start}&payPeriodEnd=${end}`, {
                 method: 'POST',
                 headers: authHeaders,
-                body: JSON.stringify({
-                    payPeriodStart: start || payPeriodStart,
-                    payPeriodEnd: end || payPeriodEnd
-                }),
+                body: JSON.stringify(detailedPayrolls),
             });
 
             if (!response.ok) {
@@ -61,7 +90,6 @@ function AdminPayrollManagement() {
                 setLastProcessed(format(new Date(sortedData[0].processedAt), 'PPP HH:mm'));
             } else {
                 setLastProcessed(null);
-                // NEW: Logic to prompt user for new payroll draft when no data exists
                 if (!hasShownInitialPrompt) {
                     const shouldDraft = window.confirm("There are no payroll records. Would you like to draft a new payroll for the previous month?");
                     if (shouldDraft) {
@@ -81,11 +109,12 @@ function AdminPayrollManagement() {
         } finally {
             setLoading(false);
         }
-    }, [API_BASE_URL, authHeaders, hasShownInitialPrompt]);
+    }, [API_BASE_URL, authHeaders, hasShownInitialPrompt, handlePreviewPayroll]);
 
     useEffect(() => {
+        fetchEmployees();
         fetchPayrollRuns();
-    }, [fetchPayrollRuns]);
+    }, [fetchEmployees, fetchPayrollRuns]);
 
     const handleFinalizePayroll = async () => {
         if (!draftPayroll) {
@@ -118,8 +147,6 @@ function AdminPayrollManagement() {
 
             toast.success('Payroll finalized and approved successfully!');
             setDraftPayroll(null);
-            setPayPeriodStart('');
-            setPayPeriodEnd('');
             fetchPayrollRuns();
         } catch (error) {
             console.error("Error finalizing payroll:", error);
@@ -213,6 +240,8 @@ function AdminPayrollManagement() {
                                 <th>Commission</th>
                                 <th>Tax Deduction</th>
                                 <th>PF Deduction</th>
+                                <th>Late Penalty</th>
+                                <th>Absent Penalty</th>
                                 <th>Total Deductions</th>
                                 <th>Net Pay</th>
                                 <th>Status</th>
@@ -226,6 +255,8 @@ function AdminPayrollManagement() {
                                     <td>{paycheck.commissionAmount ? `$${paycheck.commissionAmount.toFixed(2)}` : 'N/A'}</td>
                                     <td>{paycheck.taxDeduction ? `$${paycheck.taxDeduction.toFixed(2)}` : 'N/A'}</td>
                                     <td>{paycheck.providentFundDeduction ? `$${paycheck.providentFundDeduction.toFixed(2)}` : 'N/A'}</td>
+                                    <td>{paycheck.latePenaltyDeduction ? `$${paycheck.latePenaltyDeduction.toFixed(2)}` : 'N/A'}</td>
+                                    <td>{paycheck.absentPenaltyDeduction ? `$${paycheck.absentPenaltyDeduction.toFixed(2)}` : 'N/A'}</td>
                                     <td>{paycheck.totalDeductions ? `$${paycheck.totalDeductions.toFixed(2)}` : 'N/A'}</td>
                                     <td>{paycheck.netPay ? `$${paycheck.netPay.toFixed(2)}` : 'N/A'}</td>
                                     <td>
@@ -280,10 +311,83 @@ function AdminPayrollManagement() {
                         />
                     </div>
                 </div>
+
+                {/* New Dynamic Input Table */}
+                <div className="table-container mt-8">
+                    <table className="data-table w-full">
+                        <thead>
+                            <tr className="bg-gray-200 text-gray-600 uppercase text-sm leading-normal">
+                                <th className="py-3 px-6 text-left">Employee</th>
+                                <th className="py-3 px-6 text-left">Base Salary</th>
+                                <th className="py-3 px-6 text-left">Commission/Allowance</th>
+                                <th className="py-3 px-6 text-left">Tax Deduction</th>
+                                <th className="py-3 px-6 text-left">PF Deduction</th>
+                                <th className="py-3 px-6 text-left">Late Penalty</th>
+                                <th className="py-3 px-6 text-left">Absent Penalty</th>
+                            </tr>
+                        </thead>
+                        <tbody className="text-gray-600 text-sm font-light">
+                            {detailedPayrolls.map(payroll => (
+                                <tr key={payroll.employeeId} className="border-b border-gray-200 hover:bg-gray-100">
+                                    <td className="py-3 px-6 text-left whitespace-nowrap font-semibold">{payroll.employeeUsername}</td>
+                                    <td className="py-3 px-6 text-left">
+                                        <input
+                                            type="number"
+                                            value={payroll.baseSalary}
+                                            onChange={(e) => handleInputChange(payroll.employeeId, 'baseSalary', e.target.value)}
+                                            className="w-full bg-gray-50 border border-gray-300 rounded px-2 py-1"
+                                        />
+                                    </td>
+                                    <td className="py-3 px-6 text-left">
+                                        <input
+                                            type="number"
+                                            value={payroll.commissionAmount}
+                                            onChange={(e) => handleInputChange(payroll.employeeId, 'commissionAmount', e.target.value)}
+                                            className="w-full bg-gray-50 border border-gray-300 rounded px-2 py-1"
+                                        />
+                                    </td>
+                                    <td className="py-3 px-6 text-left">
+                                        <input
+                                            type="number"
+                                            value={payroll.taxDeduction}
+                                            onChange={(e) => handleInputChange(payroll.employeeId, 'taxDeduction', e.target.value)}
+                                            className="w-full bg-gray-50 border border-gray-300 rounded px-2 py-1"
+                                        />
+                                    </td>
+                                    <td className="py-3 px-6 text-left">
+                                        <input
+                                            type="number"
+                                            value={payroll.providentFundDeduction}
+                                            onChange={(e) => handleInputChange(payroll.employeeId, 'providentFundDeduction', e.target.value)}
+                                            className="w-full bg-gray-50 border border-gray-300 rounded px-2 py-1"
+                                        />
+                                    </td>
+                                    <td className="py-3 px-6 text-left">
+                                        <input
+                                            type="number"
+                                            value={payroll.latePenaltyDeduction}
+                                            onChange={(e) => handleInputChange(payroll.employeeId, 'latePenaltyDeduction', e.target.value)}
+                                            className="w-full bg-gray-50 border border-gray-300 rounded px-2 py-1"
+                                        />
+                                    </td>
+                                    <td className="py-3 px-6 text-left">
+                                        <input
+                                            type="number"
+                                            value={payroll.absentPenaltyDeduction}
+                                            onChange={(e) => handleInputChange(payroll.employeeId, 'absentPenaltyDeduction', e.target.value)}
+                                            className="w-full bg-gray-50 border border-gray-300 rounded px-2 py-1"
+                                        />
+                                    </td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                </div>
+
                 <button
-                    onClick={() => handlePreviewPayroll()}
+                    onClick={() => handlePreviewPayroll(payPeriodStart, payPeriodEnd)}
                     disabled={processing || !payPeriodStart || !payPeriodEnd}
-                    className={`btn ${processing || !payPeriodStart || !payPeriodEnd ? 'bg-gray-400 cursor-not-allowed' : 'btn-primary bg-blue-600 hover:bg-blue-700 text-white shadow-md'}`}
+                    className={`btn mt-4 ${processing || !payPeriodStart || !payPeriodEnd ? 'bg-gray-400 cursor-not-allowed' : 'btn-primary bg-blue-600 hover:bg-blue-700 text-white shadow-md'}`}
                 >
                     {processing ? 'Generating Preview...' : 'Preview Payroll'}
                 </button>
@@ -303,6 +407,8 @@ function AdminPayrollManagement() {
                                     <th>Commission</th>
                                     <th>Tax Deduction</th>
                                     <th>PF Deduction</th>
+                                    <th>Late Penalty</th>
+                                    <th>Absent Penalty</th>
                                     <th>Total Deductions</th>
                                     <th>Net Pay</th>
                                 </tr>
@@ -315,6 +421,8 @@ function AdminPayrollManagement() {
                                         <td>{paycheck.commissionAmount ? `$${paycheck.commissionAmount.toFixed(2)}` : 'N/A'}</td>
                                         <td>{paycheck.taxDeduction ? `$${paycheck.taxDeduction.toFixed(2)}` : 'N/A'}</td>
                                         <td>{paycheck.providentFundDeduction ? `$${paycheck.providentFundDeduction.toFixed(2)}` : 'N/A'}</td>
+                                        <td>{paycheck.latePenaltyDeduction ? `$${paycheck.latePenaltyDeduction.toFixed(2)}` : 'N/A'}</td>
+                                        <td>{paycheck.absentPenaltyDeduction ? `$${paycheck.absentPenaltyDeduction.toFixed(2)}` : 'N/A'}</td>
                                         <td>{paycheck.totalDeductions ? `$${paycheck.totalDeductions.toFixed(2)}` : 'N/A'}</td>
                                         <td>{paycheck.netPay ? `$${paycheck.netPay.toFixed(2)}` : 'N/A'}</td>
                                     </tr>
