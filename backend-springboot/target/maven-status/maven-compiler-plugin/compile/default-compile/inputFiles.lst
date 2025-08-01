@@ -47,6 +47,7 @@ G:\Ahadu-Pro\backend-springboot\src\main\java\com\ahadu\payroll\model\ContactMes
 G:\Ahadu-Pro\backend-springboot\src\main\java\com\ahadu\payroll\controller\AuthController.java
 G:\Ahadu-Pro\backend-springboot\src\main\java\com\ahadu\payroll\service\AttendanceService.java
 G:\Ahadu-Pro\backend-springboot\src\main\java\com\ahadu\payroll\repository\AttendanceRepository.java
+G:\Ahadu-Pro\backend-springboot\src\main\java\com\ahadu\payroll\payload\DetailedPaycheckDto.java
 G:\Ahadu-Pro\backend-springboot\src\main\java\com\ahadu\payroll\payload\UserProfileUpdateRequest.java
 G:\Ahadu-Pro\backend-springboot\src\main\java\com\ahadu\payroll\controller\UserRoleController.java
 G:\Ahadu-Pro\backend-springboot\src\main\java\com\ahadu\payroll\service\AnnouncementService.java

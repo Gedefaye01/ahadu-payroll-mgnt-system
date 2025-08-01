@@ -2,7 +2,7 @@ package com.ahadu.payroll.service;
 
 import com.ahadu.payroll.model.*;
 import com.ahadu.payroll.repository.*;
-import com.ahadu.payroll.dto.DetailedPaycheckDto;
+import com.ahadu.payroll.payload.DetailedPaycheckDto; // Corrected import statement
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 

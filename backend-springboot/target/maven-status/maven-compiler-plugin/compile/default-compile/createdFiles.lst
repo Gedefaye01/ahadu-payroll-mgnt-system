@@ -14,6 +14,7 @@ com\ahadu\payroll\service\FileStorageService.class
 com\ahadu\payroll\service\CustomUserDetailsService.class
 com\ahadu\payroll\service\ReportService.class
 com\ahadu\payroll\payload\PayrollRequest.class
+com\ahadu\payroll\payload\DetailedPaycheckDto.class
 com\ahadu\payroll\model\SalaryComponent.class
 com\ahadu\payroll\payload\AuthRequest.class
 com\ahadu\payroll\payload\ReportRequest.class
