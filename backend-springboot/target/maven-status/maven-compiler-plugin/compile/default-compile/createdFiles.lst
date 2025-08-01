@@ -1,4 +1,5 @@
 com\ahadu\payroll\controller\ContactController.class
+com\ahadu\payroll\model\Paycheck.class
 com\ahadu\payroll\service\UserProfileService.class
 com\ahadu\payroll\model\Announcement.class
 com\ahadu\payroll\controller\AuthController.class
@@ -6,13 +7,13 @@ com\ahadu\payroll\service\LocalFileStorageServiceImpl.class
 com\ahadu\payroll\service\AnnouncementService.class
 com\ahadu\payroll\payload\SignupRequest.class
 com\ahadu\payroll\payload\JwtResponse.class
-com\ahadu\payroll\repository\PayrollRepository.class
 com\ahadu\payroll\service\SystemSettingService.class
 com\ahadu\payroll\model\SystemSetting.class
 com\ahadu\payroll\model\Role.class
 com\ahadu\payroll\service\FileStorageService.class
 com\ahadu\payroll\service\CustomUserDetailsService.class
 com\ahadu\payroll\service\ReportService.class
+com\ahadu\payroll\payload\PayrollRequest.class
 com\ahadu\payroll\model\SalaryComponent.class
 com\ahadu\payroll\payload\AuthRequest.class
 com\ahadu\payroll\payload\ReportRequest.class
@@ -22,18 +23,19 @@ com\ahadu\payroll\service\UserRoleService.class
 com\ahadu\payroll\payload\AttendanceOverviewResponse.class
 com\ahadu\payroll\service\ReportServiceImpl.class
 com\ahadu\payroll\service\PayrollService.class
+com\ahadu\payroll\repository\PayrollRunRepository.class
 com\ahadu\payroll\security\JwtUtil.class
 com\ahadu\payroll\service\SalaryComponentService.class
 com\ahadu\payroll\controller\SystemSettingsController.class
 com\ahadu\payroll\model\Attendance.class
 com\ahadu\payroll\payload\ApiResponse.class
+com\ahadu\payroll\payload\FinalizeRequest.class
 com\ahadu\payroll\security\SecurityConfig.class
 com\ahadu\payroll\payload\AuthResponse.class
 com\ahadu\payroll\controller\UserProfileController.class
 com\ahadu\payroll\payload\ChangePasswordRequest.class
 com\ahadu\payroll\controller\UserRoleController.class
 com\ahadu\payroll\security\JwtAccessDeniedHandler.class
-com\ahadu\payroll\model\Payroll.class
 com\ahadu\payroll\security\UserDetailsImpl.class
 com\ahadu\payroll\repository\UserRepository.class
 com\ahadu\payroll\model\User.class
@@ -44,6 +46,7 @@ com\ahadu\payroll\model\LeaveRequest.class
 com\ahadu\payroll\service\EmployeeService.class
 com\ahadu\payroll\config\WebConfig.class
 com\ahadu\payroll\controller\PayrollController.class
+com\ahadu\payroll\model\PayrollRun.class
 com\ahadu\payroll\payload\LoginRequest.class
 com\ahadu\payroll\repository\LeaveRequestRepository.class
 com\ahadu\payroll\repository\ContactRepository.class
@@ -62,6 +65,7 @@ com\ahadu\payroll\scheduler\AttendanceScheduler.class
 com\ahadu\payroll\service\ContactService.class
 com\ahadu\payroll\payload\UserRoleUpdateRequest.class
 com\ahadu\payroll\controller\EmployeeController.class
+com\ahadu\payroll\repository\PaycheckRepository.class
 com\ahadu\payroll\model\ContactMessage.class
 com\ahadu\payroll\payload\UserProfileUpdateRequest.class
 com\ahadu\payroll\repository\AttendanceRepository.class

@@ -2,7 +2,7 @@ package com.ahadu.payroll.model;
 
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
-
+import java.math.BigDecimal; // <-- ADD THIS IMPORT
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -16,9 +16,9 @@ public class PayrollRun {
     private LocalDate payPeriodEnd;
     private LocalDateTime processedAt;
     private String status; // e.g., DRAFT, APPROVED, PAID
-    private double totalGrossPay;
-    private double totalDeductions;
-    private double totalNetPay;
+    private BigDecimal totalGrossPay; // <-- UPDATED TO BIGDECIMAL
+    private BigDecimal totalDeductions; // <-- UPDATED TO BIGDECIMAL
+    private BigDecimal totalNetPay; // <-- UPDATED TO BIGDECIMAL
     private List<Paycheck> paychecks;
 
     // Getters and Setters
@@ -32,12 +32,12 @@ public class PayrollRun {
     public void setProcessedAt(LocalDateTime processedAt) { this.processedAt = processedAt; }
     public String getStatus() { return status; }
     public void setStatus(String status) { this.status = status; }
-    public double getTotalGrossPay() { return totalGrossPay; }
-    public void setTotalGrossPay(double totalGrossPay) { this.totalGrossPay = totalGrossPay; }
-    public double getTotalDeductions() { return totalDeductions; }
-    public void setTotalDeductions(double totalDeductions) { this.totalDeductions = totalDeductions; }
-    public double getTotalNetPay() { return totalNetPay; }
-    public void setTotalNetPay(double totalNetPay) { this.totalNetPay = totalNetPay; }
+    public BigDecimal getTotalGrossPay() { return totalGrossPay; }
+    public void setTotalGrossPay(BigDecimal totalGrossPay) { this.totalGrossPay = totalGrossPay; }
+    public BigDecimal getTotalDeductions() { return totalDeductions; }
+    public void setTotalDeductions(BigDecimal totalDeductions) { this.totalDeductions = totalDeductions; }
+    public BigDecimal getTotalNetPay() { return totalNetPay; }
+    public void setTotalNetPay(BigDecimal totalNetPay) { this.totalNetPay = totalNetPay; }
     public List<Paycheck> getPaychecks() { return paychecks; }
     public void setPaychecks(List<Paycheck> paychecks) { this.paychecks = paychecks; }
 }

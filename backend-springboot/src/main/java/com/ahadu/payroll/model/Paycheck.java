@@ -2,7 +2,7 @@ package com.ahadu.payroll.model;
 
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
-
+import java.math.BigDecimal; // <-- ADD THIS IMPORT
 import java.time.LocalDate;
 
 @Document(collection = "paychecks")
@@ -15,9 +15,9 @@ public class Paycheck {
     private String employeeUsername;
     private LocalDate payPeriodStart;
     private LocalDate payPeriodEnd;
-    private double grossPay;
-    private double totalDeductions;
-    private double netPay;
+    private BigDecimal grossPay; // <-- UPDATED TO BIGDECIMAL
+    private BigDecimal totalDeductions; // <-- UPDATED TO BIGDECIMAL
+    private BigDecimal netPay; // <-- UPDATED TO BIGDECIMAL
     private String status; // DRAFT, APPROVED, PAID
 
     // Getters and Setters
@@ -33,12 +33,12 @@ public class Paycheck {
     public void setPayPeriodStart(LocalDate payPeriodStart) { this.payPeriodStart = payPeriodStart; }
     public LocalDate getPayPeriodEnd() { return payPeriodEnd; }
     public void setPayPeriodEnd(LocalDate payPeriodEnd) { this.payPeriodEnd = payPeriodEnd; }
-    public double getGrossPay() { return grossPay; }
-    public void setGrossPay(double grossPay) { this.grossPay = grossPay; }
-    public double getTotalDeductions() { return totalDeductions; }
-    public void setTotalDeductions(double totalDeductions) { this.totalDeductions = totalDeductions; }
-    public double getNetPay() { return netPay; }
-    public void setNetPay(double netPay) { this.netPay = netPay; }
+    public BigDecimal getGrossPay() { return grossPay; }
+    public void setGrossPay(BigDecimal grossPay) { this.grossPay = grossPay; }
+    public BigDecimal getTotalDeductions() { return totalDeductions; }
+    public void setTotalDeductions(BigDecimal totalDeductions) { this.totalDeductions = totalDeductions; }
+    public BigDecimal getNetPay() { return netPay; }
+    public void setNetPay(BigDecimal netPay) { this.netPay = netPay; }
     public String getStatus() { return status; }
     public void setStatus(String status) { this.status = status; }
 }
