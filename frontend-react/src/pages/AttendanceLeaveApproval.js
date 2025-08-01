@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { toast } from 'react-toastify';
-import { format } from 'date-fns'; // Import format for date formatting
+import { format } from 'date-fns';
 
 /**
  * AttendanceLeaveApproval Component
@@ -11,9 +11,10 @@ import { format } from 'date-fns'; // Import format for date formatting
 function AttendanceLeaveApproval() {
   const [allLeaveRequests, setAllLeaveRequests] = useState([]);
   const [allAttendanceRecords, setAllAttendanceRecords] = useState([]);
-  const [attendanceStats, setAttendanceStats] = useState({ // New state for aggregated attendance stats
+  const [attendanceStats, setAttendanceStats] = useState({ // Updated state for aggregated attendance stats
     totalEmployees: 0,
     presentToday: 0,
+    lateToday: 0, // NEW: Added state for late employees
     onLeaveToday: 0,
     absentToday: 0,
   });
@@ -33,7 +34,6 @@ function AttendanceLeaveApproval() {
    */
   const fetchAllLeaveRequests = useCallback(async () => {
     try {
-      // Corrected endpoint: Removed '/admin' to match backend controller
       const response = await fetch(`${API_BASE_URL}/api/leave-requests/all`, {
         headers: authHeaders
       });
@@ -47,7 +47,7 @@ function AttendanceLeaveApproval() {
       toast.error("Failed to load all leave requests.");
       setError("Failed to load leave requests. Please try again.");
     }
-  }, [API_BASE_URL, token]); // Dependencies: API_BASE_URL, token
+  }, [API_BASE_URL, token]);
 
   /**
    * Fetches all attendance records from the backend API.
@@ -55,7 +55,6 @@ function AttendanceLeaveApproval() {
    */
   const fetchAllAttendanceRecords = useCallback(async () => {
     try {
-      // Corrected endpoint: Removed '/admin' to match backend controller
       const response = await fetch(`${API_BASE_URL}/api/attendance/all`, {
         headers: authHeaders
       });
@@ -69,7 +68,7 @@ function AttendanceLeaveApproval() {
       toast.error("Failed to load all attendance records.");
       setError("Failed to load attendance records. Please try again.");
     }
-  }, [API_BASE_URL, token]); // Dependencies: API_BASE_URL, token
+  }, [API_BASE_URL, token]);
 
   /**
    * Fetches aggregated attendance statistics from the backend API.
@@ -78,7 +77,6 @@ function AttendanceLeaveApproval() {
    */
   const fetchAttendanceStats = useCallback(async () => {
     try {
-      // This endpoint was already correct as per backend plans
       const response = await fetch(`${API_BASE_URL}/api/attendance/admin/overview`, {
         headers: authHeaders
       });
@@ -86,13 +84,13 @@ function AttendanceLeaveApproval() {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
       const data = await response.json();
-      setAttendanceStats(data); // Assuming backend returns { totalEmployees, presentToday, onLeaveToday, absentToday }
+      setAttendanceStats(data); // Assuming backend returns { totalEmployees, presentToday, lateToday, onLeaveToday, absentToday }
     } catch (err) {
       console.error("Failed to fetch attendance overview:", err);
       toast.error("Failed to load attendance overview.");
       setError("Failed to load attendance overview. Please try again.");
     }
-  }, [API_BASE_URL, token]); // Dependencies: API_BASE_URL, token
+  }, [API_BASE_URL, token]);
 
   // Fetch all data on component mount
   useEffect(() => {
@@ -102,12 +100,12 @@ function AttendanceLeaveApproval() {
       await Promise.all([
         fetchAllLeaveRequests(),
         fetchAllAttendanceRecords(),
-        fetchAttendanceStats() // Call the new function
+        fetchAttendanceStats()
       ]);
       setLoading(false);
     };
     loadData();
-  }, [fetchAllLeaveRequests, fetchAllAttendanceRecords, fetchAttendanceStats]); // Add fetchAttendanceStats to dependencies
+  }, [fetchAllLeaveRequests, fetchAllAttendanceRecords, fetchAttendanceStats]);
 
   /**
    * Handles approving or rejecting a leave request.
@@ -115,13 +113,11 @@ function AttendanceLeaveApproval() {
    * @param {string} status - The new status ('approve' or 'reject').
    */
   const handleApproveReject = async (requestId, status) => {
-    // IMPORTANT: Replace window.confirm with a custom modal for better UX
     if (!window.confirm(`Are you sure you want to ${status} this leave request?`)) {
       return;
     }
 
     try {
-      // Corrected endpoint: Removed '/admin' to match backend controller
       const response = await fetch(`${API_BASE_URL}/api/leave-requests/${requestId}/${status}`, {
         method: 'PUT',
         headers: authHeaders
@@ -133,8 +129,8 @@ function AttendanceLeaveApproval() {
       }
 
       toast.success(`Leave request ${status}d successfully!`);
-      fetchAllLeaveRequests(); // Re-fetch all leave requests to update the list
-      fetchAttendanceStats(); // Re-fetch stats in case leave status affects 'on leave today' count
+      fetchAllLeaveRequests();
+      fetchAttendanceStats();
     } catch (err) {
       console.error(`Error ${status}ing leave request:`, err);
       toast.error(err.message || `Failed to ${status} leave request.`);
@@ -169,6 +165,7 @@ function AttendanceLeaveApproval() {
         <div className="grid grid-cols-2 gap-4 text-gray-700">
           <p><strong>Total Employees:</strong> {attendanceStats.totalEmployees}</p>
           <p><strong>Present:</strong> <span className="text-green-600 font-bold">{attendanceStats.presentToday}</span></p>
+          <p><strong>Late:</strong> <span className="text-yellow-600 font-bold">{attendanceStats.lateToday}</span></p> {/* NEW: Added display for lateToday */}
           <p><strong>On Leave:</strong> <span className="text-yellow-600 font-bold">{attendanceStats.onLeaveToday}</span></p>
           <p><strong>Absent:</strong> <span className="text-red-600 font-bold">{attendanceStats.absentToday}</span></p>
         </div>
