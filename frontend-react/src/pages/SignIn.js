@@ -139,7 +139,7 @@ function SignIn() {
               onClick={() => handleLoginTypeChange(type)}
               style={{
                 padding: '0.5rem 1rem',
-                backgroundColor: loginType === type ? '#612235' : '#e0e0e0',
+                backgroundColor: loginType === type ? '#75073d' : '#e0e0e0',
                 color: loginType === type ? 'white' : 'black',
                 border: 'none',
                 borderRadius: 4,

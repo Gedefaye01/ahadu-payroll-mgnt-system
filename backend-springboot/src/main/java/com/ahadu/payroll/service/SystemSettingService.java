@@ -1,18 +1,16 @@
 package com.ahadu.payroll.service;
 
 import com.ahadu.payroll.model.SystemSetting;
-import org.springframework.stereotype.Service;
-
-import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
 /**
- * Service class for managing system-wide settings.
- * Provides methods for retrieving and updating settings.
+ * Service interface for managing system-wide settings.
+ * Declares methods for retrieving and updating settings, including password policy.
  */
-@Service
-public interface SystemSettingService { // Changed to interface
+// @Service annotation is typically not needed on interfaces unless you're using Spring's proxy-based AOP
+// but it doesn't cause harm here.
+public interface SystemSettingService {
 
     List<SystemSetting> getAllSettings();
 
@@ -28,14 +26,14 @@ public interface SystemSettingService { // Changed to interface
     Optional<Double> getTaxRate();
     void setTaxRate(Double rate);
 
-    // NEW METHODS: For retrieving password policy settings
+    // Methods for retrieving password policy settings
     Optional<Integer> getMinPasswordLength();
     Optional<Boolean> getRequireUppercase();
     Optional<Boolean> getRequireLowercase();
     Optional<Boolean> getRequireDigit();
     Optional<Boolean> getRequireSpecialChar();
 
-    // You might also want setters for these if you allow dynamic updates via this service
+    // Setters for password policy settings
     void setMinPasswordLength(int length);
     void setRequireUppercase(boolean required);
     void setRequireLowercase(boolean required);

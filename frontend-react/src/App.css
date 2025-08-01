@@ -573,7 +573,7 @@ body {
 /* Updated table action buttons to use primary color */
 .table-actions button.text-indigo-600:hover, /* Edit button hover */
 .table-actions button.text-red-600:hover { /* Delete button hover */
-    background-color: var(--secondary-color); /* Darker primary for hover */
+    background-color: var(--primary-color); /* Darker primary for hover */
     transform: translateY(-1px);
 }
 

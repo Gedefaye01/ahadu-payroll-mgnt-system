@@ -24,6 +24,7 @@ com\ahadu\payroll\service\UserRoleService.class
 com\ahadu\payroll\payload\AttendanceOverviewResponse.class
 com\ahadu\payroll\service\ReportServiceImpl.class
 com\ahadu\payroll\service\PayrollService.class
+com\ahadu\payroll\service\SystemSettingServiceImpl.class
 com\ahadu\payroll\repository\PayrollRunRepository.class
 com\ahadu\payroll\security\JwtUtil.class
 com\ahadu\payroll\service\SalaryComponentService.class

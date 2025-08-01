@@ -58,6 +58,7 @@ G:\Ahadu-Pro\backend-springboot\src\main\java\com\ahadu\payroll\PayrollApplicati
 G:\Ahadu-Pro\backend-springboot\src\main\java\com\ahadu\payroll\repository\LeaveRequestRepository.java
 G:\Ahadu-Pro\backend-springboot\src\main\java\com\ahadu\payroll\service\PayrollService.java
 G:\Ahadu-Pro\backend-springboot\src\main\java\com\ahadu\payroll\controller\SystemSettingsController.java
+G:\Ahadu-Pro\backend-springboot\src\main\java\com\ahadu\payroll\service\SystemSettingServiceImpl.java
 G:\Ahadu-Pro\backend-springboot\src\main\java\com\ahadu\payroll\repository\SalaryComponentRepository.java
 G:\Ahadu-Pro\backend-springboot\src\main\java\com\ahadu\payroll\service\ContactService.java
 G:\Ahadu-Pro\backend-springboot\src\main\java\com\ahadu\payroll\service\UserProfileService.java
