@@ -390,7 +390,7 @@ function AddEmployee() {
                     </button>
                     <button
                       onClick={() => openPasswordResetModal(employee)}
-                      className="btn btn-primary" // Already btn btn-primary, ensure consistent spacing if needed
+                      className="btn btn-primary mr-3" // Already btn btn-primary, ensure consistent spacing if needed
                     >
                       Reset Password
                     </button>
@@ -439,13 +439,13 @@ function AddEmployee() {
                 <button
                   type="button"
                   onClick={() => setShowPasswordResetModal(false)}
-                  className="btn btn-secondary"
+                  className="btn btn-primary mr-3"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="btn btn-primary"
+                  className="btn btn-primary mr-3"
                 >
                   Set New Password
                 </button>
