@@ -73,7 +73,7 @@ public class AttendanceLeaveController {
         }
         Attendance existingAttendance = existingAttendanceOptional.get();
         String authenticatedUserId = userDetails.getId();
-        boolean isAdmin = userDetails.getAuthorities().stream().anyMatch(a -> a.getAuthority().equals("ADMIN"));
+        boolean isAdmin = userDetails.getAuthorities().stream().anyMatch(a -> a.getAuthority().equals("ADMIN'));
         if (!isAdmin && !existingAttendance.getEmployeeId().equals(authenticatedUserId)) {
             return new ResponseEntity<>(HttpStatus.FORBIDDEN);
         }
@@ -131,6 +131,14 @@ public class AttendanceLeaveController {
     public ResponseEntity<AttendanceOverviewResponse> getAttendanceOverview() {
         AttendanceOverviewResponse overview = attendanceService.getAttendanceOverview();
         return ResponseEntity.ok(overview);
+    }
+
+    // NEW: Endpoint to delete an attendance record by ID
+    @DeleteMapping("/attendance/{id}")
+    @PreAuthorize("hasAuthority('ADMIN')")
+    public ResponseEntity<Void> deleteAttendance(@PathVariable String id) {
+        attendanceService.deleteAttendance(id);
+        return new ResponseEntity<>(HttpStatus.NO_CONTENT);
     }
 
     // Leave Request Endpoints

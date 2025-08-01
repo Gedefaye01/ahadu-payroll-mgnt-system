@@ -11,13 +11,15 @@ import { format } from 'date-fns';
 function AttendanceLeaveApproval() {
   const [allLeaveRequests, setAllLeaveRequests] = useState([]);
   const [allAttendanceRecords, setAllAttendanceRecords] = useState([]);
-  const [attendanceStats, setAttendanceStats] = useState({ // Updated state for aggregated attendance stats
+  const [attendanceStats, setAttendanceStats] = useState({
     totalEmployees: 0,
     presentToday: 0,
-    lateToday: 0, // NEW: Added state for late employees
+    lateToday: 0,
     onLeaveToday: 0,
     absentToday: 0,
   });
+  const [selectedLeaveRequests, setSelectedLeaveRequests] = useState([]);
+  const [selectedAttendanceRecords, setSelectedAttendanceRecords] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
@@ -28,18 +30,10 @@ function AttendanceLeaveApproval() {
     'Authorization': `Bearer ${token}`
   };
 
-  /**
-   * Fetches all leave requests from the backend API.
-   * Memoized with useCallback.
-   */
   const fetchAllLeaveRequests = useCallback(async () => {
     try {
-      const response = await fetch(`${API_BASE_URL}/api/leave-requests/all`, {
-        headers: authHeaders
-      });
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
+      const response = await fetch(`${API_BASE_URL}/api/leave-requests/all`, { headers: authHeaders });
+      if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
       const data = await response.json();
       setAllLeaveRequests(data);
     } catch (err) {
@@ -49,18 +43,10 @@ function AttendanceLeaveApproval() {
     }
   }, [API_BASE_URL, token]);
 
-  /**
-   * Fetches all attendance records from the backend API.
-   * Memoized with useCallback.
-   */
   const fetchAllAttendanceRecords = useCallback(async () => {
     try {
-      const response = await fetch(`${API_BASE_URL}/api/attendance/all`, {
-        headers: authHeaders
-      });
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
+      const response = await fetch(`${API_BASE_URL}/api/attendance/all`, { headers: authHeaders });
+      if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
       const data = await response.json();
       setAllAttendanceRecords(data);
     } catch (err) {
@@ -70,21 +56,12 @@ function AttendanceLeaveApproval() {
     }
   }, [API_BASE_URL, token]);
 
-  /**
-   * Fetches aggregated attendance statistics from the backend API.
-   * This is a NEW function to get the overview directly from the server.
-   * Memoized with useCallback.
-   */
   const fetchAttendanceStats = useCallback(async () => {
     try {
-      const response = await fetch(`${API_BASE_URL}/api/attendance/admin/overview`, {
-        headers: authHeaders
-      });
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
+      const response = await fetch(`${API_BASE_URL}/api/attendance/admin/overview`, { headers: authHeaders });
+      if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
       const data = await response.json();
-      setAttendanceStats(data); // Assuming backend returns { totalEmployees, presentToday, lateToday, onLeaveToday, absentToday }
+      setAttendanceStats(data);
     } catch (err) {
       console.error("Failed to fetch attendance overview:", err);
       toast.error("Failed to load attendance overview.");
@@ -92,11 +69,9 @@ function AttendanceLeaveApproval() {
     }
   }, [API_BASE_URL, token]);
 
-  // Fetch all data on component mount
   useEffect(() => {
     const loadData = async () => {
       setLoading(true);
-      // Fetch all three sets of data concurrently
       await Promise.all([
         fetchAllLeaveRequests(),
         fetchAllAttendanceRecords(),
@@ -107,27 +82,17 @@ function AttendanceLeaveApproval() {
     loadData();
   }, [fetchAllLeaveRequests, fetchAllAttendanceRecords, fetchAttendanceStats]);
 
-  /**
-   * Handles approving or rejecting a leave request.
-   * @param {string} requestId - The ID of the leave request to update.
-   * @param {string} status - The new status ('approve' or 'reject').
-   */
   const handleApproveReject = async (requestId, status) => {
-    if (!window.confirm(`Are you sure you want to ${status} this leave request?`)) {
-      return;
-    }
-
+    if (!window.confirm(`Are you sure you want to ${status} this leave request?`)) return;
     try {
       const response = await fetch(`${API_BASE_URL}/api/leave-requests/${requestId}/${status}`, {
         method: 'PUT',
         headers: authHeaders
       });
-
       if (!response.ok) {
         const errorData = await response.json();
         throw new Error(errorData.message || `Failed to ${status} leave request.`);
       }
-
       toast.success(`Leave request ${status}d successfully!`);
       fetchAllLeaveRequests();
       fetchAttendanceStats();
@@ -138,6 +103,74 @@ function AttendanceLeaveApproval() {
   };
 
   const pendingLeaveRequests = allLeaveRequests.filter(req => req.status === 'Pending');
+
+  // --- NEW: Selection and Deletion Handlers ---
+
+  const handleSelectLeaveRequest = (id) => {
+    setSelectedLeaveRequests(prev =>
+      prev.includes(id) ? prev.filter(requestId => requestId !== id) : [...prev, id]
+    );
+  };
+
+  const handleSelectAllLeaveRequests = () => {
+    if (selectedLeaveRequests.length === allLeaveRequests.length) {
+      setSelectedLeaveRequests([]);
+    } else {
+      setSelectedLeaveRequests(allLeaveRequests.map(req => req.id));
+    }
+  };
+
+  const handleDeleteSelectedLeaveRequests = async () => {
+    if (!window.confirm(`Are you sure you want to delete ${selectedLeaveRequests.length} leave request(s)?`)) return;
+
+    try {
+      await Promise.all(selectedLeaveRequests.map(id => 
+        fetch(`${API_BASE_URL}/api/leave-requests/${id}`, {
+          method: 'DELETE',
+          headers: authHeaders
+        })
+      ));
+      toast.success(`${selectedLeaveRequests.length} leave request(s) deleted successfully!`);
+      setSelectedLeaveRequests([]);
+      fetchAllLeaveRequests(); // Re-fetch to update the table
+    } catch (err) {
+      console.error("Failed to delete leave requests:", err);
+      toast.error("Failed to delete one or more leave requests.");
+    }
+  };
+
+  const handleSelectAttendanceRecord = (id) => {
+    setSelectedAttendanceRecords(prev =>
+      prev.includes(id) ? prev.filter(recordId => recordId !== id) : [...prev, id]
+    );
+  };
+
+  const handleSelectAllAttendanceRecords = () => {
+    if (selectedAttendanceRecords.length === allAttendanceRecords.length) {
+      setSelectedAttendanceRecords([]);
+    } else {
+      setSelectedAttendanceRecords(allAttendanceRecords.map(rec => rec.id));
+    }
+  };
+
+  const handleDeleteSelectedAttendanceRecords = async () => {
+    if (!window.confirm(`Are you sure you want to delete ${selectedAttendanceRecords.length} attendance record(s)?`)) return;
+
+    try {
+      await Promise.all(selectedAttendanceRecords.map(id =>
+        fetch(`${API_BASE_URL}/api/attendance/${id}`, {
+          method: 'DELETE',
+          headers: authHeaders
+        })
+      ));
+      toast.success(`${selectedAttendanceRecords.length} attendance record(s) deleted successfully!`);
+      setSelectedAttendanceRecords([]);
+      fetchAllAttendanceRecords(); // Re-fetch to update the table
+    } catch (err) {
+      console.error("Failed to delete attendance records:", err);
+      toast.error("Failed to delete one or more attendance records.");
+    }
+  };
 
   if (loading) {
     return (
@@ -165,7 +198,7 @@ function AttendanceLeaveApproval() {
         <div className="grid grid-cols-2 gap-4 text-gray-700">
           <p><strong>Total Employees:</strong> {attendanceStats.totalEmployees}</p>
           <p><strong>Present:</strong> <span className="text-green-600 font-bold">{attendanceStats.presentToday}</span></p>
-          <p><strong>Late:</strong> <span className="text-yellow-600 font-bold">{attendanceStats.lateToday}</span></p> {/* NEW: Added display for lateToday */}
+          <p><strong>Late:</strong> <span className="text-yellow-600 font-bold">{attendanceStats.lateToday}</span></p>
           <p><strong>On Leave:</strong> <span className="text-yellow-600 font-bold">{attendanceStats.onLeaveToday}</span></p>
           <p><strong>Absent:</strong> <span className="text-red-600 font-bold">{attendanceStats.absentToday}</span></p>
         </div>
@@ -218,7 +251,16 @@ function AttendanceLeaveApproval() {
       )}
 
       {/* All Leave Requests Table (including Approved/Rejected) */}
-      <h3 className="text-xl font-semibold text-gray-700 mt-8 mb-4">All Leave Requests</h3>
+      <h3 className="text-xl font-semibold text-gray-700 mt-8 mb-4 flex justify-between items-center">
+        All Leave Requests
+        <button
+          onClick={handleDeleteSelectedLeaveRequests}
+          disabled={selectedLeaveRequests.length === 0}
+          className={`btn bg-red-500 text-white text-sm font-bold py-2 px-4 rounded-md ${selectedLeaveRequests.length === 0 ? 'opacity-50 cursor-not-allowed' : 'hover:bg-red-600'}`}
+        >
+          Delete Selected ({selectedLeaveRequests.length})
+        </button>
+      </h3>
       {allLeaveRequests.length === 0 ? (
         <p className="text-center text-gray-500">No leave requests.</p>
       ) : (
@@ -226,6 +268,13 @@ function AttendanceLeaveApproval() {
           <table className="data-table">
             <thead>
               <tr>
+                <th>
+                  <input
+                    type="checkbox"
+                    checked={selectedLeaveRequests.length === allLeaveRequests.length}
+                    onChange={handleSelectAllLeaveRequests}
+                  />
+                </th>
                 <th>ID</th>
                 <th>Employee</th>
                 <th>Type</th>
@@ -237,6 +286,13 @@ function AttendanceLeaveApproval() {
             <tbody>
               {allLeaveRequests.map(req => (
                 <tr key={req.id}>
+                  <td>
+                    <input
+                      type="checkbox"
+                      checked={selectedLeaveRequests.includes(req.id)}
+                      onChange={() => handleSelectLeaveRequest(req.id)}
+                    />
+                  </td>
                   <td>{req.id}</td>
                   <td>{req.employeeUsername}</td>
                   <td>{req.leaveType}</td>
@@ -259,7 +315,16 @@ function AttendanceLeaveApproval() {
       )}
 
       {/* All Attendance Records Table */}
-      <h3 className="text-xl font-semibold text-gray-700 mt-8 mb-4">All Attendance Records</h3>
+      <h3 className="text-xl font-semibold text-gray-700 mt-8 mb-4 flex justify-between items-center">
+        All Attendance Records
+        <button
+          onClick={handleDeleteSelectedAttendanceRecords}
+          disabled={selectedAttendanceRecords.length === 0}
+          className={`btn bg-red-500 text-white text-sm font-bold py-2 px-4 rounded-md ${selectedAttendanceRecords.length === 0 ? 'opacity-50 cursor-not-allowed' : 'hover:bg-red-600'}`}
+        >
+          Delete Selected ({selectedAttendanceRecords.length})
+        </button>
+      </h3>
       {allAttendanceRecords.length === 0 ? (
         <p className="text-center text-gray-500">No attendance records.</p>
       ) : (
@@ -267,6 +332,13 @@ function AttendanceLeaveApproval() {
           <table className="data-table">
             <thead>
               <tr>
+                <th>
+                  <input
+                    type="checkbox"
+                    checked={selectedAttendanceRecords.length === allAttendanceRecords.length}
+                    onChange={handleSelectAllAttendanceRecords}
+                  />
+                </th>
                 <th>ID</th>
                 <th>Employee</th>
                 <th>Date</th>
@@ -278,6 +350,13 @@ function AttendanceLeaveApproval() {
             <tbody>
               {allAttendanceRecords.map(rec => (
                 <tr key={rec.id}>
+                  <td>
+                    <input
+                      type="checkbox"
+                      checked={selectedAttendanceRecords.includes(rec.id)}
+                      onChange={() => handleSelectAttendanceRecord(rec.id)}
+                    />
+                  </td>
                   <td>{rec.id}</td>
                   <td>{rec.employeeUsername}</td>
                   <td>{format(new Date(rec.date), 'PP')}</td>
