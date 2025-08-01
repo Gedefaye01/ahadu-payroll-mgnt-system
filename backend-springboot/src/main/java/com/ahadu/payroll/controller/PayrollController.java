@@ -1,30 +1,26 @@
 package com.ahadu.payroll.controller;
 
-import com.ahadu.payroll.model.Payroll;
-import com.ahadu.payroll.payload.PayrollProcessRequest;
+import com.ahadu.payroll.model.Paycheck;
+import com.ahadu.payroll.model.PayrollRun;
+import com.ahadu.payroll.payload.FinalizeRequest;
+import com.ahadu.payroll.payload.PayrollRequest;
 import com.ahadu.payroll.security.UserDetailsImpl;
 import com.ahadu.payroll.service.PayrollService;
-
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize; // For role-based authorization
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDate;
 import java.util.List;
 
-/**
- * REST Controller for managing payroll operations.
- * Provides endpoints for processing payroll and retrieving payroll runs for
- * admins,
- * and now also for employees to view their own payslips.
- */
 @RestController
-@RequestMapping("/api/payroll") // Consistent base path for payroll management
-@CrossOrigin(origins = "*", maxAge = 3600) // Adjust CORS as needed for your frontend URL
-public class PayrollController { // Removed @PreAuthorize at class level to allow mixed access
+@RequestMapping("/api/payroll")
+@CrossOrigin(origins = "*", maxAge = 3600)
+public class PayrollController {
 
     private final PayrollService payrollService;
 
@@ -33,77 +29,63 @@ public class PayrollController { // Removed @PreAuthorize at class level to allo
         this.payrollService = payrollService;
     }
 
-    /**
-     * Endpoint to trigger payroll processing for a given period.
-     * Only accessible by ADMINs.
-     * * @param request A DTO containing the start and end dates for the payroll
-     * period.
-     * 
-     * @return ResponseEntity with a list of generated Payroll records and CREATED
-     *         status.
-     */
-    @PostMapping("/process")
-    @PreAuthorize("hasAuthority('ADMIN')") // Specific authorization for admin actions
-    public ResponseEntity<List<Payroll>> processPayroll(@RequestBody PayrollProcessRequest request) {
-        if (request.getPayPeriodStart() == null || request.getPayPeriodEnd() == null) {
-            return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
-        }
-        List<Payroll> generatedPayrolls = payrollService.processPayroll(request.getPayPeriodStart(),
-                request.getPayPeriodEnd());
-        return new ResponseEntity<>(generatedPayrolls, HttpStatus.CREATED);
-    }
-
-    /**
-     * Retrieves all payroll runs. Only accessible by ADMINs.
-     * * @return ResponseEntity with a list of all Payroll records.
-     */
+    // --- Admin Endpoints ---
     @GetMapping("/runs")
-    @PreAuthorize("hasAuthority('ADMIN')") // Specific authorization for admin actions
-    public ResponseEntity<List<Payroll>> getAllPayrollRuns() {
-        List<Payroll> payrollRuns = payrollService.getAllPayrollRuns();
-        return ResponseEntity.ok(payrollRuns);
+    @PreAuthorize("hasAuthority('ADMIN')")
+    public ResponseEntity<List<PayrollRun>> getAllPayrollRuns() {
+        return ResponseEntity.ok(payrollService.getAllPayrollRuns());
     }
 
-    /**
-     * Retrieves a single payroll record by its ID. Only accessible by ADMINs.
-     * This might be used for viewing details of a specific payslip.
-     * * @param id The ID of the payroll record.
-     * 
-     * @return ResponseEntity with the Payroll object or not found status.
-     */
-    @GetMapping("/runs/{id}")
-    @PreAuthorize("hasAuthority('ADMIN')") // Specific authorization for admin actions
-    public ResponseEntity<Payroll> getPayrollRunById(@PathVariable String id) {
-        return payrollService.getPayrollById(id)
+    @GetMapping("/run/{id}")
+    @PreAuthorize("hasAuthority('ADMIN')")
+    public ResponseEntity<PayrollRun> getPayrollRunDetails(@PathVariable String id) {
+        return payrollService.getPayrollRunById(id)
                 .map(ResponseEntity::ok)
                 .orElse(new ResponseEntity<>(HttpStatus.NOT_FOUND));
     }
 
-    /**
-     * Retrieves payroll records (payslips) for the authenticated employee.
-     * Accessible by both USERs and ADMINs (to view their own payslips).
-     * * @return ResponseEntity with a list of Payroll records for the current user.
-     */
-    @GetMapping("/my-payslips")
-    @PreAuthorize("hasAnyAuthority('USER', 'ADMIN')") // Accessible by both USER and ADMIN
-    public ResponseEntity<List<Payroll>> getMyPayslips() {
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+    @PostMapping("/preview")
+    @PreAuthorize("hasAuthority('ADMIN')")
+    public ResponseEntity<PayrollRun> previewPayroll(@RequestBody PayrollRequest payrollRequest) {
+        try {
+            LocalDate start = LocalDate.parse(payrollRequest.getPayPeriodStart());
+            LocalDate end = LocalDate.parse(payrollRequest.getPayPeriodEnd());
+            PayrollRun payrollRun = payrollService.previewPayroll(start, end);
+            return new ResponseEntity<>(payrollRun, HttpStatus.OK);
+        } catch (Exception e) {
+            return new ResponseEntity<>(null, HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
 
-        // Defensive check to prevent ClassCastException
+    @PostMapping("/finalize")
+    @PreAuthorize("hasAuthority('ADMIN')")
+    public ResponseEntity<PayrollRun> finalizePayroll(@RequestBody FinalizeRequest finalizeRequest) {
+        return payrollService.finalizePayroll(finalizeRequest.getPayrollRunId())
+                .map(ResponseEntity::ok)
+                .orElse(new ResponseEntity<>(HttpStatus.NOT_FOUND));
+    }
+
+    @DeleteMapping("/run/{id}")
+    @PreAuthorize("hasAuthority('ADMIN')")
+    public ResponseEntity<Void> deletePayrollRun(@PathVariable String id) {
+        boolean deleted = payrollService.deletePayrollRun(id);
+        if (deleted) {
+            return new ResponseEntity<>(HttpStatus.NO_CONTENT);
+        } else {
+            return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+        }
+    }
+    
+    // --- Employee Endpoint ---
+    @GetMapping("/my-payslips")
+    @PreAuthorize("hasAnyAuthority('USER', 'ADMIN')")
+    public ResponseEntity<List<Paycheck>> getMyPayslips() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         if (authentication == null || !(authentication.getPrincipal() instanceof UserDetailsImpl)) {
-            String principalType = (authentication != null && authentication.getPrincipal() != null)
-                    ? authentication.getPrincipal().getClass().getName()
-                    : "null";
-            System.err
-                    .println("ERROR in PayrollController.getMyPayslips: Principal is not UserDetailsImpl. Actual type: "
-                            + principalType);
-            // Return a 401 Unauthorized or 403 Forbidden to the client
             return new ResponseEntity<>(HttpStatus.UNAUTHORIZED);
         }
-
-        UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal(); // This is the line that was
-                                                                                       // causing the error
-        List<Payroll> myPayslips = payrollService.getPayrollsByEmployeeId(userDetails.getId());
+        UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
+        List<Paycheck> myPayslips = payrollService.getMyPaychecks(userDetails.getId());
         return ResponseEntity.ok(myPayslips);
     }
 }

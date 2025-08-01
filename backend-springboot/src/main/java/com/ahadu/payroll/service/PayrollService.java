@@ -1,126 +1,130 @@
 package com.ahadu.payroll.service;
 
-import com.ahadu.payroll.model.Payroll;
-import com.ahadu.payroll.model.User; // To fetch employee details
-import com.ahadu.payroll.repository.PayrollRepository;
-import com.ahadu.payroll.repository.UserRepository; // To get all active employees
+import com.ahadu.payroll.model.*;
+import com.ahadu.payroll.repository.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import java.math.BigDecimal;
-import java.math.RoundingMode; // Import for rounding
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
-/**
- * Service class for managing payroll processing.
- * Handles the logic for generating payrolls for employees.
- */
 @Service
 public class PayrollService {
 
-    private final PayrollRepository payrollRepository;
-    private final UserRepository userRepository; // To get employees for payroll processing
+    private final UserRepository userRepository;
+    private final AttendanceRepository attendanceRepository;
+    private final LeaveRequestRepository leaveRequestRepository;
+    private final PayrollRunRepository payrollRunRepository;
+    private final PaycheckRepository paycheckRepository;
 
     @Autowired
-    public PayrollService(PayrollRepository payrollRepository, UserRepository userRepository) {
-        this.payrollRepository = payrollRepository;
+    public PayrollService(UserRepository userRepository, AttendanceRepository attendanceRepository,
+                          LeaveRequestRepository leaveRequestRepository, PayrollRunRepository payrollRunRepository,
+                          PaycheckRepository paycheckRepository) {
         this.userRepository = userRepository;
+        this.attendanceRepository = attendanceRepository;
+        this.leaveRequestRepository = leaveRequestRepository;
+        this.payrollRunRepository = payrollRunRepository;
+        this.paycheckRepository = paycheckRepository;
     }
 
-    /**
-     * Processes payroll for all active employees for a given period.
-     * This implementation now uses employee-specific salary, tax, and commission
-     * rates.
-     * * @param payPeriodStart The start date of the payroll period.
-     * 
-     * @param payPeriodEnd The end date of the payroll period.
-     * @return A list of generated Payroll records.
-     */
-    public List<Payroll> processPayroll(LocalDate payPeriodStart, LocalDate payPeriodEnd) {
-        // Fetch all active employees (assuming 'Active' status from
-        // User.getEmployeeStatus())
-        List<User> activeEmployees = userRepository.findAll().stream()
-                .filter(user -> "Active".equalsIgnoreCase(user.getEmployeeStatus()))
-                .collect(Collectors.toList());
+    public List<PayrollRun> getAllPayrollRuns() {
+        return payrollRunRepository.findAll();
+    }
 
-        // Generate payroll for each active employee
-        List<Payroll> generatedPayrolls = activeEmployees.stream().map(employee -> {
-            // Retrieve employee-specific financial data
-            BigDecimal baseSalary = employee.getBaseSalary() != null ? employee.getBaseSalary() : BigDecimal.ZERO;
-            BigDecimal taxPercentage = employee.getTaxPercentage() != null ? employee.getTaxPercentage()
-                    : BigDecimal.ZERO;
-            BigDecimal commissionPercentage = employee.getCommissionPercentage() != null
-                    ? employee.getCommissionPercentage()
-                    : BigDecimal.ZERO;
+    public Optional<PayrollRun> getPayrollRunById(String id) {
+        return payrollRunRepository.findById(id);
+    }
+    
+    public List<Paycheck> getMyPaychecks(String employeeId) {
+        return paycheckRepository.findByEmployeeId(employeeId);
+    }
 
-            // --- REAL PAYROLL CALCULATION LOGIC ---
-            // Example: Calculate commission based on base salary (you might adjust this)
-            BigDecimal commission = baseSalary.multiply(commissionPercentage).setScale(2, RoundingMode.HALF_UP);
+    public PayrollRun previewPayroll(LocalDate payPeriodStart, LocalDate payPeriodEnd) {
+        List<User> employees = userRepository.findAll().stream()
+            .filter(user -> "Active".equalsIgnoreCase(user.getEmployeeStatus()))
+            .collect(Collectors.toList());
 
-            // Calculate Gross Pay (Base Salary + Commission)
-            BigDecimal grossPay = baseSalary.add(commission).setScale(2, RoundingMode.HALF_UP);
+        PayrollRun payrollRun = new PayrollRun();
+        payrollRun.setPayPeriodStart(payPeriodStart);
+        payrollRun.setPayPeriodEnd(payPeriodEnd);
+        payrollRun.setProcessedAt(LocalDateTime.now());
+        payrollRun.setStatus("DRAFT");
+        payrollRun = payrollRunRepository.save(payrollRun);
 
-            // Calculate Tax Deduction
-            BigDecimal taxDeduction = grossPay.multiply(taxPercentage).setScale(2, RoundingMode.HALF_UP);
+        List<Paycheck> paychecks = employees.stream().map(employee -> {
+            Paycheck paycheck = new Paycheck();
+            paycheck.setPayrollRunId(payrollRun.getId());
+            paycheck.setEmployeeId(employee.getId());
+            paycheck.setEmployeeUsername(employee.getUsername());
+            paycheck.setPayPeriodStart(payPeriodStart);
+            paycheck.setPayPeriodEnd(payPeriodEnd);
+            paycheck.setStatus("DRAFT");
+            
+            // --- Payroll Calculation Logic (Simplified) ---
+            long workedDays = calculateWorkedDays(employee.getId(), payPeriodStart, payPeriodEnd);
+            double grossPay = employee.getSalary() * workedDays; // Using a simplified daily rate
+            double deductions = grossPay * 0.15;
+            double netPay = grossPay - deductions;
 
-            // Placeholder for other deductions (e.g., pension, insurance, etc.)
-            // You would fetch these from other models or configuration
-            BigDecimal otherDeductions = new BigDecimal("100.00").setScale(2, RoundingMode.HALF_UP); // Example fixed
-                                                                                                     // deduction
-
-            // Calculate Total Deductions
-            BigDecimal totalDeductions = taxDeduction.add(otherDeductions).setScale(2, RoundingMode.HALF_UP);
-
-            // Calculate Net Pay
-            BigDecimal netPay = grossPay.subtract(totalDeductions).setScale(2, RoundingMode.HALF_UP);
-            // --- END REAL PAYROLL CALCULATION LOGIC ---
-
-            return new Payroll(
-                    employee.getId(),
-                    payPeriodStart,
-                    payPeriodEnd,
-                    grossPay,
-                    totalDeductions,
-                    netPay,
-                    "Processed" // Status after processing
-            );
+            paycheck.setGrossPay(grossPay);
+            paycheck.setTotalDeductions(deductions);
+            paycheck.setNetPay(netPay);
+            return paycheck;
         }).collect(Collectors.toList());
 
-        // Save all generated payrolls to the database
-        return payrollRepository.saveAll(generatedPayrolls);
+        List<Paycheck> savedPaychecks = paycheckRepository.saveAll(paychecks);
+        double totalGross = savedPaychecks.stream().mapToDouble(Paycheck::getGrossPay).sum();
+        double totalDeductions = savedPaychecks.stream().mapToDouble(Paycheck::getTotalDeductions).sum();
+        double totalNet = savedPaychecks.stream().mapToDouble(Paycheck::getNetPay).sum();
+
+        payrollRun.setTotalGrossPay(totalGross);
+        payrollRun.setTotalDeductions(totalDeductions);
+        payrollRun.setTotalNetPay(totalNet);
+        payrollRun.setPaychecks(savedPaychecks);
+
+        return payrollRunRepository.save(payrollRun);
+    }
+    
+    private long calculateWorkedDays(String employeeId, LocalDate startDate, LocalDate endDate) {
+        List<Attendance> attendanceRecords = attendanceRepository.findByEmployeeIdAndDateBetween(employeeId, startDate, endDate);
+        return attendanceRecords.stream()
+                .filter(a -> "Present".equalsIgnoreCase(a.getStatus()) || "Late".equalsIgnoreCase(a.getStatus()))
+                .count();
     }
 
-    /**
-     * Retrieves all payroll runs, ordered by pay period end date descending.
-     * * @return A list of all Payroll records.
-     */
-    public List<Payroll> getAllPayrollRuns() {
-        // Assuming you want to sort by latest payrolls first
-        // You might add sorting here if needed, e.g., Sort.by(Sort.Direction.DESC,
-        // "payPeriodEnd")
-        return payrollRepository.findAll();
+    public Optional<PayrollRun> finalizePayroll(String payrollRunId) {
+        return payrollRunRepository.findById(payrollRunId).map(payrollRun -> {
+            if ("DRAFT".equalsIgnoreCase(payrollRun.getStatus())) {
+                payrollRun.setStatus("APPROVED");
+                payrollRun.setProcessedAt(LocalDateTime.now());
+                payrollRunRepository.save(payrollRun);
+
+                List<Paycheck> paychecks = paycheckRepository.findByPayrollRunId(payrollRunId);
+                paychecks.forEach(paycheck -> paycheck.setStatus("APPROVED"));
+                paycheckRepository.saveAll(paychecks);
+                
+                // You would add logic here to deduct leave balances or handle other carry-forwards.
+            }
+            return payrollRun;
+        });
     }
 
-    /**
-     * Retrieves payrolls for a specific employee.
-     * * @param employeeId The ID of the employee.
-     * 
-     * @return A list of Payroll records for the specified employee.
-     */
-    public List<Payroll> getPayrollsByEmployeeId(String employeeId) {
-        return payrollRepository.findByEmployeeId(employeeId);
-    }
-
-    /**
-     * Retrieves a single payroll record by its ID.
-     * * @param id The ID of the payroll record.
-     * 
-     * @return An Optional containing the Payroll if found, or empty if not.
-     */
-    public Optional<Payroll> getPayrollById(String id) {
-        return payrollRepository.findById(id);
+    public boolean deletePayrollRun(String payrollRunId) {
+        Optional<PayrollRun> payrollRunOptional = payrollRunRepository.findById(payrollRunId);
+        if (payrollRunOptional.isPresent()) {
+            PayrollRun payrollRun = payrollRunOptional.get();
+            
+            if ("APPROVED".equalsIgnoreCase(payrollRun.getStatus()) || "DRAFT".equalsIgnoreCase(payrollRun.getStatus())) {
+                List<Paycheck> paychecks = paycheckRepository.findByPayrollRunId(payrollRunId);
+                paycheckRepository.deleteAll(paychecks);
+                payrollRunRepository.deleteById(payrollRunId);
+                return true;
+            }
+        }
+        return false;
     }
 }
