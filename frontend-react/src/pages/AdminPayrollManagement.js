@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { toast } from 'react-toastify';
-import { format } from 'date-fns';
+import { format, subMonths, startOfMonth, endOfMonth } from 'date-fns';
 
 function AdminPayrollManagement() {
     const [payrollRuns, setPayrollRuns] = useState([]);
@@ -12,6 +12,7 @@ function AdminPayrollManagement() {
     const [processing, setProcessing] = useState(false);
     const [viewDetails, setViewDetails] = useState(false);
     const [selectedRun, setSelectedRun] = useState(null);
+    const [hasShownInitialPrompt, setHasShownInitialPrompt] = useState(false); // New state to prevent repeated prompts
 
     const API_BASE_URL = process.env.REACT_APP_API_BASE_URL;
     const token = localStorage.getItem('token');
@@ -20,43 +21,16 @@ function AdminPayrollManagement() {
         'Content-Type': 'application/json',
     };
 
-    const fetchPayrollRuns = useCallback(async () => {
-        try {
-            setLoading(true);
-            const response = await fetch(`${API_BASE_URL}/api/payroll/runs`, { headers: authHeaders });
-            if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-            const data = await response.json();
-            const sortedData = data.sort((a, b) => new Date(b.payPeriodEnd) - new Date(a.payPeriodEnd));
-            setPayrollRuns(sortedData);
-            if (sortedData.length > 0) {
-                setLastProcessed(format(new Date(sortedData[0].processedAt), 'PPP HH:mm'));
-            } else {
-                setLastProcessed(null);
-            }
-        } catch (error) {
-            console.error("Failed to fetch payroll runs:", error);
-            toast.error("Failed to load payroll history.");
-        } finally {
-            setLoading(false);
-        }
-    }, [API_BASE_URL, authHeaders]);
-
-    useEffect(() => {
-        fetchPayrollRuns();
-    }, [fetchPayrollRuns]);
-
-    const handlePreviewPayroll = async () => {
-        if (!payPeriodStart || !payPeriodEnd) {
-            toast.error("Please select both start and end dates for the payroll period.");
-            return;
-        }
-
+    const handlePreviewPayroll = async (start, end) => {
         setProcessing(true);
         try {
             const response = await fetch(`${API_BASE_URL}/api/payroll/preview`, {
                 method: 'POST',
                 headers: authHeaders,
-                body: JSON.stringify({ payPeriodStart, payPeriodEnd }),
+                body: JSON.stringify({
+                    payPeriodStart: start || payPeriodStart,
+                    payPeriodEnd: end || payPeriodEnd
+                }),
             });
 
             if (!response.ok) {
@@ -74,6 +48,44 @@ function AdminPayrollManagement() {
             setProcessing(false);
         }
     };
+
+    const fetchPayrollRuns = useCallback(async () => {
+        try {
+            setLoading(true);
+            const response = await fetch(`${API_BASE_URL}/api/payroll/runs`, { headers: authHeaders });
+            if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+            const data = await response.json();
+            const sortedData = data.sort((a, b) => new Date(b.payPeriodEnd) - new Date(a.payPeriodEnd));
+            setPayrollRuns(sortedData);
+            if (sortedData.length > 0) {
+                setLastProcessed(format(new Date(sortedData[0].processedAt), 'PPP HH:mm'));
+            } else {
+                setLastProcessed(null);
+                // NEW: Logic to prompt user for new payroll draft when no data exists
+                if (!hasShownInitialPrompt) {
+                    const shouldDraft = window.confirm("There are no payroll records. Would you like to draft a new payroll for the previous month?");
+                    if (shouldDraft) {
+                        const previousMonth = subMonths(new Date(), 1);
+                        const start = format(startOfMonth(previousMonth), 'yyyy-MM-dd');
+                        const end = format(endOfMonth(previousMonth), 'yyyy-MM-dd');
+                        setPayPeriodStart(start);
+                        setPayPeriodEnd(end);
+                        await handlePreviewPayroll(start, end);
+                    }
+                    setHasShownInitialPrompt(true);
+                }
+            }
+        } catch (error) {
+            console.error("Failed to fetch payroll runs:", error);
+            toast.error("Failed to load payroll history.");
+        } finally {
+            setLoading(false);
+        }
+    }, [API_BASE_URL, authHeaders, hasShownInitialPrompt]);
+
+    useEffect(() => {
+        fetchPayrollRuns();
+    }, [fetchPayrollRuns]);
 
     const handleFinalizePayroll = async () => {
         if (!draftPayroll) {
@@ -269,7 +281,7 @@ function AdminPayrollManagement() {
                     </div>
                 </div>
                 <button
-                    onClick={handlePreviewPayroll}
+                    onClick={() => handlePreviewPayroll()}
                     disabled={processing || !payPeriodStart || !payPeriodEnd}
                     className={`btn ${processing || !payPeriodStart || !payPeriodEnd ? 'bg-gray-400 cursor-not-allowed' : 'btn-primary bg-blue-600 hover:bg-blue-700 text-white shadow-md'}`}
                 >
