@@ -8,7 +8,7 @@ function PrivacyPolicy() {
 
   return (
     <div style={{ padding: '20px', maxWidth: '900px', margin: '0 auto' }}>
-      <h1 style={{ color: '#004a99', marginBottom: '24px' }}>Privacy Policy</h1>
+      <h1 style={{ color: '#75073d', marginBottom: '24px' }}>Privacy Policy</h1>
 
       <Card>
         <p>Your privacy is important to us. It is Ahadu Bank's policy to respect your privacy regarding any information we may collect from you across our website, and other sites we own and operate.</p>
@@ -21,7 +21,7 @@ function PrivacyPolicy() {
           type="button"
           onClick={() => navigate('/about')}
           style={{
-            backgroundColor: '#612235',
+            backgroundColor: '#75073d',
             color: 'white',
             border: 'none',
             borderRadius: '4px',

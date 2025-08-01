@@ -22,7 +22,7 @@ function TermsOfService() {
           type="button"
           onClick={() => navigate('/about')}
           style={{
-            backgroundColor: '#612235',
+            backgroundColor: '#75073d',
             color: 'white',
             border: 'none',
             borderRadius: '4px',
