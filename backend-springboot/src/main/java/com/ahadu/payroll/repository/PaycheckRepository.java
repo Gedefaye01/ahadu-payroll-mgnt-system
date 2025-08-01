@@ -11,5 +11,6 @@ import java.util.Optional;
 public interface PaycheckRepository extends MongoRepository<Paycheck, String> {
     Optional<List<Paycheck>> findByEmployeeIdAndPayrollRunId(String employeeId, String payrollRunId);
     List<Paycheck> findByPayrollRunId(String payrollRunId);
-    void deleteByPayrollRunId(String payrollRunId); // New custom query method
+    void deleteByPayrollRunId(String payrollRunId);
+    List<Paycheck> findByEmployeeId(String employeeId); // New custom query method
 }

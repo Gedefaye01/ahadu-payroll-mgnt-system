@@ -2,7 +2,7 @@ package com.ahadu.payroll.service;
 
 import com.ahadu.payroll.model.*;
 import com.ahadu.payroll.repository.*;
-import com.ahadu.payroll.payload.DetailedPaycheckDto; // Corrected import statement
+import com.ahadu.payroll.payload.DetailedPaycheckDto;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -26,6 +26,11 @@ public class PayrollService {
         this.payrollRunRepository = payrollRunRepository;
         this.paycheckRepository = paycheckRepository;
         this.userRepository = userRepository;
+    }
+
+    // New method for fetching payslips by employee ID
+    public List<Paycheck> getPaychecksByEmployeeId(String employeeId) {
+        return paycheckRepository.findByEmployeeId(employeeId);
     }
 
     public List<PayrollRun> getAllPayrollRuns() {

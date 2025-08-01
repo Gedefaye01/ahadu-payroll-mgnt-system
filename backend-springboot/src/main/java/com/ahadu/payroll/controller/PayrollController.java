@@ -2,7 +2,7 @@ package com.ahadu.payroll.controller;
 
 import com.ahadu.payroll.model.*;
 import com.ahadu.payroll.service.PayrollService;
-import com.ahadu.payroll.payload.DetailedPaycheckDto; // Corrected import statement
+import com.ahadu.payroll.payload.DetailedPaycheckDto;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -22,6 +22,17 @@ public class PayrollController {
     @Autowired
     public PayrollController(PayrollService payrollService) {
         this.payrollService = payrollService;
+    }
+
+    @PreAuthorize("hasAnyAuthority('ADMIN', 'USER')")
+    @GetMapping("/my-payslips")
+    public ResponseEntity<List<Paycheck>> getMyPayslips(Authentication authentication) {
+        String currentUserId = authentication.getName(); // Get the authenticated user's ID
+        List<Paycheck> payslips = payrollService.getPaychecksByEmployeeId(currentUserId);
+        if (payslips.isEmpty()) {
+            return ResponseEntity.notFound().build();
+        }
+        return ResponseEntity.ok(payslips);
     }
 
     @PreAuthorize("hasAuthority('ADMIN')")
