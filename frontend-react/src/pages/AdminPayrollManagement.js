@@ -95,8 +95,13 @@ function AdminPayrollManagement() {
             });
 
             if (!response.ok) {
-                const errorData = await response.json();
-                throw new Error(errorData.message || `Payroll finalization failed with status: ${response.status}`);
+                if (response.status === 403) {
+                    toast.error("You cannot approve a payroll you have drafted yourself due to the maker-checker rule.");
+                } else {
+                    const errorData = await response.json();
+                    toast.error(errorData.message || `Payroll finalization failed with status: ${response.status}`);
+                }
+                return;
             }
 
             toast.success('Payroll finalized and approved successfully!');
@@ -106,9 +111,32 @@ function AdminPayrollManagement() {
             fetchPayrollRuns();
         } catch (error) {
             console.error("Error finalizing payroll:", error);
-            toast.error(error.message || "An error occurred during payroll finalization.");
+            toast.error("An unexpected error occurred during payroll finalization.");
         } finally {
             setProcessing(false);
+        }
+    };
+
+    const handleMarkAsPaid = async (runId) => {
+        const confirmPaid = window.confirm("Are you sure you want to mark this payroll as PAID? This action is irreversible.");
+        if (!confirmPaid) return;
+
+        try {
+            const response = await fetch(`${API_BASE_URL}/api/payroll/pay/${runId}`, {
+                method: 'POST',
+                headers: authHeaders,
+            });
+
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.message || `Failed to mark payroll as paid: ${response.status}`);
+            }
+
+            toast.success('Payroll marked as PAID successfully!');
+            fetchPayrollRuns();
+        } catch (error) {
+            console.error("Error marking payroll as paid:", error);
+            toast.error(error.message || "An error occurred while marking payroll as paid.");
         }
     };
 
@@ -141,7 +169,7 @@ function AdminPayrollManagement() {
             }
 
             toast.success("Payroll run deleted successfully!");
-            fetchPayrollRuns(); // Refresh the list
+            fetchPayrollRuns();
         } catch (error) {
             console.error("Error deleting payroll run:", error);
             toast.error(error.message || "An error occurred during payroll deletion.");
@@ -170,7 +198,10 @@ function AdminPayrollManagement() {
                             <tr>
                                 <th>Employee Name</th>
                                 <th>Gross Pay</th>
-                                <th>Deductions</th>
+                                <th>Commission</th>
+                                <th>Tax Deduction</th>
+                                <th>PF Deduction</th>
+                                <th>Total Deductions</th>
                                 <th>Net Pay</th>
                                 <th>Status</th>
                             </tr>
@@ -180,6 +211,9 @@ function AdminPayrollManagement() {
                                 <tr key={paycheck.id}>
                                     <td className="font-semibold text-gray-800">{paycheck.employeeUsername}</td>
                                     <td>{paycheck.grossPay ? `$${paycheck.grossPay.toFixed(2)}` : 'N/A'}</td>
+                                    <td>{paycheck.commissionAmount ? `$${paycheck.commissionAmount.toFixed(2)}` : 'N/A'}</td>
+                                    <td>{paycheck.taxDeduction ? `$${paycheck.taxDeduction.toFixed(2)}` : 'N/A'}</td>
+                                    <td>{paycheck.providentFundDeduction ? `$${paycheck.providentFundDeduction.toFixed(2)}` : 'N/A'}</td>
                                     <td>{paycheck.totalDeductions ? `$${paycheck.totalDeductions.toFixed(2)}` : 'N/A'}</td>
                                     <td>{paycheck.netPay ? `$${paycheck.netPay.toFixed(2)}` : 'N/A'}</td>
                                     <td>
@@ -254,7 +288,10 @@ function AdminPayrollManagement() {
                                 <tr>
                                     <th>Employee Name</th>
                                     <th>Gross Pay</th>
-                                    <th>Deductions</th>
+                                    <th>Commission</th>
+                                    <th>Tax Deduction</th>
+                                    <th>PF Deduction</th>
+                                    <th>Total Deductions</th>
                                     <th>Net Pay</th>
                                 </tr>
                             </thead>
@@ -263,6 +300,9 @@ function AdminPayrollManagement() {
                                     <tr key={paycheck.employeeId}>
                                         <td className="font-semibold">{paycheck.employeeUsername}</td>
                                         <td>{paycheck.grossPay ? `$${paycheck.grossPay.toFixed(2)}` : 'N/A'}</td>
+                                        <td>{paycheck.commissionAmount ? `$${paycheck.commissionAmount.toFixed(2)}` : 'N/A'}</td>
+                                        <td>{paycheck.taxDeduction ? `$${paycheck.taxDeduction.toFixed(2)}` : 'N/A'}</td>
+                                        <td>{paycheck.providentFundDeduction ? `$${paycheck.providentFundDeduction.toFixed(2)}` : 'N/A'}</td>
                                         <td>{paycheck.totalDeductions ? `$${paycheck.totalDeductions.toFixed(2)}` : 'N/A'}</td>
                                         <td>{paycheck.netPay ? `$${paycheck.netPay.toFixed(2)}` : 'N/A'}</td>
                                     </tr>
@@ -308,6 +348,7 @@ function AdminPayrollManagement() {
                                         <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
                                             run.status === 'APPROVED' ? 'bg-green-100 text-green-800' :
                                             run.status === 'DRAFT' ? 'bg-yellow-100 text-yellow-800' :
+                                            run.status === 'PAID' ? 'bg-blue-100 text-blue-800' :
                                             'bg-gray-100 text-gray-800'
                                         }`}>
                                             {run.status}
@@ -321,11 +362,27 @@ function AdminPayrollManagement() {
                                             View Details
                                         </button>
                                         {run.status === 'APPROVED' && (
+                                            <>
+                                                <button
+                                                    onClick={() => handleMarkAsPaid(run.id)}
+                                                    className="btn bg-blue-500 hover:bg-blue-600 text-white text-xs font-bold py-1 px-3 rounded-md"
+                                                >
+                                                    Mark as Paid
+                                                </button>
+                                                <button
+                                                    onClick={() => handleDeletePayrollRun(run.id)}
+                                                    className="btn bg-red-500 hover:bg-red-600 text-white text-xs font-bold py-1 px-3 rounded-md"
+                                                >
+                                                    Delete
+                                                </button>
+                                            </>
+                                        )}
+                                        {run.status === 'DRAFT' && (
                                             <button
                                                 onClick={() => handleDeletePayrollRun(run.id)}
                                                 className="btn bg-red-500 hover:bg-red-600 text-white text-xs font-bold py-1 px-3 rounded-md"
                                             >
-                                                Delete
+                                                Delete Draft
                                             </button>
                                         )}
                                     </td>

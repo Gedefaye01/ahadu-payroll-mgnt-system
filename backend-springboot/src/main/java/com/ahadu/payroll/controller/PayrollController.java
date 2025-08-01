@@ -16,6 +16,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/payroll")
@@ -27,6 +28,14 @@ public class PayrollController {
     @Autowired
     public PayrollController(PayrollService payrollService) {
         this.payrollService = payrollService;
+    }
+
+    private String getAuthenticatedUserId() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication != null && authentication.getPrincipal() instanceof UserDetailsImpl) {
+            return ((UserDetailsImpl) authentication.getPrincipal()).getId();
+        }
+        return null;
     }
 
     // --- Admin Endpoints ---
@@ -48,11 +57,16 @@ public class PayrollController {
     @PreAuthorize("hasAuthority('ADMIN')")
     public ResponseEntity<PayrollRun> previewPayroll(@RequestBody PayrollRequest payrollRequest) {
         try {
+            String creatorId = getAuthenticatedUserId();
+            if (creatorId == null) {
+                return new ResponseEntity<>(HttpStatus.UNAUTHORIZED);
+            }
             LocalDate start = LocalDate.parse(payrollRequest.getPayPeriodStart());
             LocalDate end = LocalDate.parse(payrollRequest.getPayPeriodEnd());
-            PayrollRun payrollRun = payrollService.previewPayroll(start, end);
+            PayrollRun payrollRun = payrollService.previewPayroll(start, end, creatorId); // NEW: Pass creatorId
             return new ResponseEntity<>(payrollRun, HttpStatus.OK);
         } catch (Exception e) {
+            e.printStackTrace();
             return new ResponseEntity<>(null, HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
@@ -60,7 +74,20 @@ public class PayrollController {
     @PostMapping("/finalize")
     @PreAuthorize("hasAuthority('ADMIN')")
     public ResponseEntity<PayrollRun> finalizePayroll(@RequestBody FinalizeRequest finalizeRequest) {
-        return payrollService.finalizePayroll(finalizeRequest.getPayrollRunId())
+        String approverId = getAuthenticatedUserId();
+        if (approverId == null) {
+            return new ResponseEntity<>(HttpStatus.UNAUTHORIZED);
+        }
+        Optional<PayrollRun> finalizedRun = payrollService.finalizePayroll(finalizeRequest.getPayrollRunId(), approverId); // NEW: Pass approverId
+        return finalizedRun
+                .map(ResponseEntity::ok)
+                .orElse(new ResponseEntity<>(HttpStatus.FORBIDDEN)); // NEW: Return 403 for maker-checker violation
+    }
+
+    @PostMapping("/pay/{id}")
+    @PreAuthorize("hasAuthority('ADMIN')")
+    public ResponseEntity<PayrollRun> payPayroll(@PathVariable String id) {
+        return payrollService.payPayroll(id)
                 .map(ResponseEntity::ok)
                 .orElse(new ResponseEntity<>(HttpStatus.NOT_FOUND));
     }
@@ -80,12 +107,11 @@ public class PayrollController {
     @GetMapping("/my-payslips")
     @PreAuthorize("hasAnyAuthority('USER', 'ADMIN')")
     public ResponseEntity<List<Paycheck>> getMyPayslips() {
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        if (authentication == null || !(authentication.getPrincipal() instanceof UserDetailsImpl)) {
+        String employeeId = getAuthenticatedUserId();
+        if (employeeId == null) {
             return new ResponseEntity<>(HttpStatus.UNAUTHORIZED);
         }
-        UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
-        List<Paycheck> myPayslips = payrollService.getMyPaychecks(userDetails.getId());
+        List<Paycheck> myPayslips = payrollService.getMyPaychecks(employeeId);
         return ResponseEntity.ok(myPayslips);
     }
 }

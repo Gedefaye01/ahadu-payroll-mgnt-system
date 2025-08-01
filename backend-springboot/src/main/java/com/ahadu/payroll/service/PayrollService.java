@@ -45,7 +45,7 @@ public class PayrollService {
         return paycheckRepository.findByEmployeeId(employeeId);
     }
 
-    public PayrollRun previewPayroll(LocalDate payPeriodStart, LocalDate payPeriodEnd) {
+    public PayrollRun previewPayroll(LocalDate payPeriodStart, LocalDate payPeriodEnd, String creatorId) {
         List<User> employees = userRepository.findAll().stream()
             .filter(user -> "Active".equalsIgnoreCase(user.getEmployeeStatus()))
             .collect(Collectors.toList());
@@ -55,10 +55,13 @@ public class PayrollService {
         payrollRun.setPayPeriodEnd(payPeriodEnd);
         payrollRun.setProcessedAt(LocalDateTime.now());
         payrollRun.setStatus("DRAFT");
+        payrollRun.setCreatedById(creatorId); // NEW: Set the creator's ID
         
+        PayrollRun savedPayrollRun = payrollRunRepository.save(payrollRun);
+
         List<Paycheck> paychecks = employees.stream().map(employee -> {
             Paycheck paycheck = new Paycheck();
-            paycheck.setPayrollRunId(payrollRun.getId()); // ID is null here, but will be set on save
+            paycheck.setPayrollRunId(savedPayrollRun.getId());
             paycheck.setEmployeeId(employee.getId());
             paycheck.setEmployeeUsername(employee.getUsername());
             paycheck.setPayPeriodStart(payPeriodStart);
@@ -69,29 +72,38 @@ public class PayrollService {
             BigDecimal baseSalary = employee.getBaseSalary() != null ? employee.getBaseSalary() : BigDecimal.ZERO;
             BigDecimal taxPercentage = employee.getTaxPercentage() != null ? employee.getTaxPercentage() : BigDecimal.ZERO;
             BigDecimal commissionPercentage = employee.getCommissionPercentage() != null ? employee.getCommissionPercentage() : BigDecimal.ZERO;
+            BigDecimal providentFundPercentage = employee.getProvidentFundPercentage() != null ? employee.getProvidentFundPercentage() : BigDecimal.ZERO;
             
             long workedDays = calculateWorkedDays(employee.getId(), payPeriodStart, payPeriodEnd);
-            
-            // Assuming a monthly salary is for ~22 working days
-            BigDecimal monthlyWorkingDays = new BigDecimal("22");
-            BigDecimal dailyRate = baseSalary.divide(monthlyWorkingDays, 2, RoundingMode.HALF_UP);
-            
             BigDecimal workedDaysBigDecimal = new BigDecimal(workedDays);
-            BigDecimal commission = baseSalary.multiply(commissionPercentage);
-            
-            BigDecimal grossPay = dailyRate.multiply(workedDaysBigDecimal).add(commission);
-            BigDecimal deductions = grossPay.multiply(taxPercentage);
-            BigDecimal netPay = grossPay.subtract(deductions);
 
-            paycheck.setGrossPay(grossPay.setScale(2, RoundingMode.HALF_UP));
-            paycheck.setTotalDeductions(deductions.setScale(2, RoundingMode.HALF_UP));
-            paycheck.setNetPay(netPay.setScale(2, RoundingMode.HALF_UP));
+            BigDecimal monthlyWorkingDays = new BigDecimal("22");
+            BigDecimal dailyRate = BigDecimal.ZERO;
+            if (monthlyWorkingDays.compareTo(BigDecimal.ZERO) > 0) {
+                dailyRate = baseSalary.divide(monthlyWorkingDays, 4, RoundingMode.HALF_UP);
+            }
+            
+            BigDecimal commissionAmount = baseSalary.multiply(commissionPercentage).setScale(2, RoundingMode.HALF_UP);
+            
+            BigDecimal grossPay = dailyRate.multiply(workedDaysBigDecimal).add(commissionAmount).setScale(2, RoundingMode.HALF_UP);
+            
+            BigDecimal taxDeduction = grossPay.multiply(taxPercentage).setScale(2, RoundingMode.HALF_UP);
+            BigDecimal providentFundDeduction = grossPay.multiply(providentFundPercentage).setScale(2, RoundingMode.HALF_UP);
+            
+            BigDecimal totalDeductions = taxDeduction.add(providentFundDeduction).setScale(2, RoundingMode.HALF_UP);
+            
+            BigDecimal netPay = grossPay.subtract(totalDeductions).setScale(2, RoundingMode.HALF_UP);
+
+            paycheck.setGrossPay(grossPay);
+            paycheck.setTotalDeductions(totalDeductions);
+            paycheck.setNetPay(netPay);
+            paycheck.setCommissionAmount(commissionAmount);
+            paycheck.setTaxDeduction(taxDeduction);
+            paycheck.setProvidentFundDeduction(providentFundDeduction);
+            
             return paycheck;
         }).collect(Collectors.toList());
 
-        // We save the PayrollRun first to get its ID, then link the paychecks
-        PayrollRun savedPayrollRun = payrollRunRepository.save(payrollRun);
-        paychecks.forEach(p -> p.setPayrollRunId(savedPayrollRun.getId()));
         List<Paycheck> savedPaychecks = paycheckRepository.saveAll(paychecks);
         
         BigDecimal totalGross = savedPaychecks.stream().map(Paycheck::getGrossPay).reduce(BigDecimal.ZERO, BigDecimal::add);
@@ -106,19 +118,60 @@ public class PayrollService {
         return payrollRunRepository.save(savedPayrollRun);
     }
     
-    // The rest of the PayrollService methods remain the same
     private long calculateWorkedDays(String employeeId, LocalDate startDate, LocalDate endDate) {
-        // ... (your existing implementation for this method) ...
+        // Your existing implementation for calculateWorkedDays
         return 0; // Placeholder
     }
 
-    public Optional<PayrollRun> finalizePayroll(String payrollRunId) {
-        // ... (your existing implementation for this method) ...
-        return Optional.empty(); // Placeholder
+    public Optional<PayrollRun> finalizePayroll(String payrollRunId, String approverId) {
+        return payrollRunRepository.findById(payrollRunId).map(payrollRun -> {
+            // NEW: Enforce maker-checker rule
+            if (payrollRun.getCreatedById() != null && payrollRun.getCreatedById().equals(approverId)) {
+                // If the creator and approver are the same, don't finalize
+                return null; 
+            }
+
+            if ("DRAFT".equalsIgnoreCase(payrollRun.getStatus())) {
+                payrollRun.setStatus("APPROVED");
+                payrollRun.setProcessedAt(LocalDateTime.now());
+                payrollRunRepository.save(payrollRun);
+
+                List<Paycheck> paychecks = paycheckRepository.findByPayrollRunId(payrollRunId);
+                paychecks.forEach(paycheck -> paycheck.setStatus("APPROVED"));
+                paycheckRepository.saveAll(paychecks);
+            }
+            return payrollRun;
+        });
+    }
+
+    public Optional<PayrollRun> payPayroll(String payrollRunId) {
+        // This method remains unchanged
+        return payrollRunRepository.findById(payrollRunId).map(payrollRun -> {
+            if ("APPROVED".equalsIgnoreCase(payrollRun.getStatus())) {
+                payrollRun.setStatus("PAID");
+                payrollRun.setProcessedAt(LocalDateTime.now());
+                payrollRunRepository.save(payrollRun);
+
+                List<Paycheck> paychecks = paycheckRepository.findByPayrollRunId(payrollRunId);
+                paychecks.forEach(paycheck -> paycheck.setStatus("PAID"));
+                paycheckRepository.saveAll(paychecks);
+            }
+            return payrollRun;
+        });
     }
 
     public boolean deletePayrollRun(String payrollRunId) {
-        // ... (your existing implementation for this method) ...
-        return false; // Placeholder
+        // This method remains unchanged
+        Optional<PayrollRun> payrollRunOptional = payrollRunRepository.findById(payrollRunId);
+        if (payrollRunOptional.isPresent()) {
+            PayrollRun payrollRun = payrollRunOptional.get();
+            if ("APPROVED".equalsIgnoreCase(payrollRun.getStatus()) || "DRAFT".equalsIgnoreCase(payrollRun.getStatus())) {
+                List<Paycheck> paychecks = paycheckRepository.findByPayrollRunId(payrollRunId);
+                paycheckRepository.deleteAll(paychecks);
+                payrollRunRepository.deleteById(payrollRunId);
+                return true;
+            }
+        }
+        return false;
     }
 }
