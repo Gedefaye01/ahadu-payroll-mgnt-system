@@ -2,7 +2,7 @@ package com.ahadu.payroll.controller;
 
 import com.ahadu.payroll.model.Attendance;
 import com.ahadu.payroll.model.LeaveRequest;
-import com.ahadu.payroll.payload.AttendanceOverviewResponse; // Import the new DTO
+import com.ahadu.payroll.payload.AttendanceOverviewResponse;
 import com.ahadu.payroll.security.UserDetailsImpl;
 import com.ahadu.payroll.service.AttendanceService;
 import com.ahadu.payroll.service.LeaveRequestService;
@@ -49,12 +49,53 @@ public class AttendanceLeaveController {
         return new ResponseEntity<>(savedAttendance, HttpStatus.CREATED);
     }
 
+    // CORRECTED METHOD
     @PutMapping("/attendance/{id}")
-    @PreAuthorize("hasAuthority('ADMIN')")
+    @PreAuthorize("hasAnyAuthority('USER', 'ADMIN')") // Allow both USER and ADMIN roles
     public ResponseEntity<Attendance> updateAttendance(@PathVariable String id,
             @RequestBody Attendance updatedAttendance) {
-        Optional<Attendance> updated = attendanceService.updateAttendance(id, updatedAttendance);
-        return updated.map(ResponseEntity::ok).orElseGet(() -> new ResponseEntity<>(HttpStatus.NOT_FOUND));
+
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
+
+        // Step 1: Find the existing attendance record
+        Optional<Attendance> existingAttendanceOptional = attendanceService.getAttendanceById(id);
+        if (existingAttendanceOptional.isEmpty()) {
+            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+        }
+
+        Attendance existingAttendance = existingAttendanceOptional.get();
+        String authenticatedUserId = userDetails.getId();
+        boolean isAdmin = userDetails.getAuthorities().stream().anyMatch(a -> a.getAuthority().equals("ADMIN"));
+
+        // Step 2: Implement authorization check
+        // An employee (USER) can only update their own record.
+        // An admin can update any record.
+        if (!isAdmin && !existingAttendance.getEmployeeId().equals(authenticatedUserId)) {
+            // If the user is NOT an admin AND they are NOT the owner of this record,
+            // return a 403 Forbidden status.
+            return new ResponseEntity<>(HttpStatus.FORBIDDEN);
+        }
+
+        // Step 3: Proceed with the update if authorized
+        // We only want to update the remarks and clock-out time for a regular user.
+        // The service layer can handle the full update for an admin.
+
+        Optional<Attendance> updated;
+        if (isAdmin) {
+            // Admins can update the full attendance record
+            updated = attendanceService.updateAttendance(id, updatedAttendance);
+        } else {
+            // For a regular user, we only want to allow updating remarks and clock-out
+            // time.
+            // Fetch the existing record again to prevent a malicious user from changing
+            // other fields.
+            existingAttendance.setClockOutTime(updatedAttendance.getClockOutTime());
+            existingAttendance.setRemarks(updatedAttendance.getRemarks());
+            updated = attendanceService.updateAttendance(id, existingAttendance);
+        }
+
+        return updated.map(ResponseEntity::ok).orElseGet(() -> new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR));
     }
 
     @GetMapping("/attendance/all")
@@ -106,8 +147,7 @@ public class AttendanceLeaveController {
     /**
      * NEW ENDPOINT: Retrieves aggregated attendance overview statistics for admins.
      * Accessible only by ADMINs.
-     * 
-     * @return ResponseEntity with AttendanceOverviewResponse DTO.
+     * * @return ResponseEntity with AttendanceOverviewResponse DTO.
      */
     @GetMapping("/attendance/admin/overview")
     @PreAuthorize("hasAuthority('ADMIN')")
