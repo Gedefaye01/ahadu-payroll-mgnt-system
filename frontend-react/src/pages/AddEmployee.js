@@ -58,7 +58,7 @@ function AddEmployee() {
     } finally {
       setLoading(false);
     }
-  }, [API_BASE_URL, token, toast]); // Add API_BASE_URL to dependencies
+  }, [API_BASE_URL, token]); // Add API_BASE_URL to dependencies and remove toast (not a dependency)
 
   // Fetch employees on component mount
   useEffect(() => {
@@ -161,6 +161,41 @@ function AddEmployee() {
   };
 
   /**
+   * Handles initiating a password reset for a specific employee.
+   * @param {string} employeeId - The ID of the employee whose password needs to be reset.
+   */
+  const handlePasswordReset = async (employeeId) => {
+    if (!window.confirm('Are you sure you want to reset this employee\'s password? A new password will be generated.')) {
+      return;
+    }
+
+    try {
+      // Assuming a backend endpoint for password reset exists
+      const response = await fetch(`${API_BASE_URL}/api/employees/${employeeId}/reset-password`, {
+        method: 'PUT', // Or POST, depending on your backend design
+        headers: authHeaders,
+        // You might send a body here if your backend requires specific data for reset,
+        // but for a simple admin-initiated reset, an empty body or a flag might suffice.
+        // body: JSON.stringify({}) // Example if a body is needed
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || "Failed to reset password.");
+      }
+
+      // If your backend returns the new password, you can display it here.
+      // For security, it's often better to send it via email or a secure channel.
+      // For this example, we'll assume a success message.
+      toast.success('Employee password reset successfully! (New password generated on backend)');
+    } catch (err) {
+      console.error("Error resetting password:", err);
+      toast.error(err.message || "Failed to reset password.");
+    }
+  };
+
+
+  /**
    * Handles initiating the edit process for an employee.
    * Pre-fills the form with the selected employee's data.
    * @param {Object} employee - The employee object to edit.
@@ -169,7 +204,7 @@ function AddEmployee() {
     setEmployeeForm({
       username: employee.username,
       email: employee.email,
-      password: '',
+      password: '', // Always clear password when editing to prevent accidental changes
       roles: employee.roles,
       employeeStatus: employee.employeeStatus
     });
@@ -330,9 +365,16 @@ function AddEmployee() {
                     </button>
                     <button
                       onClick={() => handleDelete(employee.id)}
-                      className="text-red-600 hover:text-red-900"
+                      className="text-red-600 hover:text-red-900 mr-3" // Added mr-3 for spacing
                     >
                       Delete
+                    </button>
+                    {/* NEW: Password Reset Button */}
+                    <button
+                      onClick={() => handlePasswordReset(employee.id)}
+                      className="btn btn-primary" // Using btn-primary for styling
+                    >
+                      Reset Password
                     </button>
                   </td>
                 </tr>

@@ -19,6 +19,8 @@ public interface UserProfileService {
 
     void updateProfilePictureUrl(String userId, String imageUrl);
 
-    // NEW METHOD: Added to support fetching all users
     List<User> findAllUsers();
+
+    // NEW METHOD: Added to support admin-initiated password reset
+    String resetUserPassword(String userId);
 }

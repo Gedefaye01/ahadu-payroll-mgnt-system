@@ -3,7 +3,8 @@ package com.ahadu.payroll.controller;
 import com.ahadu.payroll.model.User;
 import com.ahadu.payroll.payload.ChangePasswordRequest;
 import com.ahadu.payroll.payload.UserProfileUpdateRequest;
-import com.ahadu.payroll.payload.ApiResponse;
+import com.ahadu.payroll.payload.ApiResponse; // Assuming ApiResponse is a DTO for general responses
+import com.ahadu.payroll.payload.MessageResponse; // Assuming MessageResponse is a DTO for simple messages
 import com.ahadu.payroll.security.UserDetailsImpl;
 import com.ahadu.payroll.service.UserProfileService;
 import com.ahadu.payroll.service.FileStorageService;
@@ -22,8 +23,7 @@ import jakarta.validation.Valid;
 import java.util.List;
 
 @RestController
-// CHANGED: Use a generic base path for the controller
-@RequestMapping("/api")
+@RequestMapping("/api") // Base path for the controller
 @CrossOrigin(origins = "https://ahadu-payroll-mgnt-system-frontend.onrender.com", maxAge = 3600)
 public class UserProfileController {
 
@@ -39,7 +39,7 @@ public class UserProfileController {
     }
 
     @PreAuthorize("hasAnyAuthority('USER', 'ADMIN')")
-    @GetMapping("/my-profile") // CHANGED: Now relative to the class mapping
+    @GetMapping("/my-profile")
     public ResponseEntity<User> getMyProfile(@AuthenticationPrincipal UserDetailsImpl userDetails) {
         return userProfileService.getUserProfile(userDetails.getId())
                 .map(ResponseEntity::ok)
@@ -47,7 +47,7 @@ public class UserProfileController {
     }
 
     @PreAuthorize("hasAnyAuthority('USER', 'ADMIN')")
-    @PutMapping("/my-profile") // CHANGED: Now relative to the class mapping
+    @PutMapping("/my-profile")
     public ResponseEntity<User> updateMyProfile(
             @AuthenticationPrincipal UserDetailsImpl userDetails,
             @Valid @RequestBody UserProfileUpdateRequest updateRequest) {
@@ -57,7 +57,7 @@ public class UserProfileController {
     }
 
     @PreAuthorize("hasAnyAuthority('USER', 'ADMIN')")
-    @PutMapping("/my-profile/change-password") // CHANGED: Now relative to the class mapping
+    @PutMapping("/my-profile/change-password")
     public ResponseEntity<?> changePassword(
             @AuthenticationPrincipal UserDetailsImpl userDetails,
             @Valid @RequestBody ChangePasswordRequest request) {
@@ -86,7 +86,7 @@ public class UserProfileController {
     }
 
     @PreAuthorize("hasAnyAuthority('USER', 'ADMIN')")
-    @PostMapping("/my-profile/upload-picture") // CHANGED: Now relative to the class mapping
+    @PostMapping("/my-profile/upload-picture")
     public ResponseEntity<ApiResponse> uploadProfilePicture(
             @AuthenticationPrincipal UserDetailsImpl userDetails,
             @RequestPart("profilePicture") MultipartFile profilePicture) {
@@ -108,9 +108,33 @@ public class UserProfileController {
     }
 
     @PreAuthorize("hasAuthority('ADMIN')")
-    @GetMapping("/users") // CHANGED: Now relative to the class mapping
+    @GetMapping("/users")
     public ResponseEntity<List<User>> getAllUsers() {
         List<User> users = userProfileService.findAllUsers();
         return ResponseEntity.ok(users);
+    }
+
+    /**
+     * Admin-initiated password reset for a specific employee.
+     * Generates a new random password and updates it for the given user ID.
+     * Requires ADMIN role.
+     * @param id The ID of the employee whose password is to be reset.
+     * @return ResponseEntity indicating success or failure.
+     */
+    @PreAuthorize("hasAuthority('ADMIN')")
+    @PutMapping("/employees/{id}/reset-password") // New endpoint for password reset
+    public ResponseEntity<?> resetEmployeePassword(@PathVariable String id) {
+        try {
+            // Call the service method to handle the password reset logic
+            String newPassword = userProfileService.resetUserPassword(id);
+            // For security, you generally wouldn't return the plain password in a real app.
+            // Instead, you might send it via email or a secure notification.
+            // For this example, we'll confirm success.
+            return ResponseEntity.ok(new MessageResponse("Employee password for ID " + id + " reset successfully."));
+        } catch (RuntimeException e) {
+            logger.error("Error resetting password for user {}: {}", id, e.getMessage());
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST) // Use BAD_REQUEST if user not found, or INTERNAL_SERVER_ERROR for other issues
+                                 .body(new MessageResponse("Failed to reset password: " + e.getMessage()));
+        }
     }
 }

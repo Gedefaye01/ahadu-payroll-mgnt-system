@@ -10,11 +10,14 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.security.SecureRandom; // For secure password generation
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 @Service
 public class UserProfileServiceImpl implements UserProfileService {
@@ -22,13 +25,15 @@ public class UserProfileServiceImpl implements UserProfileService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final RoleRepository roleRepository;
+    private final SystemSettingService systemSettingService; // Inject SystemSettingService
 
     @Autowired
     public UserProfileServiceImpl(UserRepository userRepository, PasswordEncoder passwordEncoder,
-                                  RoleRepository roleRepository) {
+                                  RoleRepository roleRepository, SystemSettingService systemSettingService) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
         this.roleRepository = roleRepository;
+        this.systemSettingService = systemSettingService; // Initialize SystemSettingService
     }
 
     @Override
@@ -137,9 +142,100 @@ public class UserProfileServiceImpl implements UserProfileService {
         });
     }
     
-    // NEW METHOD: Implementation to fetch all users
     @Override
     public List<User> findAllUsers() {
         return userRepository.findAll();
+    }
+
+    /**
+     * Admin-initiated password reset for a specific user.
+     * Generates a new random password, hashes it, and updates the user in the database.
+     * The generated password now adheres to the password policy settings.
+     * @param userId The ID of the user whose password is to be reset.
+     * @return The new plain-text password (for immediate display to admin, but should be handled securely).
+     * @throws RuntimeException if user not found or password generation fails.
+     */
+    @Override
+    public String resetUserPassword(String userId) {
+        Optional<User> userOpt = userRepository.findById(userId);
+        if (userOpt.isEmpty()) {
+            throw new RuntimeException("User not found with ID: " + userId);
+        }
+
+        // Retrieve password policy settings from SystemSettingService
+        int minPasswordLength = systemSettingService.getMinPasswordLength().orElse(6);
+        boolean requireUppercase = systemSettingService.getRequireUppercase().orElse(true);
+        boolean requireLowercase = systemSettingService.getRequireLowercase().orElse(true);
+        boolean requireDigit = systemSettingService.getRequireDigit().orElse(true);
+        boolean requireSpecialChar = systemSettingService.getRequireSpecialChar().orElse(false);
+
+        String newPlainTextPassword = generateCompliantPassword(
+            minPasswordLength,
+            requireUppercase,
+            requireLowercase,
+            requireDigit,
+            requireSpecialChar
+        );
+
+        User user = userOpt.get();
+        user.setPassword(passwordEncoder.encode(newPlainTextPassword)); // Hash and set the new password
+        userRepository.save(user); // Save the updated user
+
+        System.out.println("Generated new password for user " + userId + ": " + newPlainTextPassword); // Log for admin
+        return newPlainTextPassword;
+    }
+
+    /**
+     * Generates a random password that complies with the specified policy.
+     * @param length Minimum length of the password.
+     * @param upperCase If uppercase characters are required.
+     * @param lowerCase If lowercase characters are required.
+     * @param digit If digits are required.
+     * @param specialChar If special characters are required.
+     * @return A randomly generated password string.
+     */
+    private String generateCompliantPassword(int length, boolean upperCase, boolean lowerCase, boolean digit, boolean specialChar) {
+        StringBuilder password = new StringBuilder();
+        SecureRandom random = new SecureRandom();
+
+        String lowerCaseChars = "abcdefghijklmnopqrstuvwxyz";
+        String upperCaseChars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+        String digitChars = "0123456789";
+        String specialChars = "!@#$%^&*()-_=+[]{}|;:',.<>?";
+
+        String allChars = "";
+        if (lowerCase) allChars += lowerCaseChars;
+        if (upperCase) allChars += upperCaseChars;
+        if (digit) allChars += digitChars;
+        if (specialChar) allChars += specialChars;
+
+        // Ensure at least one of each required type is included
+        if (lowerCase) password.append(lowerCaseChars.charAt(random.nextInt(lowerCaseChars.length())));
+        if (upperCase) password.append(upperCaseChars.charAt(random.nextInt(upperCaseChars.length())));
+        if (digit) password.append(digitChars.charAt(random.nextInt(digitChars.length())));
+        if (specialChar) password.append(specialChars.charAt(random.nextInt(specialChars.length())));
+
+        // Fill the rest of the password length
+        int remainingLength = length - password.length();
+        if (remainingLength < 0) remainingLength = 0; // Handle case where required chars already exceed min length
+
+        for (int i = 0; i < remainingLength; i++) {
+            if (allChars.isEmpty()) {
+                // Fallback if no character types are selected (should not happen with typical policies)
+                password.append((char) (random.nextInt(94) + 33)); // ASCII printable characters
+            } else {
+                password.append(allChars.charAt(random.nextInt(allChars.length())));
+            }
+        }
+
+        // Shuffle the characters to ensure randomness in position
+        List<Character> charList = password.chars()
+                                            .mapToObj(c -> (char) c)
+                                            .collect(Collectors.toList());
+        Collections.shuffle(charList, random);
+
+        return charList.stream()
+                       .map(String::valueOf)
+                       .collect(Collectors.joining());
     }
 }
