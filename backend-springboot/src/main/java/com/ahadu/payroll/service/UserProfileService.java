@@ -4,6 +4,7 @@ import com.ahadu.payroll.model.User;
 import com.ahadu.payroll.payload.SignupRequest;
 import com.ahadu.payroll.payload.UserProfileUpdateRequest;
 
+import java.util.List;
 import java.util.Optional;
 
 public interface UserProfileService {
@@ -16,5 +17,8 @@ public interface UserProfileService {
 
     void registerNewUser(SignupRequest signupRequest);
 
-    void updateProfilePictureUrl(String userId, String imageUrl); // ADDED
+    void updateProfilePictureUrl(String userId, String imageUrl);
+
+    // NEW METHOD: Added to support fetching all users
+    List<User> findAllUsers();
 }
