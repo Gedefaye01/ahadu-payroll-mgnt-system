@@ -10,12 +10,13 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
-import java.security.SecureRandom; // For secure password generation
+import java.security.SecureRandom;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import java.util.regex.Pattern; // Import Pattern for regex validation
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
@@ -25,7 +26,7 @@ public class UserProfileServiceImpl implements UserProfileService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final RoleRepository roleRepository;
-    private final SystemSettingService systemSettingService; // Inject SystemSettingService
+    private final SystemSettingService systemSettingService;
 
     @Autowired
     public UserProfileServiceImpl(UserRepository userRepository, PasswordEncoder passwordEncoder,
@@ -33,7 +34,7 @@ public class UserProfileServiceImpl implements UserProfileService {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
         this.roleRepository = roleRepository;
-        this.systemSettingService = systemSettingService; // Initialize SystemSettingService
+        this.systemSettingService = systemSettingService;
     }
 
     @Override
@@ -76,6 +77,8 @@ public class UserProfileServiceImpl implements UserProfileService {
         if (userOpt.isPresent()) {
             User user = userOpt.get();
             if (passwordEncoder.matches(oldPassword, user.getPassword())) {
+                // Validate new password against system settings before changing
+                validatePasswordPolicy(newPassword);
                 user.setPassword(passwordEncoder.encode(newPassword));
                 userRepository.save(user);
                 return true;
@@ -97,6 +100,9 @@ public class UserProfileServiceImpl implements UserProfileService {
         if (userRepository.findByEmail(signupRequest.getEmail()).isPresent()) {
             throw new RuntimeException("Email is already in use!");
         }
+
+        // Validate password against system settings during registration
+        validatePasswordPolicy(signupRequest.getPassword());
 
         User user = new User(
                 signupRequest.getUsername(),
@@ -149,93 +155,53 @@ public class UserProfileServiceImpl implements UserProfileService {
 
     /**
      * Admin-initiated password reset for a specific user.
-     * Generates a new random password, hashes it, and updates the user in the database.
-     * The generated password now adheres to the password policy settings.
+     * Accepts a new password from the admin, validates it against system password policies,
+     * hashes it, and updates the user in the database.
      * @param userId The ID of the user whose password is to be reset.
-     * @return The new plain-text password (for immediate display to admin, but should be handled securely).
-     * @throws RuntimeException if user not found or password generation fails.
+     * @param newPassword The new plain-text password provided by the admin.
+     * @throws RuntimeException if user not found or password does not meet policy.
      */
     @Override
-    public String resetUserPassword(String userId) {
+    public void resetUserPassword(String userId, String newPassword) {
         Optional<User> userOpt = userRepository.findById(userId);
         if (userOpt.isEmpty()) {
             throw new RuntimeException("User not found with ID: " + userId);
         }
 
-        // Retrieve password policy settings from SystemSettingService
+        // Validate the provided new password against system settings
+        validatePasswordPolicy(newPassword);
+
+        User user = userOpt.get();
+        user.setPassword(passwordEncoder.encode(newPassword)); // Hash and set the new password
+        userRepository.save(user); // Save the updated user
+    }
+
+    /**
+     * Validates a given password against the system's defined password policy.
+     * @param password The password string to validate.
+     * @throws RuntimeException if the password does not meet the policy requirements.
+     */
+    private void validatePasswordPolicy(String password) {
         int minPasswordLength = systemSettingService.getMinPasswordLength().orElse(6);
         boolean requireUppercase = systemSettingService.getRequireUppercase().orElse(true);
         boolean requireLowercase = systemSettingService.getRequireLowercase().orElse(true);
         boolean requireDigit = systemSettingService.getRequireDigit().orElse(true);
         boolean requireSpecialChar = systemSettingService.getRequireSpecialChar().orElse(false);
 
-        String newPlainTextPassword = generateCompliantPassword(
-            minPasswordLength,
-            requireUppercase,
-            requireLowercase,
-            requireDigit,
-            requireSpecialChar
-        );
-
-        User user = userOpt.get();
-        user.setPassword(passwordEncoder.encode(newPlainTextPassword)); // Hash and set the new password
-        userRepository.save(user); // Save the updated user
-
-        System.out.println("Generated new password for user " + userId + ": " + newPlainTextPassword); // Log for admin
-        return newPlainTextPassword;
-    }
-
-    /**
-     * Generates a random password that complies with the specified policy.
-     * @param length Minimum length of the password.
-     * @param upperCase If uppercase characters are required.
-     * @param lowerCase If lowercase characters are required.
-     * @param digit If digits are required.
-     * @param specialChar If special characters are required.
-     * @return A randomly generated password string.
-     */
-    private String generateCompliantPassword(int length, boolean upperCase, boolean lowerCase, boolean digit, boolean specialChar) {
-        StringBuilder password = new StringBuilder();
-        SecureRandom random = new SecureRandom();
-
-        String lowerCaseChars = "abcdefghijklmnopqrstuvwxyz";
-        String upperCaseChars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
-        String digitChars = "0123456789";
-        String specialChars = "!@#$%^&*()-_=+[]{}|;:',.<>?";
-
-        String allChars = "";
-        if (lowerCase) allChars += lowerCaseChars;
-        if (upperCase) allChars += upperCaseChars;
-        if (digit) allChars += digitChars;
-        if (specialChar) allChars += specialChars;
-
-        // Ensure at least one of each required type is included
-        if (lowerCase) password.append(lowerCaseChars.charAt(random.nextInt(lowerCaseChars.length())));
-        if (upperCase) password.append(upperCaseChars.charAt(random.nextInt(upperCaseChars.length())));
-        if (digit) password.append(digitChars.charAt(random.nextInt(digitChars.length())));
-        if (specialChar) password.append(specialChars.charAt(random.nextInt(specialChars.length())));
-
-        // Fill the rest of the password length
-        int remainingLength = length - password.length();
-        if (remainingLength < 0) remainingLength = 0; // Handle case where required chars already exceed min length
-
-        for (int i = 0; i < remainingLength; i++) {
-            if (allChars.isEmpty()) {
-                // Fallback if no character types are selected (should not happen with typical policies)
-                password.append((char) (random.nextInt(94) + 33)); // ASCII printable characters
-            } else {
-                password.append(allChars.charAt(random.nextInt(allChars.length())));
-            }
+        if (password.length() < minPasswordLength) {
+            throw new RuntimeException("Password must be at least " + minPasswordLength + " characters long.");
         }
-
-        // Shuffle the characters to ensure randomness in position
-        List<Character> charList = password.chars()
-                                            .mapToObj(c -> (char) c)
-                                            .collect(Collectors.toList());
-        Collections.shuffle(charList, random);
-
-        return charList.stream()
-                       .map(String::valueOf)
-                       .collect(Collectors.joining());
+        if (requireUppercase && !Pattern.compile(".*[A-Z].*").matcher(password).matches()) {
+            throw new RuntimeException("Password must contain at least one uppercase letter.");
+        }
+        if (requireLowercase && !Pattern.compile(".*[a-z].*").matcher(password).matches()) {
+            throw new RuntimeException("Password must contain at least one lowercase letter.");
+        }
+        if (requireDigit && !Pattern.compile(".*\\d.*").matcher(password).matches()) {
+            throw new RuntimeException("Password must contain at least one digit.");
+        }
+        if (requireSpecialChar && !Pattern.compile(".*[!@#$%^&*()-_=+\\[\\]{}|;:',.<>/?].*").matcher(password).matches()) {
+            throw new RuntimeException("Password must contain at least one special character.");
+        }
     }
 }

@@ -22,10 +22,16 @@ function AddEmployee() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
+  // NEW STATES for Password Reset Modal
+  const [showPasswordResetModal, setShowPasswordResetModal] = useState(false);
+  const [currentEmployeeForReset, setCurrentEmployeeForReset] = useState(null);
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmNewPassword, setConfirmNewPassword] = useState('');
+  const [passwordResetError, setPasswordResetError] = useState('');
+
+
   // Define the API_BASE_URL using the environment variable
-  // This will be 'http://localhost:8080' in development (from your local .env)
-  // and 'https://ahadu-payroll-mgnt-system.onrender.com' in production (from Render's env)
-  const API_BASE_URL = process.env.REACT_APP_API_BASE_URL; // <--- ADD THIS LINE
+  const API_BASE_URL = process.env.REACT_APP_API_BASE_URL;
 
   // Get JWT token from localStorage for authenticated requests
   const token = localStorage.getItem('token');
@@ -42,8 +48,7 @@ function AddEmployee() {
     setLoading(true);
     setError(null);
     try {
-      // Use API_BASE_URL instead of hardcoded localhost
-      const response = await fetch(`${API_BASE_URL}/api/employees`, { // <--- MODIFIED
+      const response = await fetch(`${API_BASE_URL}/api/employees`, {
         headers: authHeaders
       });
       if (!response.ok) {
@@ -58,7 +63,7 @@ function AddEmployee() {
     } finally {
       setLoading(false);
     }
-  }, [API_BASE_URL, token]); // Add API_BASE_URL to dependencies and remove toast (not a dependency)
+  }, [API_BASE_URL, token]);
 
   // Fetch employees on component mount
   useEffect(() => {
@@ -72,9 +77,8 @@ function AddEmployee() {
    */
   const handleChange = (e) => {
     const { name, value } = e.target;
-    // Special handling for roles: convert string value to an array for the backend Set<String>
     if (name === "roles") {
-      setEmployeeForm(prev => ({ ...prev, [name]: [value] })); // Wrap single role in array
+      setEmployeeForm(prev => ({ ...prev, [name]: [value] }));
     } else {
       setEmployeeForm(prev => ({ ...prev, [name]: value }));
     }
@@ -87,24 +91,20 @@ function AddEmployee() {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    // Basic validation
     if (!employeeForm.username || !employeeForm.email || (editingId === null && !employeeForm.password)) {
       toast.error("Username, email, and password (for new employees) are required.");
       return;
     }
 
     const method = editingId ? 'PUT' : 'POST';
-    // Use API_BASE_URL instead of hardcoded localhost
     const url = editingId
-      ? `${API_BASE_URL}/api/employees/${editingId}` // <--- MODIFIED
-      : `${API_BASE_URL}/api/employees`;            // <--- MODIFIED
+      ? `${API_BASE_URL}/api/employees/${editingId}`
+      : `${API_BASE_URL}/api/employees`;
 
-    // Prepare payload: exclude password for PUT requests unless it's explicitly a password reset
     const payload = { ...employeeForm };
     if (editingId && !payload.password) {
-      delete payload.password; // Don't send empty password on update
+      delete payload.password;
     } else if (editingId && payload.password) {
-      // If password is provided during edit, it means admin wants to reset it
       console.warn("Admin is updating password for existing user. Ensure this is intended behavior.");
     }
 
@@ -121,10 +121,9 @@ function AddEmployee() {
       }
 
       toast.success(`Employee ${editingId ? 'updated' : 'added'} successfully!`);
-      // Clear form and refetch employees
       setEmployeeForm({ username: '', email: '', password: '', roles: ['USER'], employeeStatus: 'Active' });
-      setEditingId(null); // Reset editing mode
-      fetchEmployees(); // Refetch updated list
+      setEditingId(null);
+      fetchEmployees();
     } catch (err) {
       console.error(`Error ${editingId ? 'updating' : 'add'} employee:`, err);
       toast.error(err.message || `Failed to ${editingId ? 'update' : 'add'} employee.`);
@@ -141,8 +140,7 @@ function AddEmployee() {
     }
 
     try {
-      // Use API_BASE_URL instead of hardcoded localhost
-      const response = await fetch(`${API_BASE_URL}/api/employees/${id}`, { // <--- MODIFIED
+      const response = await fetch(`${API_BASE_URL}/api/employees/${id}`, {
         method: 'DELETE',
         headers: authHeaders
       });
@@ -153,7 +151,7 @@ function AddEmployee() {
       }
 
       toast.info('Employee deleted successfully!');
-      fetchEmployees(); // Refetch updated list
+      fetchEmployees();
     } catch (err) {
       console.error("Error deleting employee:", err);
       toast.error(err.message || "Failed to delete employee.");
@@ -161,22 +159,43 @@ function AddEmployee() {
   };
 
   /**
-   * Handles initiating a password reset for a specific employee.
-   * @param {string} employeeId - The ID of the employee whose password needs to be reset.
+   * Opens the password reset modal for a specific employee.
+   * @param {Object} employee - The employee object for whom to reset the password.
    */
-  const handlePasswordReset = async (employeeId) => {
-    if (!window.confirm('Are you sure you want to reset this employee\'s password? A new password will be generated.')) {
+  const openPasswordResetModal = (employee) => {
+    setCurrentEmployeeForReset(employee);
+    setNewPassword('');
+    setConfirmNewPassword('');
+    setPasswordResetError('');
+    setShowPasswordResetModal(true);
+  };
+
+  /**
+   * Handles the submission of the password reset form in the modal.
+   */
+  const handlePasswordResetSubmit = async (e) => {
+    e.preventDefault();
+    setPasswordResetError('');
+
+    if (!newPassword || !confirmNewPassword) {
+      setPasswordResetError("Both password fields are required.");
       return;
+    }
+    if (newPassword !== confirmNewPassword) {
+      setPasswordResetError("New password and confirmation do not match.");
+      return;
+    }
+    // Basic client-side length check, backend will do full policy validation
+    if (newPassword.length < 6) { // Assuming a minimum of 6 for basic check
+        setPasswordResetError("Password must be at least 6 characters long.");
+        return;
     }
 
     try {
-      // Assuming a backend endpoint for password reset exists
-      const response = await fetch(`${API_BASE_URL}/api/employees/${employeeId}/reset-password`, {
-        method: 'PUT', // Or POST, depending on your backend design
+      const response = await fetch(`${API_BASE_URL}/api/employees/${currentEmployeeForReset.id}/reset-password`, {
+        method: 'PUT',
         headers: authHeaders,
-        // You might send a body here if your backend requires specific data for reset,
-        // but for a simple admin-initiated reset, an empty body or a flag might suffice.
-        // body: JSON.stringify({}) // Example if a body is needed
+        body: JSON.stringify({ newPassword: newPassword }) // Send the new password in the body
       });
 
       if (!response.ok) {
@@ -184,12 +203,12 @@ function AddEmployee() {
         throw new Error(errorData.message || "Failed to reset password.");
       }
 
-      // If your backend returns the new password, you can display it here.
-      // For security, it's often better to send it via email or a secure channel.
-      // For this example, we'll assume a success message.
-      toast.success('Employee password reset successfully! (New password generated on backend)');
+      toast.success(`Password for ${currentEmployeeForReset.username} reset successfully!`);
+      setShowPasswordResetModal(false); // Close modal on success
+      setCurrentEmployeeForReset(null);
     } catch (err) {
       console.error("Error resetting password:", err);
+      setPasswordResetError(err.message || "Failed to reset password.");
       toast.error(err.message || "Failed to reset password.");
     }
   };
@@ -359,20 +378,19 @@ function AddEmployee() {
                   <td className="table-actions text-center">
                     <button
                       onClick={() => handleEdit(employee)}
-                      className="text-indigo-600 hover:text-indigo-900 mr-3"
+                      className="btn btn-primary mr-3" // Changed to btn btn-primary
                     >
                       Edit
                     </button>
                     <button
                       onClick={() => handleDelete(employee.id)}
-                      className="text-red-600 hover:text-red-900 mr-3" // Added mr-3 for spacing
+                      className="btn btn-primary mr-3" // Changed to btn btn-primary
                     >
                       Delete
                     </button>
-                    {/* NEW: Password Reset Button */}
                     <button
-                      onClick={() => handlePasswordReset(employee.id)}
-                      className="text-red-600 hover:text-red-900 mr-3" // Using btn-primary for styling
+                      onClick={() => openPasswordResetModal(employee)}
+                      className="btn btn-primary" // Already btn btn-primary, ensure consistent spacing if needed
                     >
                       Reset Password
                     </button>
@@ -381,6 +399,59 @@ function AddEmployee() {
               ))}
             </tbody>
           </table>
+        </div>
+      )}
+
+      {/* Password Reset Modal */}
+      {showPasswordResetModal && currentEmployeeForReset && (
+        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full flex items-center justify-center z-50">
+          <div className="bg-white p-8 rounded-lg shadow-xl max-w-md w-full relative">
+            <h3 className="text-2xl font-bold text-center text-gray-800 mb-6">Reset Password for {currentEmployeeForReset.username}</h3>
+            <form onSubmit={handlePasswordResetSubmit}>
+              <div className="form-group mb-4">
+                <label htmlFor="newPassword">New Password</label>
+                <input
+                  type="password"
+                  id="newPassword"
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                  className="input-field"
+                  placeholder="Enter new password"
+                  required
+                />
+              </div>
+              <div className="form-group mb-6">
+                <label htmlFor="confirmNewPassword">Confirm New Password</label>
+                <input
+                  type="password"
+                  id="confirmNewPassword"
+                  value={confirmNewPassword}
+                  onChange={(e) => setConfirmNewPassword(e.target.value)}
+                  className="input-field"
+                  placeholder="Confirm new password"
+                  required
+                />
+              </div>
+              {passwordResetError && (
+                <p className="text-red-500 text-sm text-center mb-4">{passwordResetError}</p>
+              )}
+              <div className="flex justify-end gap-4">
+                <button
+                  type="button"
+                  onClick={() => setShowPasswordResetModal(false)}
+                  className="btn btn-secondary"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="btn btn-primary"
+                >
+                  Set New Password
+                </button>
+              </div>
+            </form>
+          </div>
         </div>
       )}
     </div>

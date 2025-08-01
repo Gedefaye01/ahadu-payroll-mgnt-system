@@ -21,6 +21,6 @@ public interface UserProfileService {
 
     List<User> findAllUsers();
 
-    // NEW METHOD: Added to support admin-initiated password reset
-    String resetUserPassword(String userId);
+    // MODIFIED METHOD: Now accepts a newPassword string
+    void resetUserPassword(String userId, String newPassword);
 }

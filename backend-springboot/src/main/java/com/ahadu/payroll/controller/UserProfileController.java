@@ -3,8 +3,8 @@ package com.ahadu.payroll.controller;
 import com.ahadu.payroll.model.User;
 import com.ahadu.payroll.payload.ChangePasswordRequest;
 import com.ahadu.payroll.payload.UserProfileUpdateRequest;
-import com.ahadu.payroll.payload.ApiResponse; // Assuming ApiResponse is a DTO for general responses
-import com.ahadu.payroll.payload.MessageResponse; // Assuming MessageResponse is a DTO for simple messages
+import com.ahadu.payroll.payload.ApiResponse;
+import com.ahadu.payroll.payload.MessageResponse;
 import com.ahadu.payroll.security.UserDetailsImpl;
 import com.ahadu.payroll.service.UserProfileService;
 import com.ahadu.payroll.service.FileStorageService;
@@ -21,9 +21,10 @@ import org.slf4j.LoggerFactory;
 
 import jakarta.validation.Valid;
 import java.util.List;
+import java.util.Map; // Import Map for the request body
 
 @RestController
-@RequestMapping("/api") // Base path for the controller
+@RequestMapping("/api")
 @CrossOrigin(origins = "https://ahadu-payroll-mgnt-system-frontend.onrender.com", maxAge = 3600)
 public class UserProfileController {
 
@@ -116,24 +117,28 @@ public class UserProfileController {
 
     /**
      * Admin-initiated password reset for a specific employee.
-     * Generates a new random password and updates it for the given user ID.
+     * Accepts a new password from the admin and updates it for the given user ID.
+     * The new password will be validated against system password policies.
      * Requires ADMIN role.
      * @param id The ID of the employee whose password is to be reset.
+     * @param requestBody A map containing the "newPassword" string.
      * @return ResponseEntity indicating success or failure.
      */
     @PreAuthorize("hasAuthority('ADMIN')")
-    @PutMapping("/employees/{id}/reset-password") // New endpoint for password reset
-    public ResponseEntity<?> resetEmployeePassword(@PathVariable String id) {
+    @PutMapping("/employees/{id}/reset-password")
+    public ResponseEntity<?> resetEmployeePassword(@PathVariable String id,
+                                                   @RequestBody Map<String, String> requestBody) {
         try {
-            // Call the service method to handle the password reset logic
-            String newPassword = userProfileService.resetUserPassword(id);
-            // For security, you generally wouldn't return the plain password in a real app.
-            // Instead, you might send it via email or a secure notification.
-            // For this example, we'll confirm success.
+            String newPassword = requestBody.get("newPassword");
+            if (newPassword == null || newPassword.isEmpty()) {
+                return ResponseEntity.badRequest().body(new MessageResponse("New password cannot be empty."));
+            }
+            // Call the service method to handle the password reset logic with the provided password
+            userProfileService.resetUserPassword(id, newPassword);
             return ResponseEntity.ok(new MessageResponse("Employee password for ID " + id + " reset successfully."));
         } catch (RuntimeException e) {
             logger.error("Error resetting password for user {}: {}", id, e.getMessage());
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST) // Use BAD_REQUEST if user not found, or INTERNAL_SERVER_ERROR for other issues
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                                  .body(new MessageResponse("Failed to reset password: " + e.getMessage()));
         }
     }
