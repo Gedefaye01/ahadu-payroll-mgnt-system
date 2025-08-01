@@ -19,6 +19,7 @@ com\ahadu\payroll\payload\ReportRequest.class
 com\ahadu\payroll\controller\CustomErrorController.class
 com\ahadu\payroll\payload\PayrollProcessRequest.class
 com\ahadu\payroll\service\UserRoleService.class
+com\ahadu\payroll\payload\AttendanceOverviewResponse.class
 com\ahadu\payroll\service\ReportServiceImpl.class
 com\ahadu\payroll\service\PayrollService.class
 com\ahadu\payroll\security\JwtUtil.class
@@ -57,6 +58,7 @@ com\ahadu\payroll\controller\AttendanceLeaveController.class
 com\ahadu\payroll\repository\AnnouncementRepository.class
 com\ahadu\payroll\security\JwtFilter.class
 com\ahadu\payroll\repository\RoleRepository.class
+com\ahadu\payroll\scheduler\AttendanceScheduler.class
 com\ahadu\payroll\service\ContactService.class
 com\ahadu\payroll\payload\UserRoleUpdateRequest.class
 com\ahadu\payroll\controller\EmployeeController.class

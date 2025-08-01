@@ -28,9 +28,7 @@ public class AttendanceLeaveController {
     private final AttendanceService attendanceService;
     private final LeaveRequestService leaveRequestService;
     
-    // Define the cutoff time for late clock-ins (e.g., 8:30 AM)
     private static final LocalTime LATE_CUTOFF_TIME = LocalTime.of(8, 30); 
-    // Define the hard cutoff for a day's attendance (e.g., 2:00 PM)
     private static final LocalTime ABSENT_CUTOFF_TIME = LocalTime.of(14, 0);
 
     @Autowired
@@ -43,17 +41,15 @@ public class AttendanceLeaveController {
     @PreAuthorize("hasAnyAuthority('USER', 'ADMIN')")
     public ResponseEntity<Attendance> saveAttendance(@RequestBody Attendance attendance) {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-
         if (authentication == null || !(authentication.getPrincipal() instanceof UserDetailsImpl)) {
             return new ResponseEntity<>(HttpStatus.UNAUTHORIZED);
         }
-
         UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
         attendance.setEmployeeId(userDetails.getId());
         
         LocalTime clockInTime = attendance.getClockInTime();
         if (clockInTime == null) {
-            attendance.setStatus("Present"); // Default to Present if time is missing
+            attendance.setStatus("Present");
         } else if (clockInTime.isAfter(ABSENT_CUTOFF_TIME)) {
             attendance.setStatus("Absent");
         } else if (clockInTime.isAfter(LATE_CUTOFF_TIME)) {
@@ -61,7 +57,6 @@ public class AttendanceLeaveController {
         } else {
             attendance.setStatus("Present");
         }
-
         Attendance savedAttendance = attendanceService.saveAttendance(attendance);
         return new ResponseEntity<>(savedAttendance, HttpStatus.CREATED);
     }
@@ -70,23 +65,18 @@ public class AttendanceLeaveController {
     @PreAuthorize("hasAnyAuthority('USER', 'ADMIN')")
     public ResponseEntity<Attendance> updateAttendance(@PathVariable String id,
                                                         @RequestBody Attendance updatedAttendance) {
-
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
-
         Optional<Attendance> existingAttendanceOptional = attendanceService.getAttendanceById(id);
         if (existingAttendanceOptional.isEmpty()) {
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
         }
-
         Attendance existingAttendance = existingAttendanceOptional.get();
         String authenticatedUserId = userDetails.getId();
         boolean isAdmin = userDetails.getAuthorities().stream().anyMatch(a -> a.getAuthority().equals("ADMIN"));
-
         if (!isAdmin && !existingAttendance.getEmployeeId().equals(authenticatedUserId)) {
             return new ResponseEntity<>(HttpStatus.FORBIDDEN);
         }
-
         Optional<Attendance> updated;
         if (isAdmin) {
             updated = attendanceService.updateAttendance(id, updatedAttendance);
@@ -95,7 +85,6 @@ public class AttendanceLeaveController {
             existingAttendance.setRemarks(updatedAttendance.getRemarks());
             updated = attendanceService.updateAttendance(id, existingAttendance);
         }
-
         return updated.map(ResponseEntity::ok).orElseGet(() -> new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR));
     }
 
@@ -110,11 +99,9 @@ public class AttendanceLeaveController {
     @PreAuthorize("hasAnyAuthority('USER', 'ADMIN')")
     public ResponseEntity<List<Attendance>> getMyAttendance() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-
         if (authentication == null || !(authentication.getPrincipal() instanceof UserDetailsImpl)) {
             return new ResponseEntity<>(HttpStatus.UNAUTHORIZED);
         }
-
         UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
         List<Attendance> myAttendance = attendanceService.getAttendanceByEmployeeIdWithUsernames(userDetails.getId());
         return ResponseEntity.ok(myAttendance);
@@ -135,9 +122,7 @@ public class AttendanceLeaveController {
             @RequestParam("endDate") String endDateString) {
         LocalDate startDate = LocalDate.parse(startDateString);
         LocalDate endDate = LocalDate.parse(endDateString);
-        List<Attendance> attendance = attendanceService.getAttendanceByEmployeeIdAndDateRangeWithUsernames(employeeId,
-                startDate,
-                endDate);
+        List<Attendance> attendance = attendanceService.getAttendanceByEmployeeIdAndDateRangeWithUsernames(employeeId, startDate, endDate);
         return ResponseEntity.ok(attendance);
     }
 
@@ -148,17 +133,14 @@ public class AttendanceLeaveController {
         return ResponseEntity.ok(overview);
     }
 
-    // --- Leave Request Endpoints ---
-
+    // Leave Request Endpoints
     @PostMapping("/leave-requests")
     @PreAuthorize("hasAnyAuthority('USER', 'ADMIN')")
     public ResponseEntity<LeaveRequest> submitLeaveRequest(@RequestBody LeaveRequest leaveRequest) {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-
         if (authentication == null || !(authentication.getPrincipal() instanceof UserDetailsImpl)) {
             return new ResponseEntity<>(HttpStatus.UNAUTHORIZED);
         }
-
         UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
         leaveRequest.setEmployeeId(userDetails.getId());
         leaveRequest.setEmployeeUsername(userDetails.getUsername());
@@ -177,14 +159,11 @@ public class AttendanceLeaveController {
     @PreAuthorize("hasAnyAuthority('USER', 'ADMIN')")
     public ResponseEntity<List<LeaveRequest>> getMyLeaveRequests() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-
         if (authentication == null || !(authentication.getPrincipal() instanceof UserDetailsImpl)) {
             return new ResponseEntity<>(HttpStatus.UNAUTHORIZED);
         }
-
         UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
-        List<LeaveRequest> myLeaveRequests = leaveRequestService
-                .getLeaveRequestsByEmployeeIdWithUsernames(userDetails.getId());
+        List<LeaveRequest> myLeaveRequests = leaveRequestService.getLeaveRequestsByEmployeeIdWithUsernames(userDetails.getId());
         return ResponseEntity.ok(myLeaveRequests);
     }
 
@@ -193,10 +172,7 @@ public class AttendanceLeaveController {
     public ResponseEntity<LeaveRequest> approveLeaveRequest(@PathVariable String requestId) {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
-
-        return leaveRequestService.approveLeaveRequest(requestId, userDetails.getId())
-                .map(ResponseEntity::ok)
-                .orElse(new ResponseEntity<>(HttpStatus.NOT_FOUND));
+        return leaveRequestService.approveLeaveRequest(requestId, userDetails.getId()).map(ResponseEntity::ok).orElse(new ResponseEntity<>(HttpStatus.NOT_FOUND));
     }
 
     @PutMapping("/leave-requests/{requestId}/reject")
@@ -204,10 +180,7 @@ public class AttendanceLeaveController {
     public ResponseEntity<LeaveRequest> rejectLeaveRequest(@PathVariable String requestId) {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
-
-        return leaveRequestService.rejectLeaveRequest(requestId, userDetails.getId())
-                .map(ResponseEntity::ok)
-                .orElse(new ResponseEntity<>(HttpStatus.NOT_FOUND));
+        return leaveRequestService.rejectLeaveRequest(requestId, userDetails.getId()).map(ResponseEntity::ok).orElse(new ResponseEntity<>(HttpStatus.NOT_FOUND));
     }
 
     @DeleteMapping("/leave-requests/{id}")
