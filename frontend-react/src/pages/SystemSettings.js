@@ -1,10 +1,13 @@
-import React, { useState } from 'react';
-import { toast } from 'react-toastify'; // Import toast for notifications
+import React, { useState, useEffect } from 'react';
+import { toast, ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css'; // Import toast CSS
 
 /**
  * SystemSettings Component
  * Allows administrators to configure system-wide settings with a form.
- * It uses mock state to simulate saving settings.
+ * It now includes password policy, login attempt limits, and session timeout settings.
+ * Simulates API calls for fetching and saving settings.
+ * All styling is now handled via external CSS classes (e.g., in App.css).
  */
 function SystemSettings() {
   // State to hold the current system settings
@@ -12,8 +15,66 @@ function SystemSettings() {
     payrollCycle: 'Monthly',
     taxRate: 15,
     emailNotifications: true,
-    dataRetentionDays: 365
+    dataRetentionDays: 365,
+    // New security-related settings with updated defaults
+    minPasswordLength: 6, // Updated default
+    requireUppercase: true,
+    requireLowercase: true,
+    requireDigit: true,
+    requireSpecialChar: false,
+    maxLoginAttempts: 5,
+    lockoutDurationMinutes: 30,
+    sessionTimeoutMinutes: 10, // Updated default
   });
+
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  // Simulate fetching settings from a backend API on component mount
+  useEffect(() => {
+    const fetchSettings = async () => {
+      setLoading(true);
+      setError(null);
+      try {
+        // In a real application, replace this with an actual fetch call:
+        // const response = await fetch('/api/settings', {
+        //   headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+        // });
+        // if (!response.ok) {
+        //   throw new Error(`HTTP error! status: ${response.status}`);
+        // }
+        // const data = await response.json();
+        // setSettings(data);
+
+        // Mock API call delay
+        await new Promise(resolve => setTimeout(resolve, 500));
+        // Mock data if no real API is connected yet
+        const mockData = {
+          payrollCycle: 'Monthly',
+          taxRate: 15,
+          emailNotifications: true,
+          dataRetentionDays: 365,
+          minPasswordLength: 6, // Updated default in mock data
+          requireUppercase: true,
+          requireLowercase: true,
+          requireDigit: true,
+          requireSpecialChar: false,
+          maxLoginAttempts: 5,
+          lockoutDurationMinutes: 30,
+          sessionTimeoutMinutes: 10, // Updated default in mock data
+        };
+        setSettings(mockData);
+        toast.info('Settings loaded successfully!');
+      } catch (err) {
+        setError('Failed to load settings: ' + err.message);
+        toast.error('Failed to load settings!');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchSettings();
+  }, []);
 
   /**
    * Handles changes to form input fields.
@@ -24,7 +85,7 @@ function SystemSettings() {
     const { name, value, type, checked } = e.target;
     setSettings(prev => ({
       ...prev,
-      [name]: type === 'checkbox' ? checked : value // Handle checkbox 'checked' property
+      [name]: type === 'checkbox' ? checked : value,
     }));
   };
 
@@ -33,20 +94,61 @@ function SystemSettings() {
    * Simulates an API call to persist the settings.
    * @param {Object} e - The event object from the form submission.
    */
-  const handleSaveSettings = (e) => {
+  const handleSaveSettings = async (e) => {
     e.preventDefault(); // Prevent default form submission
-    // In a real application, you would send 'settings' data to your backend API.
-    console.log('Saving settings:', settings);
-    toast.success('System settings saved successfully!'); // Use toast
+    setLoading(true);
+    setError(null);
+    try {
+      // In a real application, you would send 'settings' data to your backend API:
+      // const token = localStorage.getItem('token');
+      // const response = await fetch('/api/settings', {
+      //   method: 'PUT',
+      //   headers: {
+      //     'Content-Type': 'application/json',
+      //     'Authorization': `Bearer ${token}`,
+      //   },
+      //   body: JSON.stringify(settings),
+      // });
+      // if (!response.ok) {
+      //   throw new Error(`HTTP error! status: ${response.status}`);
+      // }
+
+      // Mock API call delay
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      console.log('Saving settings:', settings);
+      toast.success('System settings saved successfully!');
+    } catch (err) {
+      setError('Failed to save settings: ' + err.message);
+      toast.error('Failed to save settings!');
+    } finally {
+      setLoading(false);
+    }
   };
 
+  if (loading) {
+    return (
+      <div className="page-container loading-state">
+        <p>Loading settings...</p>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="page-container error-state">
+        <p>{error}</p>
+      </div>
+    );
+  }
+
   return (
-    <div className="page-container p-6 max-w-4xl mx-auto bg-white rounded-lg shadow-md">
-      <h2 className="text-3xl font-bold text-center text-gray-800 mb-8">Configure System Settings</h2>
+    <div className="page-container">
+      <ToastContainer position="top-right" autoClose={3000} hideProgressBar={false} newestOnTop={false} closeOnClick rtl={false} pauseOnFocusLoss draggable pauseOnHover />
+      <h2 className="heading-primary">Configure System Settings</h2>
 
       {/* System Settings Form */}
-      <form onSubmit={handleSaveSettings} className="p-6 border border-gray-200 rounded-lg bg-gray-50">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+      <form onSubmit={handleSaveSettings} className="settings-form">
+        <div className="form-grid">
           {/* Payroll Cycle Select */}
           <div className="form-group">
             <label htmlFor="payrollCycle">Payroll Cycle</label>
@@ -55,7 +157,7 @@ function SystemSettings() {
               name="payrollCycle"
               value={settings.payrollCycle}
               onChange={handleChange}
-              className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+              className="input-field select-field"
             >
               <option value="Monthly">Monthly</option>
               <option value="Bi-Weekly">Bi-Weekly</option>
@@ -73,19 +175,20 @@ function SystemSettings() {
               onChange={handleChange}
               min="0" // Minimum value
               max="100" // Maximum value
+              className="input-field"
             />
           </div>
           {/* Email Notifications Checkbox */}
-          <div className="flex items-center">
+          <div className="checkbox-group">
             <input
               type="checkbox"
               id="emailNotifications"
               name="emailNotifications"
               checked={settings.emailNotifications}
               onChange={handleChange}
-              className="h-4 w-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500"
+              className="checkbox-input"
             />
-            <label htmlFor="emailNotifications" className="ml-2 block text-sm font-medium text-gray-700">
+            <label htmlFor="emailNotifications" className="checkbox-label">
               Enable Email Notifications
             </label>
           </div>
@@ -99,15 +202,137 @@ function SystemSettings() {
               value={settings.dataRetentionDays}
               onChange={handleChange}
               min="30" // Minimum retention days
+              className="input-field"
             />
           </div>
         </div>
+
+        {/* --- Password Policy Enforcement --- */}
+        <h3 className="heading-secondary">Password Policy</h3>
+        <div className="form-grid">
+          <div className="form-group">
+            <label htmlFor="minPasswordLength">Minimum Password Length</label>
+            <input
+              type="number"
+              id="minPasswordLength"
+              name="minPasswordLength"
+              value={settings.minPasswordLength}
+              onChange={handleChange}
+              min="6"
+              max="30"
+              className="input-field"
+            />
+          </div>
+          <div className="checkbox-group">
+            <input
+              type="checkbox"
+              id="requireUppercase"
+              name="requireUppercase"
+              checked={settings.requireUppercase}
+              onChange={handleChange}
+              className="checkbox-input"
+            />
+            <label htmlFor="requireUppercase" className="checkbox-label">
+              Require Uppercase Character
+            </label>
+          </div>
+          <div className="checkbox-group">
+            <input
+              type="checkbox"
+              id="requireLowercase"
+              name="requireLowercase"
+              checked={settings.requireLowercase}
+              onChange={handleChange}
+              className="checkbox-input"
+            />
+            <label htmlFor="requireLowercase" className="checkbox-label">
+              Require Lowercase Character
+            </label>
+          </div>
+          <div className="checkbox-group">
+            <input
+              type="checkbox"
+              id="requireDigit"
+              name="requireDigit"
+              checked={settings.requireDigit}
+              onChange={handleChange}
+              className="checkbox-input"
+            />
+            <label htmlFor="requireDigit" className="checkbox-label">
+              Require Digit
+            </label>
+          </div>
+          <div className="checkbox-group">
+            <input
+              type="checkbox"
+              id="requireSpecialChar"
+              name="requireSpecialChar"
+              checked={settings.requireSpecialChar}
+              onChange={handleChange}
+              className="checkbox-input"
+            />
+            <label htmlFor="requireSpecialChar" className="checkbox-label">
+              Require Special Character
+            </label>
+          </div>
+        </div>
+
+        {/* --- Login Attempt Limits --- */}
+        <h3 className="heading-secondary">Login Security</h3>
+        <div className="form-grid">
+          <div className="form-group">
+            <label htmlFor="maxLoginAttempts">Max Login Attempts (before lockout)</label>
+            <input
+              type="number"
+              id="maxLoginAttempts"
+              name="maxLoginAttempts"
+              value={settings.maxLoginAttempts}
+              onChange={handleChange}
+              min="1"
+              max="10"
+              className="input-field"
+            />
+          </div>
+          <div className="form-group">
+            <label htmlFor="lockoutDurationMinutes">Account Lockout Duration (minutes)</label>
+            <input
+              type="number"
+              id="lockoutDurationMinutes"
+              name="lockoutDurationMinutes"
+              value={settings.lockoutDurationMinutes}
+              onChange={handleChange}
+              min="1"
+              max="1440" // Max 24 hours
+              className="input-field"
+            />
+          </div>
+        </div>
+
+        {/* --- Session Timeout Configuration --- */}
+        <h3 className="heading-secondary">Session Management</h3>
+        <div className="form-grid">
+          <div className="form-group">
+            <label htmlFor="sessionTimeoutMinutes">Session Timeout (minutes)</label>
+            <input
+              type="number"
+              id="sessionTimeoutMinutes"
+              name="sessionTimeoutMinutes"
+              value={settings.sessionTimeoutMinutes}
+              onChange={handleChange}
+              min="10"
+              max="480" // Max 8 hours
+              className="input-field"
+            />
+          </div>
+        </div>
+
         {/* Save Settings Button */}
         <button
           type="submit"
-          className="btn btn-primary w-full"
+          className="button-primary"
+          disabled={loading} // Disable button while loading
         >
-          Save Settings
+          {loading ? 'Saving...' : 'Save Settings'}
         </button>
       </form>
     </div>

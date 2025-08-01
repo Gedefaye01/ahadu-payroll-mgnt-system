@@ -25,8 +25,7 @@ public class SystemSettingService {
 
     /**
      * Retrieves all system settings.
-     * 
-     * @return A list of all SystemSetting objects.
+     * * @return A list of all SystemSetting objects.
      */
     public List<SystemSetting> getAllSettings() {
         return systemSettingRepository.findAll();
@@ -34,8 +33,7 @@ public class SystemSettingService {
 
     /**
      * Retrieves a single system setting by its key (ID).
-     * 
-     * @param id The key (ID) of the setting.
+     * * @param id The key (ID) of the setting.
      * @return An Optional containing the SystemSetting if found, or empty if not.
      */
     public Optional<SystemSetting> getSettingById(String id) {
@@ -44,8 +42,7 @@ public class SystemSettingService {
 
     /**
      * Updates an existing system setting or creates it if it doesn't exist.
-     * 
-     * @param setting The SystemSetting object to be saved or updated.
+     * * @param setting The SystemSetting object to be saved or updated.
      * @return The saved/updated SystemSetting object.
      */
     public SystemSetting saveOrUpdateSetting(SystemSetting setting) {
@@ -55,8 +52,7 @@ public class SystemSettingService {
 
     /**
      * Deletes a system setting by its ID.
-     * 
-     * @param id The ID of the setting to delete.
+     * * @param id The ID of the setting to delete.
      */
     public void deleteSetting(String id) {
         systemSettingRepository.deleteById(id);
