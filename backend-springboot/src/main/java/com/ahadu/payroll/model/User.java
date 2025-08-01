@@ -2,9 +2,9 @@ package com.ahadu.payroll.model;
 
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
-import com.fasterxml.jackson.annotation.JsonIgnore; // <-- IMPORT THIS
+import com.fasterxml.jackson.annotation.JsonIgnore;
 
-import java.math.BigDecimal; // Import BigDecimal for monetary values
+import java.math.BigDecimal;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -13,10 +13,10 @@ public class User {
     @Id
     private String id;
 
-    private String username; // This typically stores the full name
+    private String username;
     private String email;
-    private String password; // Hashed password
-    private Set<String> roles = new HashSet<>(); // Storing roles as strings (e.g., "ROLE_USER", "ROLE_ADMIN")
+    private String password;
+    private Set<String> roles = new HashSet<>();
 
     private String phone;
     private String address;
@@ -25,9 +25,10 @@ public class User {
     private String emergencyContactPhone;
 
     // --- NEW FIELDS FOR PAYROLL ---
-    private BigDecimal baseSalary; // Base salary of the employee
-    private BigDecimal taxPercentage; // Tax rate as a percentage (e.g., 0.15 for 15%)
-    private BigDecimal commissionPercentage; // Commission rate as a percentage (e.g., 0.02 for 2%)
+    private BigDecimal baseSalary;
+    private BigDecimal taxPercentage;
+    private BigDecimal commissionPercentage;
+    private BigDecimal providentFundPercentage; // NEW FIELD: Provident Fund Percentage
     private String status; // e.g., "Active", "Inactive", "On Leave"
     // --- END NEW FIELDS ---
 
@@ -43,122 +44,40 @@ public class User {
     }
 
     // Getters and Setters
-    public String getId() {
-        return id;
-    }
-
-    public void setId(String id) {
-        this.id = id;
-    }
-
-    public String getUsername() {
-        return username;
-    }
-
-    // Corrected the typo here: removed the duplicate 'void'
-    public void setUsername(String username) {
-        this.username = username;
-    }
-
-    public String getEmail() {
-        return email;
-    }
-
-    public void setEmail(String email) {
-        this.email = email;
-    }
-
-    public String getPassword() {
-        return password;
-    }
-
-    public void setPassword(String password) {
-        this.password = password;
-    }
-
-    public Set<String> getRoles() {
-        return roles;
-    }
-
-    public void setRoles(Set<String> roles) {
-        this.roles = roles;
-    }
-
-    public String getPhone() {
-        return phone;
-    }
-
-    public void setPhone(String phone) {
-        this.phone = phone;
-    }
-
-    public String getAddress() {
-        return address;
-    }
-
-    public void setAddress(String address) {
-        this.address = address;
-    }
-
-    public String getProfilePictureUrl() {
-        return profilePictureUrl;
-    }
-
-    public void setProfilePictureUrl(String profilePictureUrl) {
-        this.profilePictureUrl = profilePictureUrl;
-    }
-
-    public String getEmergencyContactName() {
-        return emergencyContactName;
-    }
-
-    public void setEmergencyContactName(String emergencyContactName) {
-        this.emergencyContactName = emergencyContactName;
-    }
-
-    public String getEmergencyContactPhone() {
-        return emergencyContactPhone;
-    }
-
-    public void setEmergencyContactPhone(String emergencyContactPhone) {
-        this.emergencyContactPhone = emergencyContactPhone;
-    }
+    public String getId() { return id; }
+    public void setId(String id) { this.id = id; }
+    public String getUsername() { return username; }
+    public void setUsername(String username) { this.username = username; }
+    public String getEmail() { return email; }
+    public void setEmail(String email) { this.email = email; }
+    public String getPassword() { return password; }
+    public void setPassword(String password) { this.password = password; }
+    public Set<String> getRoles() { return roles; }
+    public void setRoles(Set<String> roles) { this.roles = roles; }
+    public String getPhone() { return phone; }
+    public void setPhone(String phone) { this.phone = phone; }
+    public String getAddress() { return address; }
+    public void setAddress(String address) { this.address = address; }
+    public String getProfilePictureUrl() { return profilePictureUrl; }
+    public void setProfilePictureUrl(String profilePictureUrl) { this.profilePictureUrl = profilePictureUrl; }
+    public String getEmergencyContactName() { return emergencyContactName; }
+    public void setEmergencyContactName(String emergencyContactName) { this.emergencyContactName = emergencyContactName; }
+    public String getEmergencyContactPhone() { return emergencyContactPhone; }
+    public void setEmergencyContactPhone(String emergencyContactPhone) { this.emergencyContactPhone = emergencyContactPhone; }
 
     // --- NEW GETTERS AND SETTERS FOR PAYROLL FIELDS ---
-    public BigDecimal getBaseSalary() {
-        return baseSalary;
-    }
+    public BigDecimal getBaseSalary() { return baseSalary; }
+    public void setBaseSalary(BigDecimal baseSalary) { this.baseSalary = baseSalary; }
+    public BigDecimal getTaxPercentage() { return taxPercentage; }
+    public void setTaxPercentage(BigDecimal taxPercentage) { this.taxPercentage = taxPercentage; }
+    public BigDecimal getCommissionPercentage() { return commissionPercentage; }
+    public void setCommissionPercentage(BigDecimal commissionPercentage) { this.commissionPercentage = commissionPercentage; }
+    public BigDecimal getProvidentFundPercentage() { return providentFundPercentage; }
+    public void setProvidentFundPercentage(BigDecimal providentFundPercentage) { this.providentFundPercentage = providentFundPercentage; }
 
-    public void setBaseSalary(BigDecimal baseSalary) {
-        this.baseSalary = baseSalary;
-    }
-
-    public BigDecimal getTaxPercentage() {
-        return taxPercentage;
-    }
-
-    public void setTaxPercentage(BigDecimal taxPercentage) {
-        this.taxPercentage = taxPercentage;
-    }
-
-    public BigDecimal getCommissionPercentage() {
-        return commissionPercentage;
-    }
-
-    public void setCommissionPercentage(BigDecimal commissionPercentage) {
-        this.commissionPercentage = commissionPercentage;
-    }
-
-    // Implemented getEmployeeStatus based on the new 'status' field
-    @JsonIgnore // Prevents this from being serialized to JSON if you don't want it in API
-                // responses
-    public String getEmployeeStatus() {
-        return this.status;
-    }
-
-    public void setStatus(String status) {
-        this.status = status;
-    }
+    @JsonIgnore
+    public String getEmployeeStatus() { return this.status; }
+    public void setStatus(String status) { this.status = status; }
     // --- END NEW GETTERS AND SETTERS ---
 
     @Override
@@ -173,9 +92,10 @@ public class User {
                 ", profilePictureUrl='" + profilePictureUrl + '\'' +
                 ", emergencyContactName='" + emergencyContactName + '\'' +
                 ", emergencyContactPhone='" + emergencyContactPhone + '\'' +
-                ", baseSalary=" + baseSalary + // Include new fields in toString
+                ", baseSalary=" + baseSalary +
                 ", taxPercentage=" + taxPercentage +
                 ", commissionPercentage=" + commissionPercentage +
+                ", providentFundPercentage=" + providentFundPercentage +
                 ", status='" + status + '\'' +
                 '}';
     }

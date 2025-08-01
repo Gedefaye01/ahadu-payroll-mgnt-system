@@ -55,7 +55,7 @@ public class PayrollService {
         payrollRun.setPayPeriodEnd(payPeriodEnd);
         payrollRun.setProcessedAt(LocalDateTime.now());
         payrollRun.setStatus("DRAFT");
-        payrollRun.setCreatedById(creatorId); // NEW: Set the creator's ID
+        payrollRun.setCreatedById(creatorId);
         
         PayrollRun savedPayrollRun = payrollRunRepository.save(payrollRun);
 
@@ -97,9 +97,9 @@ public class PayrollService {
             paycheck.setGrossPay(grossPay);
             paycheck.setTotalDeductions(totalDeductions);
             paycheck.setNetPay(netPay);
-            paycheck.setCommissionAmount(commissionAmount);
-            paycheck.setTaxDeduction(taxDeduction);
-            paycheck.setProvidentFundDeduction(providentFundDeduction);
+            paycheck.setCommissionAmount(commissionAmount); // Corrected setter
+            paycheck.setTaxDeduction(taxDeduction); // Corrected setter
+            paycheck.setProvidentFundDeduction(providentFundDeduction); // Corrected setter
             
             return paycheck;
         }).collect(Collectors.toList());
@@ -118,16 +118,19 @@ public class PayrollService {
         return payrollRunRepository.save(savedPayrollRun);
     }
     
+    // This method needs to be correctly implemented based on your Attendance model and data.
+    // I'm providing a placeholder, but ensure it fetches actual worked days.
     private long calculateWorkedDays(String employeeId, LocalDate startDate, LocalDate endDate) {
-        // Your existing implementation for calculateWorkedDays
-        return 0; // Placeholder
+        // Example: Count attendance records that are 'Present' or 'Late'
+        List<Attendance> attendanceRecords = attendanceRepository.findByEmployeeIdAndDateBetween(employeeId, startDate, endDate);
+        return attendanceRecords.stream()
+                .filter(a -> "Present".equalsIgnoreCase(a.getStatus()) || "Late".equalsIgnoreCase(a.getStatus()))
+                .count();
     }
 
     public Optional<PayrollRun> finalizePayroll(String payrollRunId, String approverId) {
         return payrollRunRepository.findById(payrollRunId).map(payrollRun -> {
-            // NEW: Enforce maker-checker rule
             if (payrollRun.getCreatedById() != null && payrollRun.getCreatedById().equals(approverId)) {
-                // If the creator and approver are the same, don't finalize
                 return null; 
             }
 
@@ -145,7 +148,6 @@ public class PayrollService {
     }
 
     public Optional<PayrollRun> payPayroll(String payrollRunId) {
-        // This method remains unchanged
         return payrollRunRepository.findById(payrollRunId).map(payrollRun -> {
             if ("APPROVED".equalsIgnoreCase(payrollRun.getStatus())) {
                 payrollRun.setStatus("PAID");
@@ -161,7 +163,6 @@ public class PayrollService {
     }
 
     public boolean deletePayrollRun(String payrollRunId) {
-        // This method remains unchanged
         Optional<PayrollRun> payrollRunOptional = payrollRunRepository.findById(payrollRunId);
         if (payrollRunOptional.isPresent()) {
             PayrollRun payrollRun = payrollRunOptional.get();

@@ -2,7 +2,7 @@ package com.ahadu.payroll.model;
 
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
-import java.math.BigDecimal; // <-- ADD THIS IMPORT
+import java.math.BigDecimal;
 import java.time.LocalDate;
 
 @Document(collection = "paychecks")
@@ -15,9 +15,12 @@ public class Paycheck {
     private String employeeUsername;
     private LocalDate payPeriodStart;
     private LocalDate payPeriodEnd;
-    private BigDecimal grossPay; // <-- UPDATED TO BIGDECIMAL
-    private BigDecimal totalDeductions; // <-- UPDATED TO BIGDECIMAL
-    private BigDecimal netPay; // <-- UPDATED TO BIGDECIMAL
+    private BigDecimal grossPay;
+    private BigDecimal totalDeductions;
+    private BigDecimal netPay;
+    private BigDecimal commissionAmount;
+    private BigDecimal taxDeduction;
+    private BigDecimal providentFundDeduction;
     private String status; // DRAFT, APPROVED, PAID
 
     // Getters and Setters
@@ -39,6 +42,12 @@ public class Paycheck {
     public void setTotalDeductions(BigDecimal totalDeductions) { this.totalDeductions = totalDeductions; }
     public BigDecimal getNetPay() { return netPay; }
     public void setNetPay(BigDecimal netPay) { this.netPay = netPay; }
+    public BigDecimal getCommissionAmount() { return commissionAmount; }
+    public void setCommissionAmount(BigDecimal commissionAmount) { this.commissionAmount = commissionAmount; }
+    public BigDecimal getTaxDeduction() { return taxDeduction; }
+    public void setTaxDeduction(BigDecimal taxDeduction) { this.taxDeduction = taxDeduction; }
+    public BigDecimal getProvidentFundDeduction() { return providentFundDeduction; }
+    public void setProvidentFundDeduction(BigDecimal providentFundDeduction) { this.providentFundDeduction = providentFundDeduction; }
     public String getStatus() { return status; }
     public void setStatus(String status) { this.status = status; }
 }
