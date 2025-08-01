@@ -1,6 +1,7 @@
 package com.ahadu.payroll.model;
 
 import org.springframework.data.annotation.Id;
+import org.springframework.data.mongodb.core.index.Indexed; // Import the Indexed annotation
 import org.springframework.data.mongodb.core.mapping.Document;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
@@ -13,8 +14,14 @@ public class User {
     @Id
     private String id;
 
+    // Add @Indexed(unique = true) to create a unique index on the username field
+    @Indexed(unique = true)
     private String username;
+
+    // Add @Indexed(unique = true) to create a unique index on the email field
+    @Indexed(unique = true)
     private String email;
+
     private String password;
     private Set<String> roles = new HashSet<>();
 
