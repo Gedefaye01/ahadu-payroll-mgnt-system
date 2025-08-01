@@ -88,7 +88,7 @@ public class AttendanceService {
 
     /**
      * CORRECTED METHOD: Calculates and returns aggregated attendance overview statistics for today.
-     * This method now uses a more robust logic to determine attendance status for each employee.
+     * This version fixes the logical issue by correctly querying for today's records.
      */
     public AttendanceOverviewResponse getAttendanceOverview() {
         LocalDate today = LocalDate.now();
@@ -103,18 +103,25 @@ public class AttendanceService {
                 .filter(leaveRequest -> !leaveRequest.getStartDate().isAfter(today) && !leaveRequest.getEndDate().isBefore(today))
                 .map(LeaveRequest::getEmployeeId)
                 .collect(Collectors.toSet());
+        
+        // CORRECTION: The query is changed to a simple find-by-date and filtered
+        // to avoid any potential issues with the `Between` query on a specific day.
+        List<Attendance> allAttendanceRecords = attendanceRepository.findAll();
+        List<Attendance> todayAttendanceRecords = allAttendanceRecords.stream()
+                .filter(a -> a.getDate() != null && a.getDate().isEqual(today))
+                .collect(Collectors.toList());
 
-        long presentToday = attendanceRepository.findByDateBetween(today, today).stream()
+        long presentToday = todayAttendanceRecords.stream()
                 .filter(attendance -> "Present".equalsIgnoreCase(attendance.getStatus()))
                 .count();
 
-        long lateToday = attendanceRepository.findByDateBetween(today, today).stream()
+        long lateToday = todayAttendanceRecords.stream()
                 .filter(attendance -> "Late".equalsIgnoreCase(attendance.getStatus()))
                 .count();
 
         long onLeaveToday = onLeaveEmployeeIds.size();
 
-        Set<String> presentLateAndOnLeaveIds = attendanceRepository.findByDateBetween(today, today).stream()
+        Set<String> presentLateAndOnLeaveIds = todayAttendanceRecords.stream()
                 .filter(attendance -> "Present".equalsIgnoreCase(attendance.getStatus()) || "Late".equalsIgnoreCase(attendance.getStatus()))
                 .map(Attendance::getEmployeeId)
                 .collect(Collectors.toSet());
@@ -135,7 +142,9 @@ public class AttendanceService {
                 .map(User::getId)
                 .collect(Collectors.toList());
 
-        Set<String> presentOrLateEmployeeIds = attendanceRepository.findByDateBetween(today, today).stream()
+        List<Attendance> allAttendanceRecords = attendanceRepository.findAll();
+        Set<String> presentOrLateEmployeeIds = allAttendanceRecords.stream()
+                .filter(a -> a.getDate() != null && a.getDate().isEqual(today))
                 .map(Attendance::getEmployeeId)
                 .collect(Collectors.toSet());
 
