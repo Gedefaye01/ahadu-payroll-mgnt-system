@@ -19,10 +19,11 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import jakarta.validation.Valid;
-import java.util.List; // ADD THIS IMPORT STATEMENT
+import java.util.List;
 
 @RestController
-@RequestMapping({"/api/my-profile", "/api/users"})
+// CHANGED: Use a generic base path for the controller
+@RequestMapping("/api")
 @CrossOrigin(origins = "https://ahadu-payroll-mgnt-system-frontend.onrender.com", maxAge = 3600)
 public class UserProfileController {
 
@@ -38,7 +39,7 @@ public class UserProfileController {
     }
 
     @PreAuthorize("hasAnyAuthority('USER', 'ADMIN')")
-    @GetMapping("/api/my-profile")
+    @GetMapping("/my-profile") // CHANGED: Now relative to the class mapping
     public ResponseEntity<User> getMyProfile(@AuthenticationPrincipal UserDetailsImpl userDetails) {
         return userProfileService.getUserProfile(userDetails.getId())
                 .map(ResponseEntity::ok)
@@ -46,7 +47,7 @@ public class UserProfileController {
     }
 
     @PreAuthorize("hasAnyAuthority('USER', 'ADMIN')")
-    @PutMapping("/api/my-profile")
+    @PutMapping("/my-profile") // CHANGED: Now relative to the class mapping
     public ResponseEntity<User> updateMyProfile(
             @AuthenticationPrincipal UserDetailsImpl userDetails,
             @Valid @RequestBody UserProfileUpdateRequest updateRequest) {
@@ -56,7 +57,7 @@ public class UserProfileController {
     }
 
     @PreAuthorize("hasAnyAuthority('USER', 'ADMIN')")
-    @PutMapping("/api/my-profile/change-password")
+    @PutMapping("/my-profile/change-password") // CHANGED: Now relative to the class mapping
     public ResponseEntity<?> changePassword(
             @AuthenticationPrincipal UserDetailsImpl userDetails,
             @Valid @RequestBody ChangePasswordRequest request) {
@@ -85,7 +86,7 @@ public class UserProfileController {
     }
 
     @PreAuthorize("hasAnyAuthority('USER', 'ADMIN')")
-    @PostMapping("/api/my-profile/upload-picture")
+    @PostMapping("/my-profile/upload-picture") // CHANGED: Now relative to the class mapping
     public ResponseEntity<ApiResponse> uploadProfilePicture(
             @AuthenticationPrincipal UserDetailsImpl userDetails,
             @RequestPart("profilePicture") MultipartFile profilePicture) {
@@ -105,9 +106,9 @@ public class UserProfileController {
                     .body(new ApiResponse(false, "Failed to upload profile picture: " + e.getMessage()));
         }
     }
-    
+
     @PreAuthorize("hasAuthority('ADMIN')")
-    @GetMapping("/api/users")
+    @GetMapping("/users") // CHANGED: Now relative to the class mapping
     public ResponseEntity<List<User>> getAllUsers() {
         List<User> users = userProfileService.findAllUsers();
         return ResponseEntity.ok(users);
