@@ -372,7 +372,7 @@ function AddEmployee() {
                     {/* NEW: Password Reset Button */}
                     <button
                       onClick={() => handlePasswordReset(employee.id)}
-                      className="btn btn-primary" // Using btn-primary for styling
+                      className="text-red-600 hover:text-red-900 mr-3" // Using btn-primary for styling
                     >
                       Reset Password
                     </button>
