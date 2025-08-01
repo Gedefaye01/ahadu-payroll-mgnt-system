@@ -89,47 +89,91 @@ public class AttendanceService {
     /**
      * CORRECTED METHOD: Calculates and returns aggregated attendance overview statistics for today.
      * This method now uses a more robust logic to determine attendance status for each employee.
-     * @return AttendanceOverviewResponse DTO containing total employees, present, on leave, and absent counts.
      */
     public AttendanceOverviewResponse getAttendanceOverview() {
         LocalDate today = LocalDate.now();
 
-        // 1. Get all active employees
         List<User> allEmployees = userRepository.findAll().stream()
                 .filter(user -> "Active".equalsIgnoreCase(user.getEmployeeStatus()))
                 .collect(Collectors.toList());
         
         long totalEmployees = allEmployees.size();
 
-        // 2. Get all approved leave requests for today
         Set<String> onLeaveEmployeeIds = leaveRequestRepository.findByStatus("Approved").stream()
                 .filter(leaveRequest -> !leaveRequest.getStartDate().isAfter(today) && !leaveRequest.getEndDate().isBefore(today))
                 .map(LeaveRequest::getEmployeeId)
                 .collect(Collectors.toSet());
 
-        // 3. Get all attendance records for today
-        Set<String> presentEmployeeIds = attendanceRepository.findByDateBetween(today, today).stream()
-                .filter(attendance -> "Present".equalsIgnoreCase(attendance.getStatus()))
+        Set<String> presentAndLateEmployeeIds = attendanceRepository.findByDateBetween(today, today).stream()
+                .filter(attendance -> "Present".equalsIgnoreCase(attendance.getStatus()) || "Late".equalsIgnoreCase(attendance.getStatus()))
                 .map(Attendance::getEmployeeId)
                 .collect(Collectors.toSet());
-
-        // 4. Calculate final counts by iterating through all employees
-        long presentToday = 0;
-        long onLeaveToday = 0;
-        long absentToday = 0;
         
-        for (User employee : allEmployees) {
-            String employeeId = employee.getId();
-            if (presentEmployeeIds.contains(employeeId)) {
-                presentToday++;
-            } else if (onLeaveEmployeeIds.contains(employeeId)) {
-                onLeaveToday++;
-            } else {
-                // If not present and not on leave, they are considered absent
-                absentToday++;
-            }
+        long presentToday = attendanceRepository.findByDateBetween(today, today).stream()
+                .filter(attendance -> "Present".equalsIgnoreCase(attendance.getStatus()))
+                .count();
+
+        long lateToday = attendanceRepository.findByDateBetween(today, today).stream()
+                .filter(attendance -> "Late".equalsIgnoreCase(attendance.getStatus()))
+                .count();
+
+        long onLeaveToday = onLeaveEmployeeIds.size();
+
+        // Calculate absent by excluding those who are present, late, or on leave
+        Set<String> presentLateAndOnLeaveIds = presentAndLateEmployeeIds;
+        presentLateAndOnLeaveIds.addAll(onLeaveEmployeeIds);
+        long absentToday = totalEmployees - presentLateAndOnLeaveIds.size();
+
+        // Ensure absent count is not negative
+        if (absentToday < 0) {
+            absentToday = 0;
         }
 
         return new AttendanceOverviewResponse(totalEmployees, presentToday, onLeaveToday, absentToday);
+    }
+
+    /**
+     * NEW METHOD: Creates a daily "Absent" record for any employee who has not clocked in.
+     */
+    public void createAbsentRecordsForToday() {
+        LocalDate today = LocalDate.now();
+
+        // 1. Get all employee IDs who are supposed to be working
+        List<String> allEmployeeIds = userRepository.findAll().stream()
+                .filter(user -> "Active".equalsIgnoreCase(user.getEmployeeStatus()))
+                .map(User::getId)
+                .collect(Collectors.toList());
+
+        // 2. Get IDs of employees who are already present or late today
+        Set<String> presentOrLateEmployeeIds = attendanceRepository.findByDateBetween(today, today).stream()
+                .map(Attendance::getEmployeeId)
+                .collect(Collectors.toSet());
+
+        // 3. Get IDs of employees who have an approved leave for today
+        leaveRequestRepository.findByStatus("Approved").stream()
+                .filter(leaveRequest -> !leaveRequest.getStartDate().isAfter(today) && !leaveRequest.getEndDate().isBefore(today))
+                .map(LeaveRequest::getEmployeeId)
+                .forEach(presentOrLateEmployeeIds::add);
+
+        // 4. Find all employees who are neither present, late, nor on leave
+        List<String> absentEmployeeIds = allEmployeeIds.stream()
+                .filter(employeeId -> !presentOrLateEmployeeIds.contains(employeeId))
+                .collect(Collectors.toList());
+
+        // 5. Create and save an "Absent" record for each of them
+        List<Attendance> absentRecords = absentEmployeeIds.stream()
+                .map(employeeId -> {
+                    Attendance absentRecord = new Attendance();
+                    absentRecord.setEmployeeId(employeeId);
+                    absentRecord.setDate(today);
+                    absentRecord.setStatus("Absent");
+                    return absentRecord;
+                })
+                .collect(Collectors.toList());
+
+        if (!absentRecords.isEmpty()) {
+            attendanceRepository.saveAll(absentRecords);
+            System.out.println("Created " + absentRecords.size() + " absent records for today.");
+        }
     }
 }

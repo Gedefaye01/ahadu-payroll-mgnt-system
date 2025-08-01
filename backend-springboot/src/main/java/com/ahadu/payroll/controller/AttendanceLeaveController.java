@@ -16,6 +16,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
+import java.time.LocalTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -26,6 +27,11 @@ public class AttendanceLeaveController {
 
     private final AttendanceService attendanceService;
     private final LeaveRequestService leaveRequestService;
+    
+    // Define the cutoff time for late clock-ins (e.g., 8:30 AM)
+    private static final LocalTime LATE_CUTOFF_TIME = LocalTime.of(8, 30); 
+    // Define the hard cutoff for a day's attendance (e.g., 2:00 PM)
+    private static final LocalTime ABSENT_CUTOFF_TIME = LocalTime.of(14, 0);
 
     @Autowired
     public AttendanceLeaveController(AttendanceService attendanceService, LeaveRequestService leaveRequestService) {
@@ -44,21 +50,30 @@ public class AttendanceLeaveController {
 
         UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
         attendance.setEmployeeId(userDetails.getId());
+        
+        LocalTime clockInTime = attendance.getClockInTime();
+        if (clockInTime == null) {
+            attendance.setStatus("Present"); // Default to Present if time is missing
+        } else if (clockInTime.isAfter(ABSENT_CUTOFF_TIME)) {
+            attendance.setStatus("Absent");
+        } else if (clockInTime.isAfter(LATE_CUTOFF_TIME)) {
+            attendance.setStatus("Late");
+        } else {
+            attendance.setStatus("Present");
+        }
 
         Attendance savedAttendance = attendanceService.saveAttendance(attendance);
         return new ResponseEntity<>(savedAttendance, HttpStatus.CREATED);
     }
 
-    // CORRECTED METHOD
     @PutMapping("/attendance/{id}")
-    @PreAuthorize("hasAnyAuthority('USER', 'ADMIN')") // Allow both USER and ADMIN roles
+    @PreAuthorize("hasAnyAuthority('USER', 'ADMIN')")
     public ResponseEntity<Attendance> updateAttendance(@PathVariable String id,
-            @RequestBody Attendance updatedAttendance) {
+                                                        @RequestBody Attendance updatedAttendance) {
 
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
 
-        // Step 1: Find the existing attendance record
         Optional<Attendance> existingAttendanceOptional = attendanceService.getAttendanceById(id);
         if (existingAttendanceOptional.isEmpty()) {
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
@@ -68,28 +83,14 @@ public class AttendanceLeaveController {
         String authenticatedUserId = userDetails.getId();
         boolean isAdmin = userDetails.getAuthorities().stream().anyMatch(a -> a.getAuthority().equals("ADMIN"));
 
-        // Step 2: Implement authorization check
-        // An employee (USER) can only update their own record.
-        // An admin can update any record.
         if (!isAdmin && !existingAttendance.getEmployeeId().equals(authenticatedUserId)) {
-            // If the user is NOT an admin AND they are NOT the owner of this record,
-            // return a 403 Forbidden status.
             return new ResponseEntity<>(HttpStatus.FORBIDDEN);
         }
 
-        // Step 3: Proceed with the update if authorized
-        // We only want to update the remarks and clock-out time for a regular user.
-        // The service layer can handle the full update for an admin.
-
         Optional<Attendance> updated;
         if (isAdmin) {
-            // Admins can update the full attendance record
             updated = attendanceService.updateAttendance(id, updatedAttendance);
         } else {
-            // For a regular user, we only want to allow updating remarks and clock-out
-            // time.
-            // Fetch the existing record again to prevent a malicious user from changing
-            // other fields.
             existingAttendance.setClockOutTime(updatedAttendance.getClockOutTime());
             existingAttendance.setRemarks(updatedAttendance.getRemarks());
             updated = attendanceService.updateAttendance(id, existingAttendance);
@@ -101,7 +102,6 @@ public class AttendanceLeaveController {
     @GetMapping("/attendance/all")
     @PreAuthorize("hasAuthority('ADMIN')")
     public ResponseEntity<List<Attendance>> getAllAttendance() {
-        // Service method will now populate employeeUsername
         List<Attendance> attendanceRecords = attendanceService.getAllAttendanceWithUsernames();
         return ResponseEntity.ok(attendanceRecords);
     }
@@ -116,7 +116,6 @@ public class AttendanceLeaveController {
         }
 
         UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
-        // Service method will now populate employeeUsername
         List<Attendance> myAttendance = attendanceService.getAttendanceByEmployeeIdWithUsernames(userDetails.getId());
         return ResponseEntity.ok(myAttendance);
     }
@@ -124,7 +123,6 @@ public class AttendanceLeaveController {
     @GetMapping("/attendance/employee/{employeeId}")
     @PreAuthorize("hasAuthority('ADMIN')")
     public ResponseEntity<List<Attendance>> getAttendanceByEmployeeId(@PathVariable String employeeId) {
-        // Service method will now populate employeeUsername
         List<Attendance> attendance = attendanceService.getAttendanceByEmployeeIdWithUsernames(employeeId);
         return ResponseEntity.ok(attendance);
     }
@@ -137,18 +135,12 @@ public class AttendanceLeaveController {
             @RequestParam("endDate") String endDateString) {
         LocalDate startDate = LocalDate.parse(startDateString);
         LocalDate endDate = LocalDate.parse(endDateString);
-        // Service method will now populate employeeUsername
         List<Attendance> attendance = attendanceService.getAttendanceByEmployeeIdAndDateRangeWithUsernames(employeeId,
                 startDate,
                 endDate);
         return ResponseEntity.ok(attendance);
     }
 
-    /**
-     * NEW ENDPOINT: Retrieves aggregated attendance overview statistics for admins.
-     * Accessible only by ADMINs.
-     * * @return ResponseEntity with AttendanceOverviewResponse DTO.
-     */
     @GetMapping("/attendance/admin/overview")
     @PreAuthorize("hasAuthority('ADMIN')")
     public ResponseEntity<AttendanceOverviewResponse> getAttendanceOverview() {
@@ -169,7 +161,6 @@ public class AttendanceLeaveController {
 
         UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
         leaveRequest.setEmployeeId(userDetails.getId());
-        // Frontend already sets this, but backend can re-verify/set
         leaveRequest.setEmployeeUsername(userDetails.getUsername());
         LeaveRequest submittedRequest = leaveRequestService.submitLeaveRequest(leaveRequest);
         return new ResponseEntity<>(submittedRequest, HttpStatus.CREATED);
@@ -178,8 +169,6 @@ public class AttendanceLeaveController {
     @GetMapping("/leave-requests/all")
     @PreAuthorize("hasAuthority('ADMIN')")
     public ResponseEntity<List<LeaveRequest>> getAllLeaveRequests() {
-        // Assuming leaveRequestService.getAllLeaveRequests() will also be updated to
-        // populate employeeUsername
         List<LeaveRequest> leaveRequests = leaveRequestService.getAllLeaveRequestsWithUsernames();
         return ResponseEntity.ok(leaveRequests);
     }
@@ -194,8 +183,6 @@ public class AttendanceLeaveController {
         }
 
         UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
-        // Assuming leaveRequestService.getLeaveRequestsByEmployeeId() will also be
-        // updated to populate employeeUsername
         List<LeaveRequest> myLeaveRequests = leaveRequestService
                 .getLeaveRequestsByEmployeeIdWithUsernames(userDetails.getId());
         return ResponseEntity.ok(myLeaveRequests);

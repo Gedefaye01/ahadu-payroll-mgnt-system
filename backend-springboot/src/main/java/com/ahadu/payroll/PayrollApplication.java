@@ -6,8 +6,10 @@ import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.Bean;
+import org.springframework.scheduling.annotation.EnableScheduling; // Import the annotation
 
 @SpringBootApplication
+@EnableScheduling // Add this annotation to enable scheduled tasks
 public class PayrollApplication {
 
     public static void main(String[] args) {
