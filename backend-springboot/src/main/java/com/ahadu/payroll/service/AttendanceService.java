@@ -86,6 +86,10 @@ public class AttendanceService {
         attendanceRepository.deleteById(id);
     }
 
+    /**
+     * CORRECTED METHOD: Calculates and returns aggregated attendance overview statistics for today.
+     * This method now uses a more robust logic to determine attendance status for each employee.
+     */
     public AttendanceOverviewResponse getAttendanceOverview() {
         LocalDate today = LocalDate.now();
 
