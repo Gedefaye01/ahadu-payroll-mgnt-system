@@ -8,7 +8,7 @@ function TermsOfService() {
 
   return (
     <div style={{ padding: '20px', maxWidth: '900px', margin: '0 auto' }}>
-      <h1 style={{ color: '#004a99', marginBottom: '24px' }}>Terms of Service</h1>
+      <h1 style={{ color: '#75073d', marginBottom: '24px' }}>Terms of Service</h1>
 
       <Card>
         <h3>1. Terms</h3>
