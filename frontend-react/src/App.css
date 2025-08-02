@@ -10,6 +10,7 @@
     --text-dark: #333333; /* Darker text for main content */
     --text-medium: #666666; /* Medium grey for secondary text */
     --text-light: #888888; /* Light grey for placeholders/hints */
+    --text-on-dark: #e8eaeb; /* Off-white for text on dark backgrounds */
     --success-color: #28a745;
     --error-color: #dc3545;
     --warning-color: #ffc107;
@@ -78,10 +79,11 @@ body {
 .text-green-800 { color: #065f46; }
 .bg-red-100 { background-color: #fee2e2; }
 .text-red-800 { color: #991b1b; }
-.text-indigo-600 { color: #fee2e2; }
-.hover\:text-indigo-900:hover { color: #fee2e2; }
-.text-red-600 { color: #fee2e2; }
-.hover\:text-red-900:hover { color: #fee2e2; }
+/* Reverted these specific Tailwind-like color classes to their original non-Tailwind equivalents if they were hardcoded */
+.text-indigo-600 { color: #4f46e5; }
+.hover\:text-indigo-900:hover { color: #312e81; }
+.text-red-600 { color: #dc2626; }
+.hover\:text-red-900:hover { color: #7f1d1d; }
 
 
 /* --- Header Styles --- */
@@ -133,7 +135,7 @@ body {
 .header-nav nav a:hover,
 .header-nav nav button:hover,
 .header-nav nav a.active {
-    color: var(--light-bg);
+    color: var(--secondary-color); /* REVERTED: Now uses secondary-color on hover */
     transform: translateY(-3px);
 }
 
@@ -145,7 +147,7 @@ body {
     height: 2px;
     bottom: 0;
     left: 0;
-    background-color: var(--primary-color);
+    background-color: var(--secondary-color); /* REVERTED: Now uses secondary-color */
     transition: width 0.3s ease-out;
 }
 
@@ -412,7 +414,7 @@ body {
 /* Custom dropdown arrow */
 .form-group select {
     background-image:
-        url("data:image/svg+xml;charset=UTF-8,%3csvg fill='%23612335' height='24' viewBox='0 0 24 24' width='24' xmlns='[http://www.w3.org/2000/svg'%3e%3cpath](http://www.w3.org/2000/svg'%3e%3cpath) d='M7 10l5 5 5-5z'/%3e%3c/svg%3e");
+        url("data:image/svg+xml;charset=UTF-8,%3csvg fill='%23612335' height='24' viewBox='0 0 24 24' width='24' xmlns='http://www.w3.org/2000/svg'%3e%3cpath d='M7 10l5 5 5-5z'/%3e%3c/svg%3e");
     background-repeat: no-repeat;
     background-position: right 1rem center; /* Adjusted position */
     background-size: 16px 16px; /* Slightly smaller arrow */
@@ -464,25 +466,25 @@ body {
 }
 
 .btn-primary {
-    background-color: var(--primary-color);
+    background-color: var(--primary-color); /* Uses primary color */
     color: white;
     box-shadow: 0 5px 18px rgba(97,34,53,0.25);
 }
 
 .btn-primary:hover {
-    background-color: var(--primary-color);
+    background-color: var(--primary-color); /* REVERTED: Now uses primary-color on hover */
     box-shadow: 0 8px 25px rgba(97,34,53,0.35);
 }
 
 .btn-secondary {
-    background-color: var(--primary-color); /* Use light-bg for secondary */
-    color: var(--text-dark);
-    border: 1px solid var(--border-color-light); /* Solid border */
+    background-color: var(--light-bg); /* REVERTED: Uses light-bg for secondary */
+    color: var(--text-dark); /* REVERTED: Text color for secondary button */
+    border: 1px solid var(--border-color-light); /* REVERTED: Added border back */
     box-shadow: 0 3px 10px rgba(0,0,0,0.05);
 }
 
 .btn-secondary:hover {
-    background-color: var(--primary-color);
+    background-color: #d0d0d0; /* REVERTED: Now uses #d0d0d0 for secondary hover */
     box-shadow: 0 6px 16px rgba(0,0,0,0.08);
 }
 
@@ -583,7 +585,7 @@ body {
   align-items: center;
 }
 
-/* Updated table action buttons to use primary color */
+/* General styling for buttons within table-actions, not overriding specific btn-action-primary */
 .table-actions button {
     margin-right: 0; /* Removed margin-right as gap handles spacing */
     padding: 0.6rem 1rem; /* Adjusted padding */
@@ -591,15 +593,9 @@ body {
     border-radius: 0.5rem; /* More rounded action buttons */
     transition: background-color 0.2s ease, transform 0.1s ease;
     user-select: none;
-    border: none; /* Removed border to match announcement buttons */
-    color: white; /* Ensure text is white */
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); /* Consistent shadow */
-    background-color: var(--primary-color); /* All action buttons now use primary color */
-}
-
-.table-actions button:hover { /* Apply hover directly to the button */
-    background-color: var(--dark-primary); /* Darker primary for hover */
-    transform: translateY(-1px);
+    /* REMOVED: background-color and color here to let .btn-action-primary apply its styles */
+    /* REMOVED: border here as well */
 }
 
 
@@ -853,7 +849,7 @@ body {
         height: 18vw;
         max-height: 180px;
     }
-    .slick-prev { left: 0px !important; }
+    .slick-prev { left: 0px !important; } /* Bring arrows closer on small screens */
     .slick-next { right: 0px !important; }
     .dropdown { margin: 0 0.5rem; }
     .dropbtn { font-size: 0.95rem; }
@@ -1020,7 +1016,7 @@ body {
 }
 
 .change-password-button:hover {
-    background-color: var(--primary-color); /* Match btn-primary hover */
+    background-color: var(--primary-color); /* REVERTED: Now uses primary-color on hover */
     transform: translateY(-3px); /* Match btn-primary hover lift */
     box-shadow: 0 8px 25px rgba(97,34,53,0.35); /* Match btn-primary hover shadow */
 }
@@ -1031,6 +1027,101 @@ body {
     background-color: var(--primary-color); /* Keep primary color but with opacity */
     box-shadow: none; /* No shadow when disabled */
     transform: none; /* No transform when disabled */
+}
+
+/* --- Employee Profile Specific Styles --- */
+.employee-welcome-section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  margin-bottom: 2.5rem;
+  padding: 2rem;
+  background: linear-gradient(to right, var(--light-section-bg), var(--light-bg)); /* Using theme variables */
+  border-radius: 1rem;
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+}
+
+.employee-profile-photo {
+  width: 8rem;
+  height: 8rem;
+  border-radius: 50%;
+  border: 4px solid var(--secondary-color); /* Using theme variable */
+  margin-bottom: 1rem;
+  object-fit: cover;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+}
+
+.employee-welcome-icon {
+  color: var(--primary-color); /* Using theme variable */
+  width: 4rem;
+  height: 4rem;
+  margin-bottom: 1rem;
+}
+
+.employee-welcome-title {
+  font-size: 2.5rem;
+  font-weight: 800;
+  color: var(--text-dark); /* Using theme variable */
+  margin-bottom: 0.75rem;
+}
+
+.employee-welcome-text {
+  font-size: 1.125rem;
+  color: var(--text-medium); /* Using theme variable */
+}
+
+.employee-activities-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 2rem;
+}
+
+.employee-activity-card {
+  background-color: var(--light-card-bg);
+  padding: 1.5rem;
+  border-radius: 0.75rem;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  transition: all 0.3s ease-in-out;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  border: 1px solid var(--border-color-light); /* Using theme variable */
+}
+
+.employee-activity-card:hover {
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  transform: translateY(-0.25rem);
+}
+
+.employee-activity-icon {
+  color: var(--primary-color); /* Using theme variable */
+  width: 3.5rem;
+  height: 3.5rem;
+  margin-bottom: 1rem;
+}
+
+.employee-activity-title {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: var(--text-dark); /* Using theme variable */
+  margin-bottom: 0.5rem;
+}
+
+.employee-activity-description {
+  color: var(--text-medium); /* Using theme variable */
+  font-size: 1rem;
+  margin-bottom: 1rem;
+  flex-grow: 1;
+}
+
+.btn-primary.employee-activity-button { /* Specificity for this button */
+  background-color: var(--primary-color); /* Using theme variable */
+  color: white;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
 }
 
 
