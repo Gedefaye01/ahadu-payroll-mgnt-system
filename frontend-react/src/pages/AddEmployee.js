@@ -379,19 +379,19 @@ function AddEmployee() {
                   <td className="table-actions text-center" style={{ display: 'flex', gap: '0.5rem', justifyContent: 'center' }}>
                     <button
                       onClick={() => handleEdit(employee)}
-                      className="bg-primary-color text-white px-3 py-1.5 rounded-md font-semibold hover:bg-dark-primary text-xs"
+                      className="btn-action-primary"
                     >
                       Edit
                     </button>
                     <button
                       onClick={() => handleDelete(employee.id)}
-                      className="bg-primary-color text-white px-3 py-1.5 rounded-md font-semibold hover:bg-dark-primary text-xs"
+                      className="btn-action-primary"
                     >
                       Delete
                     </button>
                     <button
                       onClick={() => openPasswordResetModal(employee)}
-                      className="bg-primary-color text-white px-3 py-1.5 rounded-md font-semibold hover:bg-dark-primary text-xs"
+                      className="btn-action-primary"
                     >
                       Reset
                     </button>

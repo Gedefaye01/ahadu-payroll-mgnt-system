@@ -476,40 +476,16 @@ body {
 }
 
 .btn-secondary {
-    background-color: var(--light-bg); /* Uses light-bg for secondary */
-    color: var(--text-dark); /* Text color for secondary button */
-    border: 1px solid var(--border-color-light); /* Added border back */
+    background-color: var(--primary-color); /* Use primary-color for secondary - UPDATED */
+    color: white; /* Text color for secondary button - UPDATED */
+    border: none; /* Removed border for consistency - UPDATED */
     box-shadow: 0 3px 10px rgba(0,0,0,0.05);
 }
 
 .btn-secondary:hover {
-    background-color: #d0d0d0; /* Now uses #d0d0d0 for secondary hover */
+    background-color: var(--dark-primary); /* Darker primary for secondary hover - UPDATED */
     box-shadow: 0 6px 16px rgba(0,0,0,0.08);
 }
-
-/* NEW: Styles for action buttons within tables (e.g., Edit, Delete, Reset Password) */
-.btn-action-primary {
-    background-color: var(--primary-color); /* Use primary color for consistency */
-    color: white;
-    padding: 0.5rem 1rem;
-    border-radius: 0.375rem; /* rounded-md */
-    font-weight: 600; /* font-semibold */
-    transition: background-color 0.2s ease-in-out;
-    border: none;
-    cursor: pointer;
-    white-space: nowrap; /* Prevent text wrapping */
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); /* Consistent shadow */
-    display: inline-block; /* Ensure it respects width/height */
-    min-width: 60px; /* Ensure a minimum width */
-    min-height: 30px; /* Ensure a minimum height */
-    flex-shrink: 0; /* Prevent buttons from shrinking */
-    margin: 0 0.25rem; /* Fallback margin for spacing */
-}
-
-.btn-action-primary:hover {
-    background-color: var(--dark-primary); /* Darker primary on hover */
-}
-
 
 /* --- Table Styles (Enhanced for clarity and responsiveness) --- */
 .table-container {
@@ -559,7 +535,7 @@ body {
     width: 15%;
 }
 .data-table th:nth-child(3), .data-table td:nth-child(3) { /* Email Column */
-    width: 20%; /* Slightly reduced to give more space for actions */
+    width: 25%;
 }
 .data-table th:nth-child(4), .data-table td:nth-child(4) { /* Role(s) Column */
     width: 10%;
@@ -568,7 +544,7 @@ body {
     width: 10%;
 }
 .data-table th:nth-child(6), .data-table td:nth-child(6) { /* Actions Column */
-    width: 30%; /* Increased width for actions column */
+    width: 25%;
 }
 
 
@@ -587,6 +563,29 @@ body {
   gap: 0.5rem;   /* Adds space between buttons */
   justify-content: center; /* Centers buttons if the cell is wider */
   align-items: center;
+}
+
+/* Specific styling for action buttons within the table */
+.btn-action-primary {
+    background-color: var(--primary-color) !important; /* Force primary color */
+    color: white !important; /* Force white text */
+    padding: 0.5rem 1rem;
+    border-radius: 0.375rem; /* rounded-md */
+    font-weight: 600; /* font-semibold */
+    transition: background-color 0.2s ease-in-out;
+    border: none;
+    cursor: pointer;
+    white-space: nowrap; /* Prevent text wrapping */
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); /* Consistent shadow */
+    display: inline-block !important; /* Ensure it respects width/height and is not collapsed */
+    min-width: 60px; /* Ensure a minimum width */
+    min-height: 30px; /* Ensure a minimum height */
+    flex-shrink: 0; /* Prevent buttons from shrinking */
+    margin: 0 0.25rem; /* Fallback margin for spacing */
+}
+
+.btn-action-primary:hover {
+    background-color: var(--dark-primary) !important; /* Force darker primary on hover */
 }
 
 
@@ -921,6 +920,15 @@ body {
     .dropbtn { font-size: 0.9rem; }
     .dropdown-content { min-width: 120px; border-radius: 0.5rem; }
     .dropdown-content a { padding: 0.5rem 0.8rem; font-size: 0.8rem; }
+    .data-table th, .data-table td {
+        padding: 0.7rem 0.8rem;
+        font-size: 0.85rem;
+    }
+    .table-actions button {
+        margin-right: 0.4rem;
+        padding: 0.5rem 0.8rem;
+        font-size: 0.8rem;
+    }
 }
 
 /* --- Change Password Page Styling --- */
