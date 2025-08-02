@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import Card from '../components/Card';
-import { useAuth } from './context/AuthContext'; // Import useAuth hook
+import { useAuth } from '../context/AuthContext'; // Corrected import path: SignIn.js is in src/pages/, AuthContext.js is in src/context/
 
 /**
  * SignIn Component
@@ -25,7 +25,6 @@ function SignIn() {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    // No need to manually clear localStorage here, AuthContext's login/logout handles it
     setLoading(true);
 
     const payload = {
