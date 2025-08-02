@@ -10,7 +10,6 @@
     --text-dark: #333333; /* Darker text for main content */
     --text-medium: #666666; /* Medium grey for secondary text */
     --text-light: #888888; /* Light grey for placeholders/hints */
-    --text-on-dark: #e8eaeb; /* Off-white for text on dark backgrounds */
     --success-color: #28a745;
     --error-color: #dc3545;
     --warning-color: #ffc107;
@@ -413,7 +412,7 @@ body {
 /* Custom dropdown arrow */
 .form-group select {
     background-image:
-        url("data:image/svg+xml;charset=UTF-8,%3csvg fill='%23612335' height='24' viewBox='0 0 24 24' width='24' xmlns='http://www.w3.org/2000/svg'%3e%3cpath d='M7 10l5 5 5-5z'/%3e%3c/svg%3e");
+        url("data:image/svg+xml;charset=UTF-8,%3csvg fill='%23612335' height='24' viewBox='0 0 24 24' width='24' xmlns='[http://www.w3.org/2000/svg'%3e%3cpath](http://www.w3.org/2000/svg'%3e%3cpath) d='M7 10l5 5 5-5z'/%3e%3c/svg%3e");
     background-repeat: no-repeat;
     background-position: right 1rem center; /* Adjusted position */
     background-size: 16px 16px; /* Slightly smaller arrow */
@@ -487,6 +486,25 @@ body {
     box-shadow: 0 6px 16px rgba(0,0,0,0.08);
 }
 
+/* NEW: Styles for action buttons within tables (e.g., Edit, Delete, Reset Password) */
+.btn-action-primary {
+    background-color: var(--primary-color); /* Use primary color for consistency */
+    color: white;
+    padding: 0.5rem 1rem;
+    border-radius: 0.375rem; /* rounded-md */
+    font-weight: 600; /* font-semibold */
+    transition: background-color 0.2s ease-in-out;
+    border: none;
+    cursor: pointer;
+    white-space: nowrap; /* Prevent text wrapping */
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); /* Consistent shadow */
+}
+
+.btn-action-primary:hover {
+    background-color: var(--dark-primary); /* Darker primary on hover */
+}
+
+
 /* --- Table Styles (Enhanced for clarity and responsiveness) --- */
 .table-container {
     overflow-x: auto; /* Ensures horizontal scrolling on small screens */
@@ -557,8 +575,17 @@ body {
     transition: background-color 0.2s ease;
 }
 
+/* Table actions column */
+.table-actions {
+  display: flex; /* Ensures buttons are in a row */
+  gap: 0.5rem;   /* Adds space between buttons */
+  justify-content: center; /* Centers buttons if the cell is wider */
+  align-items: center;
+}
+
+/* Updated table action buttons to use primary color */
 .table-actions button {
-    margin-right: 0.6rem; /* Consistent spacing */
+    margin-right: 0; /* Removed margin-right as gap handles spacing */
     padding: 0.6rem 1rem; /* Adjusted padding */
     font-size: 0.85rem; /* Smaller font for action buttons */
     border-radius: 0.5rem; /* More rounded action buttons */
@@ -570,10 +597,8 @@ body {
     background-color: var(--primary-color); /* All action buttons now use primary color */
 }
 
-/* Updated table action buttons to use primary color */
-.table-actions button.text-indigo-600:hover, /* Edit button hover */
-.table-actions button.text-red-600:hover { /* Delete button hover */
-    background-color: var(--primary-color); /* Darker primary for hover */
+.table-actions button:hover { /* Apply hover directly to the button */
+    background-color: var(--dark-primary); /* Darker primary for hover */
     transform: translateY(-1px);
 }
 
@@ -828,12 +853,21 @@ body {
         height: 18vw;
         max-height: 180px;
     }
-    .slick-prev { left: 0px !important; } /* Bring arrows closer on small screens */
+    .slick-prev { left: 0px !important; }
     .slick-next { right: 0px !important; }
     .dropdown { margin: 0 0.5rem; }
     .dropbtn { font-size: 0.95rem; }
     .dropdown-content { min-width: 140px; border-radius: 0.6rem; }
     .dropdown-content a { padding: 0.6rem 1rem; font-size: 0.85rem; }
+    .data-table th, .data-table td {
+        padding: 0.7rem 0.8rem;
+        font-size: 0.85rem;
+    }
+    .table-actions button {
+        margin-right: 0.4rem;
+        padding: 0.5rem 0.8rem;
+        font-size: 0.8rem;
+    }
 }
 
 @media (max-width: 480px) {
@@ -998,6 +1032,7 @@ body {
     box-shadow: none; /* No shadow when disabled */
     transform: none; /* No transform when disabled */
 }
+
 
 /* --- Employee Profile Specific Styles --- */
 .employee-welcome-section {

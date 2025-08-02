@@ -135,6 +135,7 @@ function AddEmployee() {
    * @param {string} id - The ID of the employee to delete.
    */
   const handleDelete = async (id) => {
+    // Replaced window.confirm with a custom modal/toast if needed, but keeping for now as per original.
     if (!window.confirm('Are you sure you want to delete this employee? This action cannot be undone.')) {
       return;
     }
@@ -186,13 +187,14 @@ function AddEmployee() {
       return;
     }
     // Basic client-side length check, backend will do full policy validation
-    if (newPassword.length < 6) { // Assuming a minimum of 6 for basic check
+    // This should ideally come from system settings as well for consistency
+    if (newPassword.length < 6) {
         setPasswordResetError("Password must be at least 6 characters long.");
         return;
     }
 
     try {
-      const response = await fetch(`${API_BASE_URL}/api/employees/${currentEmployeeForReset.id}/reset-password`, {
+      const response = await fetch(`${API_BASE_URL}/api/users/${currentEmployeeForReset.id}/reset-password`, { // Corrected endpoint to /api/users
         method: 'PUT',
         headers: authHeaders,
         body: JSON.stringify({ newPassword: newPassword }) // Send the new password in the body
@@ -375,22 +377,22 @@ function AddEmployee() {
                       {employee.employeeStatus}
                     </span>
                   </td>
-                  <td className="table-actions text-center">
+                  <td className="table-actions text-center" style={{ display: 'flex', gap: '0.5rem', justifyContent: 'center' }}> {/* Added flex and gap */}
                     <button
                       onClick={() => handleEdit(employee)}
-                      className="btn btn-primary mr-3" // Changed to btn btn-primary
+                      className="btn btn-action-primary" // Consistent class name
                     >
                       Edit
                     </button>
                     <button
                       onClick={() => handleDelete(employee.id)}
-                      className="btn btn-primary mr-3" // Changed to btn btn-primary
+                      className="btn btn-action-primary" // Consistent class name
                     >
                       Delete
                     </button>
                     <button
                       onClick={() => openPasswordResetModal(employee)}
-                      className="btn btn-primary mr-3" // Already btn btn-primary, ensure consistent spacing if needed
+                      className="btn btn-action-primary" // Consistent class name
                     >
                       Reset Password
                     </button>
@@ -439,13 +441,13 @@ function AddEmployee() {
                 <button
                   type="button"
                   onClick={() => setShowPasswordResetModal(false)}
-                  className="btn btn-primary mr-3"
+                  className="btn btn-secondary" // Changed to btn btn-secondary
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="btn btn-primary mr-3"
+                  className="btn btn-primary" // Changed to btn btn-primary
                 >
                   Set New Password
                 </button>
