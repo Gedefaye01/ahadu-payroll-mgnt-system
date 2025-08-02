@@ -6,6 +6,7 @@ import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
+import java.time.LocalDateTime; // Import LocalDateTime
 import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
@@ -23,15 +24,23 @@ public class UserDetailsImpl implements UserDetails {
 
     private final Collection<? extends GrantedAuthority> authorities;
 
+    // NEW FIELDS for Login Security
+    private final LocalDateTime accountLockedUntil; // Make final as it's set once during build
+    private final int failedLoginAttempts;      // Make final as it's set once during build
+
     public UserDetailsImpl(String id, String username, String email, String password,
-            Collection<? extends GrantedAuthority> authorities) {
+                           Collection<? extends GrantedAuthority> authorities,
+                           int failedLoginAttempts, LocalDateTime accountLockedUntil) { // Updated constructor
         this.id = id;
         this.username = username;
         this.email = email;
         this.password = password;
         this.authorities = authorities;
+        this.failedLoginAttempts = failedLoginAttempts; // Initialize
+        this.accountLockedUntil = accountLockedUntil;   // Initialize
     }
 
+    // Static factory method to build UserDetailsImpl from your User model
     public static UserDetailsImpl build(User user) {
         List<GrantedAuthority> authorities = user.getRoles().stream()
                 .map(SimpleGrantedAuthority::new) // No "ROLE_" prefix
@@ -42,7 +51,10 @@ public class UserDetailsImpl implements UserDetails {
                 user.getUsername(),
                 user.getEmail(),
                 user.getPassword(),
-                authorities);
+                authorities,
+                user.getFailedLoginAttempts(), // Pass failedLoginAttempts
+                user.getAccountLockedUntil()   // Pass accountLockedUntil
+        );
     }
 
     @Override
@@ -70,32 +82,44 @@ public class UserDetailsImpl implements UserDetails {
 
     @Override
     public boolean isAccountNonExpired() {
-        return true;
+        return true; // Assuming accounts do not expire based on current model
     }
 
     @Override
     public boolean isAccountNonLocked() {
-        return true;
+        // Account is non-locked if accountLockedUntil is null or in the past
+        return accountLockedUntil == null || LocalDateTime.now().isAfter(accountLockedUntil);
     }
 
     @Override
     public boolean isCredentialsNonExpired() {
-        return true;
+        return true; // Assuming credentials do not expire based on current model
     }
 
     @Override
     public boolean isEnabled() {
-        return true; // You can customize this based on employee status
+        // You might want to tie this to user.getEmployeeStatus() if "Active" means enabled
+        // For now, assuming true unless explicitly disabled in User model
+        return true;
+    }
+
+    // NEW Getters for login security fields (optional, but good for debugging/logging)
+    public int getFailedLoginAttempts() {
+        return failedLoginAttempts;
+    }
+
+    public LocalDateTime getAccountLockedUntil() {
+        return accountLockedUntil;
     }
 
     @Override
     public boolean equals(Object o) {
         if (this == o)
             return true;
-        if (!(o instanceof UserDetailsImpl))
+        if (o == null || getClass() != o.getClass()) // Check for null and exact class type
             return false;
-        UserDetailsImpl that = (UserDetailsImpl) o;
-        return Objects.equals(id, that.id);
+        UserDetailsImpl user = (UserDetailsImpl) o;
+        return Objects.equals(id, user.id);
     }
 
     @Override

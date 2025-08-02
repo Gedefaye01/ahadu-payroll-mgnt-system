@@ -8,22 +8,17 @@ import Card from '../components/Card'; // Assuming this component exists and is 
  * SignIn Component
  * Handles user authentication, including sending credentials to the backend,
  * storing user data (token, role, userId, username, photo URL) in localStorage,
- * and redirecting to the appropriate dashboard.
+ * and redirecting to the appropriate dashboard based on their role.
+ * The login screen is now unified, without separate Admin/User toggles.
  */
 function SignIn() {
   const navigate = useNavigate();
   const [formData, setFormData] = useState({ email: '', password: '' });
-  const [loginType, setLoginType] = useState('user');
   const [loading, setLoading] = useState(false);
 
   const handleChange = (e) => {
     const { id, value } = e.target;
     setFormData((prev) => ({ ...prev, [id]: value }));
-  };
-
-  const handleLoginTypeChange = (type) => {
-    setLoginType(type);
-    setFormData({ email: '', password: '' });
   };
 
   const handleSubmit = async (e) => {
@@ -33,8 +28,8 @@ function SignIn() {
     localStorage.removeItem('token');
     localStorage.removeItem('userRole');
     localStorage.removeItem('userId');
-    localStorage.removeItem('username'); // Clear username on new login attempt
-    localStorage.removeItem('userPhotoUrl'); // Clear user photo URL on new login attempt
+    localStorage.removeItem('username');
+    localStorage.removeItem('userPhotoUrl');
 
     setLoading(true);
 
@@ -67,28 +62,8 @@ function SignIn() {
         localStorage.setItem('token', data.token);
         localStorage.setItem('userRole', assignedRole);
         localStorage.setItem('userId', data.id);
-        // Store the actual username and profilePictureUrl from the backend response
-        localStorage.setItem('username', data.username || formData.email.split('@')[0]); // Use backend username, fallback to email part
-        localStorage.setItem('userPhotoUrl', data.profilePictureUrl || ''); // Store photo URL, or empty string if not provided
-
-        // Verify if selected login type matches assigned role
-        if (
-          (loginType === 'admin' && assignedRole !== 'ADMIN') ||
-          (loginType === 'user' && assignedRole !== 'USER')
-        ) {
-          toast.warning(
-            `Selected login type "${loginType}" does not match your assigned role "${assignedRole}". Please use the correct login type.`,
-            { autoClose: 4000, position: 'top-center' }
-          );
-          // Remove incorrect token and role if mismatch
-          localStorage.removeItem('token');
-          localStorage.removeItem('userRole');
-          localStorage.removeItem('userId');
-          localStorage.removeItem('username');
-          localStorage.removeItem('userPhotoUrl');
-          setLoading(false);
-          return;
-        }
+        localStorage.setItem('username', data.username || formData.email.split('@')[0]);
+        localStorage.setItem('userPhotoUrl', data.profilePictureUrl || '');
 
         toast.success('Sign in successful!', {
           autoClose: 2000,
@@ -122,42 +97,10 @@ function SignIn() {
   return (
     <div className="form-container" style={{ maxWidth: 400, margin: 'auto' }}>
       <Card title="Sign In to Your Account">
-        {/* Toggle Login Type Buttons */}
-        <div
-          style={{
-            marginBottom: '1rem',
-            textAlign: 'center',
-            display: 'flex',
-            justifyContent: 'center',
-            gap: '1rem',
-          }}
-        >
-          {['user', 'admin'].map((type) => (
-            <button
-              key={type}
-              type="button"
-              onClick={() => handleLoginTypeChange(type)}
-              style={{
-                padding: '0.5rem 1rem',
-                backgroundColor: loginType === type ? '#75073d' : '#e0e0e0',
-                color: loginType === type ? 'white' : 'black',
-                border: 'none',
-                borderRadius: 4,
-                cursor: 'pointer',
-                flex: 1,
-              }}
-            >
-              {type === 'user' ? 'End User Login' : 'Admin Login'}
-            </button>
-          ))}
-        </div>
-
         {/* Login Form */}
         <form onSubmit={handleSubmit}>
           <div className="form-group">
-            <label htmlFor="email">
-              {loginType === 'admin' ? 'Admin Email Address' : 'User Email Address'}
-            </label>
+            <label htmlFor="email">Email Address</label> {/* Simplified label */}
             <input
               type="email"
               id="email"
@@ -184,7 +127,7 @@ function SignIn() {
             style={{ width: '100%' }}
             disabled={loading}
           >
-            {loading ? 'Signing In...' : `Sign In as ${loginType === 'admin' ? 'Admin' : 'User'}`}
+            {loading ? 'Signing In...' : 'Sign In'} {/* Simplified button text */}
           </button>
         </form>
       </Card>

@@ -6,6 +6,7 @@ import org.springframework.data.mongodb.core.mapping.Document;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime; // Import for accountLockedUntil
 import java.util.HashSet;
 import java.util.Set;
 
@@ -39,6 +40,10 @@ public class User {
     private String status; // e.g., "Active", "Inactive", "On Leave"
     // --- END NEW FIELDS ---
 
+    // NEW FIELDS for Login Security
+    private int failedLoginAttempts; // Tracks consecutive failed login attempts
+    private LocalDateTime accountLockedUntil; // Timestamp until which the account is locked
+
     // Constructors
     public User() {
     }
@@ -48,6 +53,8 @@ public class User {
         this.email = email;
         this.password = password;
         this.status = "Active"; // Default status for new users
+        this.failedLoginAttempts = 0; // Initialize for new users
+        this.accountLockedUntil = null; // Initialize for new users
     }
 
     // Getters and Setters
@@ -72,7 +79,7 @@ public class User {
     public String getEmergencyContactPhone() { return emergencyContactPhone; }
     public void setEmergencyContactPhone(String emergencyContactPhone) { this.emergencyContactPhone = emergencyContactPhone; }
 
-    // --- NEW GETTERS AND SETTERS FOR PAYROLL FIELDS ---
+    // --- GETTERS AND SETTERS FOR PAYROLL FIELDS ---
     public BigDecimal getBaseSalary() { return baseSalary; }
     public void setBaseSalary(BigDecimal baseSalary) { this.baseSalary = baseSalary; }
     public BigDecimal getTaxPercentage() { return taxPercentage; }
@@ -86,6 +93,23 @@ public class User {
     public String getEmployeeStatus() { return this.status; }
     public void setStatus(String status) { this.status = status; }
     // --- END NEW GETTERS AND SETTERS ---
+
+    // Getters and Setters for NEW Login Security fields
+    public int getFailedLoginAttempts() {
+        return failedLoginAttempts;
+    }
+
+    public void setFailedLoginAttempts(int failedLoginAttempts) {
+        this.failedLoginAttempts = failedLoginAttempts;
+    }
+
+    public LocalDateTime getAccountLockedUntil() {
+        return accountLockedUntil;
+    }
+
+    public void setAccountLockedUntil(LocalDateTime accountLockedUntil) {
+        this.accountLockedUntil = accountLockedUntil;
+    }
 
     @Override
     public String toString() {
@@ -104,6 +128,8 @@ public class User {
                 ", commissionPercentage=" + commissionPercentage +
                 ", providentFundPercentage=" + providentFundPercentage +
                 ", status='" + status + '\'' +
+                ", failedLoginAttempts=" + failedLoginAttempts + // Include new fields in toString
+                ", accountLockedUntil=" + accountLockedUntil +   // Include new fields in toString
                 '}';
     }
 }
