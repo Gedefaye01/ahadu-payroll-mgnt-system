@@ -472,19 +472,19 @@ body {
 }
 
 .btn-primary:hover {
-    background-color: var(--primary-color); /* REVERTED: Now uses primary-color on hover */
+    background-color: var(--dark-primary); /* Darker primary for hover */
     box-shadow: 0 8px 25px rgba(97,34,53,0.35);
 }
 
 .btn-secondary {
-    background-color: var(--light-bg); /* REVERTED: Uses light-bg for secondary */
-    color: var(--text-dark); /* REVERTED: Text color for secondary button */
-    border: 1px solid var(--border-color-light); /* REVERTED: Added border back */
+    background-color: var(--light-bg); /* Uses light-bg for secondary */
+    color: var(--text-dark); /* Text color for secondary button */
+    border: 1px solid var(--border-color-light); /* Added border back */
     box-shadow: 0 3px 10px rgba(0,0,0,0.05);
 }
 
 .btn-secondary:hover {
-    background-color: #d0d0d0; /* REVERTED: Now uses #d0d0d0 for secondary hover */
+    background-color: #d0d0d0; /* Now uses #d0d0d0 for secondary hover */
     box-shadow: 0 6px 16px rgba(0,0,0,0.08);
 }
 
@@ -500,6 +500,9 @@ body {
     cursor: pointer;
     white-space: nowrap; /* Prevent text wrapping */
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); /* Consistent shadow */
+    display: inline-block; /* Ensure it respects width/height */
+    min-width: 60px; /* Ensure a minimum width */
+    min-height: 30px; /* Ensure a minimum height */
 }
 
 .btn-action-primary:hover {
@@ -519,19 +522,19 @@ body {
 .data-table {
     width: 100%;
     border-collapse: collapse;
-    table-layout: fixed; /* Force fixed column widths */ /* MODIFIED */
+    table-layout: fixed; /* Force fixed column widths */
 }
 
 .data-table th, .data-table td {
     padding: 1rem 1.2rem; /* Adjusted padding */
     text-align: left;
     border-bottom: 1px solid var(--border-color-light); /* Consistent border */
-    word-break: break-all; /* More aggressive word breaking */ /* MODIFIED */
+    word-break: break-all; /* More aggressive word breaking */
     font-size: 0.95rem; /* Slightly smaller font for tables */
     color: var(--text-dark); /* Ensure text is dark and clear */
-    overflow: hidden; /* Hide overflowing content */ /* ADDED */
-    text-overflow: ellipsis; /* Show ellipsis for truncated text */ /* ADDED */
-    white-space: nowrap; /* Prevent text from wrapping prematurely */ /* ADDED */
+    overflow: hidden; /* Hide overflowing content */
+    text-overflow: ellipsis; /* Show ellipsis for truncated text */
+    white-space: nowrap; /* Prevent text from wrapping prematurely */
 }
 
 .data-table thead th {
@@ -547,7 +550,7 @@ body {
     user-select: none;
 }
 
-/* Specific column widths for better layout based on screenshot */ /* ADDED */
+/* Specific column widths for better layout based on screenshot */
 .data-table th:nth-child(1), .data-table td:nth-child(1) { /* ID Column */
     width: 15%;
 }
@@ -579,48 +582,16 @@ body {
 
 /* Table actions column */
 .table-actions {
-  display: flex; /* Ensures buttons are in a row */
+  display: flex !important; /* Ensures buttons are in a row, added !important */
   gap: 0.5rem;   /* Adds space between buttons */
   justify-content: center; /* Centers buttons if the cell is wider */
   align-items: center;
 }
 
-/* General styling for buttons within table-actions, not overriding specific btn-action-primary */
-.table-actions button {
-    margin-right: 0; /* Removed margin-right as gap handles spacing */
-    padding: 0.6rem 1rem; /* Adjusted padding */
-    font-size: 0.85rem; /* Smaller font for action buttons */
-    border-radius: 0.5rem; /* More rounded action buttons */
-    transition: background-color 0.2s ease, transform 0.1s ease;
-    user-select: none;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); /* Consistent shadow */
-    /* REMOVED: background-color and color here to let .btn-action-primary apply its styles */
-    /* REMOVED: border here as well */
-}
+/* Removed the general .table-actions button rule to avoid conflicts and rely on .btn-action-primary */
+/* Removed the specific .table-actions button.text-indigo-600 and .text-red-600 rules as they are now handled by .btn-action-primary */
 
-.btn-action-primary {
-    background-color: var(--primary-color); /* Use primary color for consistency */
-    color: white;
-    padding: 0.5rem 1rem;
-    border-radius: 0.375rem; /* rounded-md */
-    font-weight: 600; /* font-semibold */
-    transition: background-color 0.2s ease-in-out;
-    border: none;
-    cursor: pointer;
-    white-space: nowrap; /* Prevent text wrapping */
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); /* Consistent shadow */
-}
 
-.btn-action-primary:hover {
-    background-color: var(--dark-primary); /* Darker primary on hover */
-}
-
-.table-actions {
-  display: flex; /* Ensures buttons are in a row */
-  gap: 0.5rem;   /* Adds space between buttons */
-  justify-content: center; /* Centers buttons if the cell is wider */
-  align-items: center;
-}
 /* --- Dashboard & Profile Page Specific Styles --- */
 .dashboard-grid {
     display: grid;
@@ -877,15 +848,6 @@ body {
     .dropbtn { font-size: 0.95rem; }
     .dropdown-content { min-width: 140px; border-radius: 0.6rem; }
     .dropdown-content a { padding: 0.6rem 1rem; font-size: 0.85rem; }
-    .data-table th, .data-table td {
-        padding: 0.7rem 0.8rem;
-        font-size: 0.85rem;
-    }
-    .table-actions button {
-        margin-right: 0.4rem;
-        padding: 0.5rem 0.8rem;
-        font-size: 0.8rem;
-    }
 }
 
 @media (max-width: 480px) {
@@ -961,15 +923,6 @@ body {
     .dropbtn { font-size: 0.9rem; }
     .dropdown-content { min-width: 120px; border-radius: 0.5rem; }
     .dropdown-content a { padding: 0.5rem 0.8rem; font-size: 0.8rem; }
-    .data-table th, .data-table td {
-        padding: 0.7rem 0.8rem;
-        font-size: 0.85rem;
-    }
-    .table-actions button {
-        margin-right: 0.4rem;
-        padding: 0.5rem 0.8rem;
-        font-size: 0.8rem;
-    }
 }
 
 /* --- Change Password Page Styling --- */
@@ -1038,7 +991,7 @@ body {
 }
 
 .change-password-button:hover {
-    background-color: var(--primary-color); /* REVERTED: Now uses primary-color on hover */
+    background-color: var(--dark-primary); /* Darker primary for hover */
     transform: translateY(-3px); /* Match btn-primary hover lift */
     box-shadow: 0 8px 25px rgba(97,34,53,0.35); /* Match btn-primary hover shadow */
 }
@@ -1050,103 +1003,6 @@ body {
     box-shadow: none; /* No shadow when disabled */
     transform: none; /* No transform when disabled */
 }
-
-/* --- Employee Profile Specific Styles --- */
-.employee-welcome-section {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  text-align: center;
-  margin-bottom: 2.5rem;
-  padding: 2rem;
-  background: linear-gradient(to right, var(--light-section-bg), var(--light-bg)); /* Using theme variables */
-  border-radius: 1rem;
-  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
-}
-
-.employee-profile-photo {
-  width: 8rem;
-  height: 8rem;
-  border-radius: 50%;
-  border: 4px solid var(--secondary-color); /* Using theme variable */
-  margin-bottom: 1rem;
-  object-fit: cover;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-}
-
-.employee-welcome-icon {
-  color: var(--primary-color); /* Using theme variable */
-  width: 4rem;
-  height: 4rem;
-  margin-bottom: 1rem;
-}
-
-.employee-welcome-title {
-  font-size: 2.5rem;
-  font-weight: 800;
-  color: var(--text-dark); /* Using theme variable */
-  margin-bottom: 0.75rem;
-}
-
-.employee-welcome-text {
-  font-size: 1.125rem;
-  color: var(--text-medium); /* Using theme variable */
-}
-
-.employee-activities-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-  gap: 2rem;
-}
-
-.employee-activity-card {
-  background-color: var(--light-card-bg);
-  padding: 1.5rem;
-  border-radius: 0.75rem;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-  transition: all 0.3s ease-in-out;
-  cursor: pointer;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  text-align: center;
-  border: 1px solid var(--border-color-light); /* Using theme variable */
-}
-
-.employee-activity-card:hover {
-  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
-  transform: translateY(-0.25rem);
-}
-
-.employee-activity-icon {
-  color: var(--primary-color); /* Using theme variable */
-  width: 3.5rem;
-  height: 3.5rem;
-  margin-bottom: 1rem;
-}
-
-.employee-activity-title {
-  font-size: 1.5rem;
-  font-weight: 600;
-  color: var(--text-dark); /* Using theme variable */
-  margin-bottom: 0.5rem;
-}
-
-.employee-activity-description {
-  color: var(--text-medium); /* Using theme variable */
-  font-size: 1rem;
-  margin-bottom: 1rem;
-  flex-grow: 1;
-}
-
-.btn-primary.employee-activity-button { /* Specificity for this button */
-  background-color: var(--primary-color); /* Using theme variable */
-  color: white;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-}
-
-
 /* --- Employee Profile Specific Styles --- */
 .employee-welcome-section {
   display: flex;
