@@ -26,6 +26,6 @@ const ProtectedRoute = ({ allowedRoles, redirectPath = '/signin' }) => {
 
   // If authenticated and authorized, render the child routes
   return <Outlet />;
-};
+}; 
 
 export default ProtectedRoute;
