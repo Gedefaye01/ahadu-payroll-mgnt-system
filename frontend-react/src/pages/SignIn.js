@@ -2,17 +2,18 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
-import Card from '../components/Card'; // Assuming this component exists and is correctly imported
+import Card from '../components/Card';
+import { useAuth } from '../AuthContext'; // Import useAuth hook
 
 /**
  * SignIn Component
  * Handles user authentication, including sending credentials to the backend,
- * storing user data (token, role, userId, username, photo URL) in localStorage,
+ * updating global authentication state via AuthContext,
  * and redirecting to the appropriate dashboard based on their role.
- * The login screen is now unified, without separate Admin/User toggles.
  */
 function SignIn() {
   const navigate = useNavigate();
+  const { login } = useAuth(); // Use the login function from AuthContext
   const [formData, setFormData] = useState({ email: '', password: '' });
   const [loading, setLoading] = useState(false);
 
@@ -24,17 +25,11 @@ function SignIn() {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    // Clear any existing auth info BEFORE attempting new login
-    localStorage.removeItem('token');
-    localStorage.removeItem('userRole');
-    localStorage.removeItem('userId');
-    localStorage.removeItem('username');
-    localStorage.removeItem('userPhotoUrl');
-
+    // No need to manually clear localStorage here, AuthContext's login/logout handles it
     setLoading(true);
 
     const payload = {
-      username: formData.email.trim(), // Assuming backend expects email as 'username' for signin
+      username: formData.email.trim(),
       password: formData.password,
     };
 
@@ -52,18 +47,13 @@ function SignIn() {
 
       if (res.ok) {
         const backendRoles = new Set((data.roles || []).map((r) => r.toUpperCase()));
-
         let assignedRole = 'USER';
         if (backendRoles.has('ADMIN')) {
           assignedRole = 'ADMIN';
         }
 
-        // Store token, role, userId, username, and profilePictureUrl
-        localStorage.setItem('token', data.token);
-        localStorage.setItem('userRole', assignedRole);
-        localStorage.setItem('userId', data.id);
-        localStorage.setItem('username', data.username || formData.email.split('@')[0]);
-        localStorage.setItem('userPhotoUrl', data.profilePictureUrl || '');
+        // Call the login function from AuthContext to update global state and localStorage
+        login(data.token, assignedRole, data.id, data.username || formData.email.split('@')[0], data.profilePictureUrl);
 
         toast.success('Sign in successful!', {
           autoClose: 2000,
@@ -97,10 +87,9 @@ function SignIn() {
   return (
     <div className="form-container" style={{ maxWidth: 400, margin: 'auto' }}>
       <Card title="Sign In to Your Account">
-        {/* Login Form */}
         <form onSubmit={handleSubmit}>
           <div className="form-group">
-            <label htmlFor="email">Email Address</label> {/* Simplified label */}
+            <label htmlFor="email">Email Address</label>
             <input
               type="email"
               id="email"
@@ -127,7 +116,7 @@ function SignIn() {
             style={{ width: '100%' }}
             disabled={loading}
           >
-            {loading ? 'Signing In...' : 'Sign In'} {/* Simplified button text */}
+            {loading ? 'Signing In...' : 'Sign In'}
           </button>
         </form>
       </Card>
