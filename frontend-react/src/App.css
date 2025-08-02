@@ -598,7 +598,29 @@ body {
     /* REMOVED: border here as well */
 }
 
+.btn-action-primary {
+    background-color: var(--primary-color); /* Use primary color for consistency */
+    color: white;
+    padding: 0.5rem 1rem;
+    border-radius: 0.375rem; /* rounded-md */
+    font-weight: 600; /* font-semibold */
+    transition: background-color 0.2s ease-in-out;
+    border: none;
+    cursor: pointer;
+    white-space: nowrap; /* Prevent text wrapping */
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); /* Consistent shadow */
+}
 
+.btn-action-primary:hover {
+    background-color: var(--dark-primary); /* Darker primary on hover */
+}
+
+.table-actions {
+  display: flex; /* Ensures buttons are in a row */
+  gap: 0.5rem;   /* Adds space between buttons */
+  justify-content: center; /* Centers buttons if the cell is wider */
+  align-items: center;
+}
 /* --- Dashboard & Profile Page Specific Styles --- */
 .dashboard-grid {
     display: grid;
