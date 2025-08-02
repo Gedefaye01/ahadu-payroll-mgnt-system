@@ -2,6 +2,7 @@ com\ahadu\payroll\controller\ContactController.class
 com\ahadu\payroll\model\Paycheck.class
 com\ahadu\payroll\service\UserProfileService.class
 com\ahadu\payroll\model\Announcement.class
+com\ahadu\payroll\service\LoginAttemptService.class
 com\ahadu\payroll\controller\AuthController.class
 com\ahadu\payroll\service\LocalFileStorageServiceImpl.class
 com\ahadu\payroll\service\AnnouncementService.class
@@ -40,6 +41,7 @@ com\ahadu\payroll\controller\UserRoleController.class
 com\ahadu\payroll\security\JwtAccessDeniedHandler.class
 com\ahadu\payroll\security\UserDetailsImpl.class
 com\ahadu\payroll\repository\UserRepository.class
+com\ahadu\payroll\security\CustomAuthenticationFailureHandler.class
 com\ahadu\payroll\model\User.class
 com\ahadu\payroll\controller\ReportController.class
 com\ahadu\payroll\service\AttendanceService.class

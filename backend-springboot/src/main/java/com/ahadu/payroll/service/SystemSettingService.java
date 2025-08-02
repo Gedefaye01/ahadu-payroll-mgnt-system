@@ -6,10 +6,9 @@ import java.util.Optional;
 
 /**
  * Service interface for managing system-wide settings.
- * Declares methods for retrieving and updating settings, including password policy.
+ * Declares methods for retrieving and updating settings, including password policy,
+ * login security, and session management.
  */
-// @Service annotation is typically not needed on interfaces unless you're using Spring's proxy-based AOP
-// but it doesn't cause harm here.
 public interface SystemSettingService {
 
     List<SystemSetting> getAllSettings();
@@ -39,4 +38,14 @@ public interface SystemSettingService {
     void setRequireLowercase(boolean required);
     void setRequireDigit(boolean required);
     void setRequireSpecialChar(boolean required);
+
+    // NEW METHODS: For retrieving Login Security settings
+    Optional<Integer> getMaxLoginAttempts();
+    Optional<Long> getLockoutDurationMinutes();
+    Optional<Long> getSessionTimeoutMinutes(); // Also add session timeout
+
+    // NEW METHODS: Setters for Login Security settings
+    void setMaxLoginAttempts(int attempts);
+    void setLockoutDurationMinutes(long minutes);
+    void setSessionTimeoutMinutes(long minutes);
 }

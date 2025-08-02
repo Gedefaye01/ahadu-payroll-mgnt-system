@@ -13,7 +13,7 @@ import java.util.Optional;
  * Service class for managing system-wide settings.
  * Provides methods for retrieving and updating settings.
  */
-@Service // This annotation correctly marks it as a Spring bean
+@Service
 public class SystemSettingServiceImpl implements SystemSettingService { // Correctly implements the interface
 
     private final SystemSettingRepository systemSettingRepository;
@@ -143,5 +143,43 @@ public class SystemSettingServiceImpl implements SystemSettingService { // Corre
     @Override
     public void setRequireSpecialChar(boolean required) {
         saveOrUpdateSetting(new SystemSetting("requireSpecialChar", String.valueOf(required), "Require at least one special character in passwords."));
+    }
+
+    // NEW METHODS IMPLEMENTATION: For retrieving Login Security settings
+    @Override
+    public Optional<Integer> getMaxLoginAttempts() {
+        return getSettingById("maxLoginAttempts")
+                .map(SystemSetting::getValue)
+                .map(Integer::parseInt);
+    }
+
+    @Override
+    public Optional<Long> getLockoutDurationMinutes() {
+        return getSettingById("lockoutDurationMinutes")
+                .map(SystemSetting::getValue)
+                .map(Long::parseLong);
+    }
+
+    @Override
+    public Optional<Long> getSessionTimeoutMinutes() {
+        return getSettingById("sessionTimeoutMinutes")
+                .map(SystemSetting::getValue)
+                .map(Long::parseLong);
+    }
+
+    // NEW METHODS IMPLEMENTATION: Setters for Login Security settings
+    @Override
+    public void setMaxLoginAttempts(int attempts) {
+        saveOrUpdateSetting(new SystemSetting("maxLoginAttempts", String.valueOf(attempts), "Maximum number of failed login attempts before account lockout."));
+    }
+
+    @Override
+    public void setLockoutDurationMinutes(long minutes) {
+        saveOrUpdateSetting(new SystemSetting("lockoutDurationMinutes", String.valueOf(minutes), "Duration in minutes for which an account is locked after too many failed attempts."));
+    }
+
+    @Override
+    public void setSessionTimeoutMinutes(long minutes) {
+        saveOrUpdateSetting(new SystemSetting("sessionTimeoutMinutes", String.valueOf(minutes), "Duration in minutes after which a user's session will expire."));
     }
 }
