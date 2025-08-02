@@ -26,7 +26,7 @@ function AddEmployee() {
   const [showPasswordResetModal, setShowPasswordResetModal] = useState(false);
   const [currentEmployeeForReset, setCurrentEmployeeForReset] = useState(null);
   const [newPassword, setNewPassword] = useState('');
-  const [confirmNewPassword, setConfirmNewPassword] = useState('');
+  const [confirmNewPassword, setNewConfirmPassword] = useState('');
   const [passwordResetError, setPasswordResetError] = useState('');
 
 
@@ -165,7 +165,7 @@ function AddEmployee() {
   const openPasswordResetModal = (employee) => {
     setCurrentEmployeeForReset(employee);
     setNewPassword('');
-    setConfirmNewPassword('');
+    setNewConfirmPassword('');
     setPasswordResetError('');
     setShowPasswordResetModal(true);
   };
@@ -375,22 +375,24 @@ function AddEmployee() {
                       {employee.employeeStatus}
                     </span>
                   </td>
+                  {/* Inline CSS added here for direct control */}
                   <td className="table-actions text-center" style={{ display: 'flex', gap: '0.5rem', justifyContent: 'center' }}>
                     <button
                       onClick={() => handleEdit(employee)}
-                      className="btn-action-primary" // Using the specific action button class
+                      className="btn-action-primary" // Keep the class for styling
+                      style={{ backgroundColor: '#75073d', color: 'white' }} // Inline style for visibility
                     >
                       Edit
                     </button>
                     <button
                       onClick={() => handleDelete(employee.id)}
-                      className="btn-action-primary" // Using the specific action button class
+                      className="btn-action-primary"
                     >
                       Delete
                     </button>
                     <button
                       onClick={() => openPasswordResetModal(employee)}
-                      className="btn-action-primary" // Using the specific action button class
+                      className="btn-action-primary"
                     >
                       Reset Password
                     </button>
@@ -426,7 +428,7 @@ function AddEmployee() {
                   type="password"
                   id="confirmNewPassword"
                   value={confirmNewPassword}
-                  onChange={(e) => setConfirmNewPassword(e.target.value)}
+                  onChange={(e) => setNewConfirmPassword(e.target.value)}
                   className="input-field"
                   placeholder="Confirm new password"
                   required
