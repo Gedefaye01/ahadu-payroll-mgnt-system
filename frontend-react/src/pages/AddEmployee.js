@@ -26,7 +26,7 @@ function AddEmployee() {
   const [showPasswordResetModal, setShowPasswordResetModal] = useState(false);
   const [currentEmployeeForReset, setCurrentEmployeeForReset] = useState(null);
   const [newPassword, setNewPassword] = useState('');
-  const [confirmNewPassword, setNewConfirmPassword] = useState('');
+  const [confirmNewPassword, setConfirmNewPassword] = useState('');
   const [passwordResetError, setPasswordResetError] = useState('');
 
 
@@ -165,7 +165,7 @@ function AddEmployee() {
   const openPasswordResetModal = (employee) => {
     setCurrentEmployeeForReset(employee);
     setNewPassword('');
-    setNewConfirmPassword('');
+    setConfirmNewPassword('');
     setPasswordResetError('');
     setShowPasswordResetModal(true);
   };
@@ -375,24 +375,23 @@ function AddEmployee() {
                       {employee.employeeStatus}
                     </span>
                   </td>
-                  {/* Inline CSS added here for direct control */}
+                  {/* Applied direct Tailwind classes for styling the action buttons */}
                   <td className="table-actions text-center" style={{ display: 'flex', gap: '0.5rem', justifyContent: 'center' }}>
                     <button
                       onClick={() => handleEdit(employee)}
-                      className="btn-action-primary" // Keep the class for styling
-                      style={{ backgroundColor: '#75073d', color: 'white' }} // Inline style for visibility
+                      className="bg-primary-color text-white px-3 py-1.5 rounded-md font-semibold hover:bg-dark-primary text-xs"
                     >
                       Edit
                     </button>
                     <button
                       onClick={() => handleDelete(employee.id)}
-                      className="btn-action-primary"
+                      className="bg-primary-color text-white px-3 py-1.5 rounded-md font-semibold hover:bg-dark-primary text-xs"
                     >
                       Delete
                     </button>
                     <button
                       onClick={() => openPasswordResetModal(employee)}
-                      className="btn-action-primary"
+                      className="bg-primary-color text-white px-3 py-1.5 rounded-md font-semibold hover:bg-dark-primary text-xs"
                     >
                       Reset
                     </button>
@@ -428,7 +427,7 @@ function AddEmployee() {
                   type="password"
                   id="confirmNewPassword"
                   value={confirmNewPassword}
-                  onChange={(e) => setNewConfirmPassword(e.target.value)}
+                  onChange={(e) => setConfirmNewPassword(e.target.value)}
                   className="input-field"
                   placeholder="Confirm new password"
                   required
