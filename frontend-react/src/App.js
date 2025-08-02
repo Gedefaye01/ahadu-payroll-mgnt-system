@@ -24,7 +24,7 @@ import UserRoleManagement from './pages/UserRoleManagement';
 import SystemSettings from './pages/SystemSettings';
 import GenerateReports from './pages/GenerateReports';
 import AttendanceLeaveApproval from './pages/AttendanceLeaveApproval';
-import SalaryStructure from './pages/SalaryHistory'; // Corrected from SalaryStructure if it's for history
+import SalaryStructure from './pages/SalaryStructure'; // Corrected from SalaryStructure if it's for history
 
 // Employee pages
 import EmployeeProfile from './pages/EmployeeProfile';
