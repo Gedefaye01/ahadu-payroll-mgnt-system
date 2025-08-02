@@ -79,7 +79,6 @@ body {
 .text-green-800 { color: #065f46; }
 .bg-red-100 { background-color: #fee2e2; }
 .text-red-800 { color: #991b1b; }
-/* Reverted these specific Tailwind-like color classes to their original non-Tailwind equivalents if they were hardcoded */
 .text-indigo-600 { color: #4f46e5; }
 .hover\:text-indigo-900:hover { color: #312e81; }
 .text-red-600 { color: #dc2626; }
@@ -135,7 +134,7 @@ body {
 .header-nav nav a:hover,
 .header-nav nav button:hover,
 .header-nav nav a.active {
-    color: var(--secondary-color); /* REVERTED: Now uses secondary-color on hover */
+    color: var(--secondary-color); /* Changed to secondary-color on hover */
     transform: translateY(-3px);
 }
 
@@ -147,7 +146,7 @@ body {
     height: 2px;
     bottom: 0;
     left: 0;
-    background-color: var(--secondary-color); /* REVERTED: Now uses secondary-color */
+    background-color: var(--secondary-color); /* Changed to secondary-color */
     transition: width 0.3s ease-out;
 }
 
@@ -503,6 +502,8 @@ body {
     display: inline-block; /* Ensure it respects width/height */
     min-width: 60px; /* Ensure a minimum width */
     min-height: 30px; /* Ensure a minimum height */
+    flex-shrink: 0; /* Prevent buttons from shrinking */
+    margin: 0 0.25rem; /* Fallback margin for spacing */
 }
 
 .btn-action-primary:hover {
@@ -587,9 +588,6 @@ body {
   justify-content: center; /* Centers buttons if the cell is wider */
   align-items: center;
 }
-
-/* Removed the general .table-actions button rule to avoid conflicts and rely on .btn-action-primary */
-/* Removed the specific .table-actions button.text-indigo-600 and .text-red-600 rules as they are now handled by .btn-action-primary */
 
 
 /* --- Dashboard & Profile Page Specific Styles --- */
@@ -1003,6 +1001,7 @@ body {
     box-shadow: none; /* No shadow when disabled */
     transform: none; /* No transform when disabled */
 }
+
 /* --- Employee Profile Specific Styles --- */
 .employee-welcome-section {
   display: flex;
@@ -1097,6 +1096,7 @@ body {
   color: white;
   box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
 }
+
 
 .btn-primary.employee-activity-button:hover {
   background-color: var(--primary-color); /* Using theme variable */
