@@ -7,31 +7,53 @@ export const AuthContext = createContext(null);
  * AuthProvider Component
  * Manages the global authentication state (isAuthenticated, userRole, userId, username, userPhotoUrl).
  * Provides functions to log in and log out.
- * Reads initial state from localStorage and updates it on changes.
+ * Initializes state directly from localStorage for immediate availability on refresh.
  */
 export const AuthProvider = ({ children }) => {
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [userRole, setUserRole] = useState(null);
-  const [userId, setUserId] = useState(null);
-  const [username, setUsername] = useState(null);
-  const [userPhotoUrl, setUserPhotoUrl] = useState(null);
+  // Initialize state directly from localStorage
+  const initialToken = localStorage.getItem('token');
+  const initialRole = localStorage.getItem('userRole');
+  const initialUserId = localStorage.getItem('userId');
+  const initialUsername = localStorage.getItem('username');
+  const initialUserPhotoUrl = localStorage.getItem('userPhotoUrl');
 
-  // Effect to read initial authentication state from localStorage when component mounts
+  const [isAuthenticated, setIsAuthenticated] = useState(!!initialToken);
+  const [userRole, setUserRole] = useState(initialRole);
+  const [userId, setUserId] = useState(initialUserId);
+  const [username, setUsername] = useState(initialUsername);
+  const [userPhotoUrl, setUserPhotoUrl] = useState(initialUserPhotoUrl);
+
+  // This useEffect handles 'storage' events from other tabs/windows.
+  // The initial state is already set during useState initialization.
   useEffect(() => {
-    const token = localStorage.getItem('token');
-    const storedRole = localStorage.getItem('userRole');
-    const storedUserId = localStorage.getItem('userId');
-    const storedUsername = localStorage.getItem('username');
-    const storedUserPhotoUrl = localStorage.getItem('userPhotoUrl');
+    const handleStorageChange = () => {
+      const token = localStorage.getItem('token');
+      const role = localStorage.getItem('userRole');
+      const id = localStorage.getItem('userId');
+      const name = localStorage.getItem('username');
+      const photoUrl = localStorage.getItem('userPhotoUrl');
 
-    if (token) {
-      setIsAuthenticated(true);
-      setUserRole(storedRole);
-      setUserId(storedUserId);
-      setUsername(storedUsername);
-      setUserPhotoUrl(storedUserPhotoUrl);
-    }
-  }, []);
+      // Only update if there's an actual change to prevent unnecessary re-renders
+      if (
+        !!token !== isAuthenticated ||
+        role !== userRole ||
+        id !== userId ||
+        name !== username ||
+        photoUrl !== userPhotoUrl
+      ) {
+        setIsAuthenticated(!!token);
+        setUserRole(role);
+        setUserId(id);
+        setUsername(name);
+        setUserPhotoUrl(photoUrl);
+      }
+    };
+
+    window.addEventListener('storage', handleStorageChange);
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+    };
+  }, [isAuthenticated, userRole, userId, username, userPhotoUrl]);
 
   /**
    * Logs in a user by setting authentication details in state and localStorage.
@@ -46,7 +68,7 @@ export const AuthProvider = ({ children }) => {
     localStorage.setItem('userRole', role);
     localStorage.setItem('userId', id);
     localStorage.setItem('username', name);
-    localStorage.setItem('userPhotoUrl', photoUrl || ''); // Store photo URL, or empty string if not provided
+    localStorage.setItem('userPhotoUrl', photoUrl || '');
 
     setIsAuthenticated(true);
     setUserRole(role);

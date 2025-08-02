@@ -5,11 +5,18 @@ import { useAuth } from '../context/AuthContext'; // Corrected import path
 /**
  * ProtectedRoute Component
  * Controls access to routes based on user authentication status and roles.
- * It now consumes the global authentication state from AuthContext.
+ * It now consistently consumes the global authentication state from AuthContext,
+ * and waits for the authentication context to finish loading.
  */
 const ProtectedRoute = ({ allowedRoles, redirectPath = '/signin' }) => {
-  // Use the useAuth hook to get the current authentication state and user role
-  const { isAuthenticated, userRole } = useAuth();
+  // Use the useAuth hook to get the current authentication state, user role, AND loading status
+  const { isAuthenticated, userRole, loading } = useAuth(); // IMPORTANT: Destructure 'loading' here
+
+  // If authentication is still loading, render a loading indicator (or null)
+  // This prevents redirects before the auth state is fully determined on refresh.
+  if (loading) {
+    return <div>Loading authentication...</div>; // You can replace this with a spinner or null
+  }
 
   // If not authenticated, redirect to the sign-in page
   if (!isAuthenticated) {
