@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
-import { useAuth } from '../AuthContext'; // Import useAuth hook
+import { useAuth } from './context/AuthContext'; // Import useAuth hook
 
 /**
  * Header Component
