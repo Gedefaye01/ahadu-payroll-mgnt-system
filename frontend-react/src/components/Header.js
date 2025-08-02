@@ -76,13 +76,9 @@ function Header() {
     <header className="app-header">
       <div className="header-logo">
         {/* Link logo to home or dashboard based on login status */}
-        <Link to={isAuthenticated ? (userRole === 'ADMIN' ? '/admin-dashboard' : '/employee-profile') : '/'}>
-          {/* Main Ahadu Bank Logo */}
-          <img src="/footer-logo.png" alt="Ahadu Bank Logo" className="main-logo" /> {/* Ensure logo is in public folder */}
+        <Link to={isAuthenticated ? dashboardPath : '/'}>
+          <img src="/Ahadu-logo.PNG" alt="Ahadu Bank Logo" /> {/* Ensure logo is in public folder */}
         </Link>
-        {/* Additional logos can be added here */}
-        <img src="https://placehold.co/55x55/612235/ffffff?text=Logo2" alt="Additional Logo 1" className="additional-logo" />
-        <img src="https://placehold.co/55x55/d4af37/612235?text=Logo3" alt="Additional Logo 2" className="additional-logo" />
       </div>
       <div className="header-nav">
         <nav>
