@@ -394,7 +394,7 @@ function AddEmployee() {
                       onClick={() => openPasswordResetModal(employee)}
                       className="btn-action-primary"
                     >
-                      Reset Password
+                      Reset
                     </button>
                   </td>
                 </tr>
@@ -449,7 +449,7 @@ function AddEmployee() {
                   type="submit"
                   className="btn btn-primary" // Uses btn-primary
                 >
-                  Set New Password
+                  Save New Password
                 </button>
               </div>
             </form>

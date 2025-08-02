@@ -559,7 +559,7 @@ body {
     width: 15%;
 }
 .data-table th:nth-child(3), .data-table td:nth-child(3) { /* Email Column */
-    width: 25%;
+    width: 20%; /* Slightly reduced to give more space for actions */
 }
 .data-table th:nth-child(4), .data-table td:nth-child(4) { /* Role(s) Column */
     width: 10%;
@@ -568,7 +568,7 @@ body {
     width: 10%;
 }
 .data-table th:nth-child(6), .data-table td:nth-child(6) { /* Actions Column */
-    width: 25%;
+    width: 30%; /* Increased width for actions column */
 }
 
 
