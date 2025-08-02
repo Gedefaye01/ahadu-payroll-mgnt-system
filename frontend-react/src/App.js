@@ -4,7 +4,7 @@ import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 
 // Import your AuthProvider
-import { AuthProvider } from './AuthContext'; // Adjust path if AuthContext.js is in a different directory
+import { AuthProvider } from './context/AuthContext'; // Adjust path if AuthContext.js is in a different directory
 
 import Header from './components/Header';
 import Footer from './components/Footer';
