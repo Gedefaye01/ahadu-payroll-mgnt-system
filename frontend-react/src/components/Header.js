@@ -76,10 +76,11 @@ function Header() {
     <header className="app-header">
       <div className="header-logo">
         {/* Link logo to home or dashboard based on login status */}
-        <Link to={isAuthenticated ? dashboardPath : '/'}>
+        <Link to={isAuthenticated ? (userRole === 'ADMIN' ? '/admin-dashboard' : '/employee-profile') : '/'}>
+          {/* Main Ahadu Bank Logo */}
           <img src="/Ahadu-logo.PNG" alt="Ahadu Bank Logo" /> {/* Ensure logo is in public folder */}
         </Link>
-      </div>
+        </div>
       <div className="header-nav">
         <nav>
           {/* Always visible links */}
